@@ -1,12 +1,12 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-
+import setupAssociations from './models/associations.js';
 import dotenv from 'dotenv';
 import initDB from './database/init.js';
 import swaggerDocs from './utils/swagger.js';
 
-
+setupAssociations();
 dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
