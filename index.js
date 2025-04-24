@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 
 import dotenv from 'dotenv';
 import initDB from './database/init.js';
+import swaggerDocs from './utils/swagger.js';
 
 
 dotenv.config();
@@ -23,7 +24,7 @@ initDB().then(() => {
     app.listen(port, () => {
         console.log(`Server running at http://localhost:${port}`);
         // Initialize Swagger docs
-        // swaggerDocs(app, port);
+        swaggerDocs(app, port);
     });
 }).catch(error => {
     console.error('Invalid database connection:', error);
