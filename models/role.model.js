@@ -15,17 +15,7 @@ const Role = sequelize.define('Role', {
     description: {
         type: DataTypes.TEXT,
         allowNull: true,
-    },
-    permissions: {
-        type: DataTypes.JSON,
-        allowNull: true,
-        comment: 'JSON object containing specific permissions for this role'
-    },
-    isActive: {
-        type: DataTypes.BOOLEAN,
-        allowNull: false,
-        defaultValue: true
-    },
+    }
 }, {
     tableName: 'roles',
     timestamps: false,
