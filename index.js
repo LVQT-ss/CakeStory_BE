@@ -5,6 +5,7 @@ import setupAssociations from './models/associations.js';
 import dotenv from 'dotenv';
 import initDB from './database/init.js';
 import swaggerDocs from './utils/swagger.js';
+import authRoutes from './routes/auth.route.js';
 
 setupAssociations();
 dotenv.config();
@@ -17,7 +18,7 @@ app.use(cookieParser());
 app.use(cors());
 
 // Register the routes
-
+app.use('/api/auth', authRoutes);
 
 // Initialize and synchronize the database
 initDB().then(() => {

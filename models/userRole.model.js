@@ -38,11 +38,11 @@ const UserRole = sequelize.define('UserRole', {
             key: 'userId'
         }
     },
-    expiresAt: {
-        type: DataTypes.DATE,
-        allowNull: true,
-        comment: 'Optional expiration date for temporary role assignments'
-    }
+    // expiresAt: {
+    //     type: DataTypes.DATE,
+    //     allowNull: true,
+    //     comment: 'Optional expiration date for temporary role assignments'
+    // }
 }, {
     tableName: 'user_roles',
     timestamps: false,
