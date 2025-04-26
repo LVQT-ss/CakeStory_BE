@@ -1,7 +1,7 @@
 import express from 'express'; // Fixed typo 'expess' -> 'express'
 import {
     register,
-    // login,
+    login
     // requestPasswordReset,
     // resetPassword,
 } from '../controllers/auth.controller.js';
@@ -68,5 +68,64 @@ const router = express.Router();
  *         description: Server Error
  */
 router.post('/register', register);
+
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     tags:
+ *     - Auth Controller
+ *     summary: Log in a user
+ *     description: This endpoint allows a user to log in by providing their username and password.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - password
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: admin
+ *               password:
+ *                 type: string
+ *                 example: admin
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Login successful
+ *                 token:
+ *                   type: string
+ *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     userId:
+ *                       type: integer
+ *                     username:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                     usertype:
+ *                       type: string
+ *       400:
+ *         description: Bad Request - Missing or invalid input
+ *       401:
+ *         description: Unauthorized - Invalid username or password
+ *       500:
+ *         description: Server error
+ */
+router.post('/login', login);
+
 
 export default router;

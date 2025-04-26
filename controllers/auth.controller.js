@@ -1,10 +1,12 @@
 import bcryptjs from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import 'dotenv/config';
 import sequelize from '../database/db.js';
 import User from '../models/user.model.js';
 import UserRole from '../models/userRole.model.js';
 import Role from '../models/role.model.js';
 
+// THIS FUNCTION IS FOR SIGNUP A STAFF ACCOUNT IN THE SYSTEM 
 export const register = async (req, res) => {
     const { roleId, username, email, password, userAddress, userPhoneNumber } = req.body;
 
@@ -77,5 +79,45 @@ export const register = async (req, res) => {
 
         console.error('Error creating user:', err);
         res.status(500).send(err.message);
+    }
+};
+
+export const login = async (req, res) => {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
+    }
+
+    try {
+        const user = await User.findOne({ where: { username } });
+
+        if (!user) {
+            return res.status(401).json({ message: "Invalid username or password" });
+        }
+
+        const passwordMatch = await bcryptjs.compare(password, user.password);
+
+        if (!passwordMatch) {
+            return res.status(401).json({ message: 'Invalid username or password' });
+        }
+
+        const token = jwt.sign(
+            { id: user.userId, userType: user.usertype },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+
+        const { password: pass, ...userWithoutPassword } = user.dataValues;
+
+        res.status(200).json({
+            message: "Login successful",
+            token: token,
+            user: userWithoutPassword,
+        });
+
+    } catch (err) {
+        console.error('Login error:', err.message);
+        res.status(500).json({ message: 'Server error', error: err.message });
     }
 };
