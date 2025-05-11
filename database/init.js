@@ -1,8 +1,7 @@
 // src/database/init.js
 import sequelize from './db.js';
-import User from '../models/user.model.js';
-import UserRole from '../models/userRole.model.js';
-import Role from '../models/role.model.js';
+import User from '../models/User.model.js';
+import BakerProfile from '../models/BakerProfile.model.js';
 const initDB = async () => {
     try {
         await sequelize.authenticate();

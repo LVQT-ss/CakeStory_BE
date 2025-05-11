@@ -1,4 +1,4 @@
-import express from 'express'; // Fixed typo 'expess' -> 'express'
+import express from 'express';
 import {
     register,
     login
@@ -16,7 +16,7 @@ const router = express.Router();
  *     tags:
  *     - Auth Controller
  *     summary: Register a new user
- *     description: This endpoint allows you to create a new user in the system by providing the necessary details.
+ *     description: Creates a new customer account in the system
  *     requestBody:
  *       required: true
  *       content:
@@ -24,48 +24,118 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             required:
- *               - roleId
  *               - username
  *               - email
  *               - password
+ *               - full_name
  *             properties:
- *               roleId:
- *                 type: integer
- *                 description: Role ID (7 for Customer, 8 for Guest, 1-6 for staff roles)
- *                 example: 7
  *               username:
  *                 type: string
  *                 example: johndoe
  *               email:
  *                 type: string
  *                 format: email
- *                 example: johndoe@mail.com
+ *                 example: johndoe@example.com
  *               password:
  *                 type: string
- *                 example: JohnDoe20!@
- *               userAddress:
+ *                 description: Must be at least 6 characters with at least one uppercase letter, one lowercase letter, and one number
+ *                 example: Password123
+ *               full_name:
  *                 type: string
- *                 example: 123 Main St, Anytown, USA
- *               userPhoneNumber:
+ *                 example: John Doe
+ *               avatar:
  *                 type: string
- *                 example: +1234567890
+ *                 example: https://example.com/avatar.jpg
+ *                 nullable: true
  *     responses:
  *       201:
- *         description: User successfully registered
+ *         description: Registration successful
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
  *                 message:
  *                   type: string
- *                   example: User successfully registered!
+ *                   example: Registration successful!
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     username:
+ *                       type: string
+ *                       example: johndoe
+ *                     email:
+ *                       type: string
+ *                       example: johndoe@example.com
+ *                     full_name:
+ *                       type: string
+ *                       example: John Doe
+ *                     avatar:
+ *                       type: string
+ *                       nullable: true
+ *                       example: https://example.com/avatar.jpg
+ *                     is_Baker:
+ *                       type: boolean
+ *                       example: false
+ *                     is_admin:
+ *                       type: boolean
+ *                       example: false
+ *                     created_at:
+ *                       type: string
+ *                       format: date-time
+ *                     updated_at:
+ *                       type: string
+ *                       format: date-time
+ *                 token:
+ *                   type: string
+ *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
  *       400:
- *         description: Bad Request - Invalid user input
+ *         description: Bad Request - Missing or invalid input
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Please provide all required fields or Password must be at least 6 characters long and contain at least one uppercase letter, one lowercase letter, and one number.
  *       409:
- *         description: Conflict - User already exists
+ *         description: Conflict - Username or email already exists
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Username or email already exists.
  *       500:
  *         description: Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: An error occurred during registration.
+ *                 error:
+ *                   type: string
  */
 router.post('/register', register);
 
@@ -76,7 +146,7 @@ router.post('/register', register);
  *     tags:
  *     - Auth Controller
  *     summary: Log in a user
- *     description: This endpoint allows a user to log in by providing their username and password.
+ *     description: Authenticates a user and returns a JWT token
  *     requestBody:
  *       required: true
  *       content:
@@ -89,10 +159,10 @@ router.post('/register', register);
  *             properties:
  *               username:
  *                 type: string
- *                 example: admin
+ *                 example: johndoe
  *               password:
  *                 type: string
- *                 example: admin
+ *                 example: Password123
  *     responses:
  *       200:
  *         description: Login successful
@@ -101,6 +171,9 @@ router.post('/register', register);
  *             schema:
  *               type: object
  *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
  *                 message:
  *                   type: string
  *                   example: Login successful
@@ -110,22 +183,75 @@ router.post('/register', register);
  *                 user:
  *                   type: object
  *                   properties:
- *                     userId:
+ *                     id:
  *                       type: integer
+ *                       example: 1
  *                     username:
  *                       type: string
+ *                       example: johndoe
  *                     email:
  *                       type: string
- *                     usertype:
+ *                       example: johndoe@example.com
+ *                     full_name:
  *                       type: string
+ *                       example: John Doe
+ *                     avatar:
+ *                       type: string
+ *                       nullable: true
+ *                     is_Baker:
+ *                       type: boolean
+ *                       example: false
+ *                     is_admin:
+ *                       type: boolean
+ *                       example: false
+ *                     BakerProfile:
+ *                       type: object
+ *                       nullable: true
+ *                     last_login:
+ *                       type: string
+ *                       format: date-time
  *       400:
- *         description: Bad Request - Missing or invalid input
+ *         description: Bad Request - Missing input
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Username and password are required
  *       401:
- *         description: Unauthorized - Invalid username or password
+ *         description: Unauthorized - Invalid credentials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Invalid credentials
  *       500:
  *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: An error occurred during login
+ *                 error:
+ *                   type: string
  */
 router.post('/login', login);
-
 
 export default router;
