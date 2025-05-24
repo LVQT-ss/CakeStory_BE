@@ -16,7 +16,7 @@ const router = express.Router();
  *     tags:
  *     - Auth Controller
  *     summary: Register a new user
- *     description: Creates a new customer account in the system
+ *     description: Creates a new customer account in the system with Firebase Auth integration
  *     requestBody:
  *       required: true
  *       content:
@@ -47,6 +47,7 @@ const router = express.Router();
  *                 type: string
  *                 example: https://example.com/avatar.jpg
  *                 nullable: true
+ *                 description: Avatar image URL as string
  *     responses:
  *       201:
  *         description: Registration successful
@@ -55,12 +56,9 @@ const router = express.Router();
  *             schema:
  *               type: object
  *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
  *                 message:
  *                   type: string
- *                   example: Registration successful!
+ *                   example: User successfully registered!
  *                 user:
  *                   type: object
  *                   properties:
@@ -80,6 +78,9 @@ const router = express.Router();
  *                       type: string
  *                       nullable: true
  *                       example: https://example.com/avatar.jpg
+ *                     firebase_uid:
+ *                       type: string
+ *                       example: firebase-uid-string
  *                     is_Baker:
  *                       type: boolean
  *                       example: false
@@ -92,9 +93,9 @@ const router = express.Router();
  *                     updated_at:
  *                       type: string
  *                       format: date-time
- *                 token:
+ *                 firebaseUid:
  *                   type: string
- *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *                   example: firebase-uid-string
  *       400:
  *         description: Bad Request - Missing or invalid input
  *         content:
@@ -102,12 +103,9 @@ const router = express.Router();
  *             schema:
  *               type: object
  *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
  *                 message:
  *                   type: string
- *                   example: Please provide all required fields or Password must be at least 6 characters long and contain at least one uppercase letter, one lowercase letter, and one number.
+ *                   example: Please provide all required fields or Input data exceeds allowed length.
  *       409:
  *         description: Conflict - Username or email already exists
  *         content:
@@ -115,12 +113,9 @@ const router = express.Router();
  *             schema:
  *               type: object
  *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
  *                 message:
  *                   type: string
- *                   example: Username or email already exists.
+ *                   example: Username or email already exists. Please choose a different one.
  *       500:
  *         description: Server Error
  *         content:
@@ -128,12 +123,9 @@ const router = express.Router();
  *             schema:
  *               type: object
  *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
  *                 message:
  *                   type: string
- *                   example: An error occurred during registration.
+ *                   example: Registration failed
  *                 error:
  *                   type: string
  */
@@ -146,7 +138,7 @@ router.post('/register', register);
  *     tags:
  *     - Auth Controller
  *     summary: Log in a user
- *     description: Authenticates a user and returns a JWT token
+ *     description: Authenticates a user with Firebase Auth and returns a JWT token
  *     requestBody:
  *       required: true
  *       content:
@@ -154,12 +146,13 @@ router.post('/register', register);
  *           schema:
  *             type: object
  *             required:
- *               - username
+ *               - email
  *               - password
  *             properties:
- *               username:
+ *               email:
  *                 type: string
- *                 example: johndoe
+ *                 format: email
+ *                 example: johndoe@example.com
  *               password:
  *                 type: string
  *                 example: Password123
@@ -171,9 +164,6 @@ router.post('/register', register);
  *             schema:
  *               type: object
  *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
  *                 message:
  *                   type: string
  *                   example: Login successful
@@ -198,18 +188,19 @@ router.post('/register', register);
  *                     avatar:
  *                       type: string
  *                       nullable: true
+ *                       example: https://example.com/avatar.jpg
+ *                     firebase_uid:
+ *                       type: string
+ *                       example: firebase-uid-string
  *                     is_Baker:
  *                       type: boolean
  *                       example: false
  *                     is_admin:
  *                       type: boolean
  *                       example: false
- *                     BakerProfile:
- *                       type: object
- *                       nullable: true
- *                     last_login:
- *                       type: string
- *                       format: date-time
+ *                 firebaseUid:
+ *                   type: string
+ *                   example: firebase-uid-string
  *       400:
  *         description: Bad Request - Missing input
  *         content:
@@ -217,12 +208,9 @@ router.post('/register', register);
  *             schema:
  *               type: object
  *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
  *                 message:
  *                   type: string
- *                   example: Username and password are required
+ *                   example: Email and password are required
  *       401:
  *         description: Unauthorized - Invalid credentials
  *         content:
@@ -230,12 +218,9 @@ router.post('/register', register);
  *             schema:
  *               type: object
  *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
  *                 message:
  *                   type: string
- *                   example: Invalid credentials
+ *                   example: Invalid email or password
  *       500:
  *         description: Server error
  *         content:
@@ -243,12 +228,9 @@ router.post('/register', register);
  *             schema:
  *               type: object
  *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
  *                 message:
  *                   type: string
- *                   example: An error occurred during login
+ *                   example: Server error
  *                 error:
  *                   type: string
  */

@@ -32,6 +32,11 @@ const User = sequelize.define('User', {
         type: DataTypes.STRING(255),
         allowNull: true,
     },
+    firebase_uid: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        unique: true,
+    },
     is_admin: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
