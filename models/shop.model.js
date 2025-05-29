@@ -1,7 +1,7 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../database/db.js';
 
-const BakerProfile = sequelize.define('BakerProfile', {
+const BakerProfile = sequelize.define('shop', {
     user_id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -30,13 +30,22 @@ const BakerProfile = sequelize.define('BakerProfile', {
         type: DataTypes.TEXT,
         allowNull: true,
     },
-    is_verified: {
+    
+    is_active: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: false,
-    }
+    },
+    longtitue: {
+        type: DataTypes.FLOAT,
+        allowNull:false,
+    },
+    latitude: {
+        type: DataTypes.FLOAT,
+        allowNull:false,
+    },
 }, {
-    tableName: 'baker_profile',
+    tableName: 'shop',
     timestamps: false,
     underscored: true,
 });

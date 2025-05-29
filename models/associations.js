@@ -1,15 +1,15 @@
 
-import BakerProfile from './BakerProfile.model.js';
+import shop from './shop.model.js';
 import User from './User.model.js';
 
 
 function setupAssociations() {
-    User.hasOne(BakerProfile, {
+    User.hasOne(shop, {
         foreignKey: 'user_id',
-        as: 'bakerProfile'
+        as: 'shop'
     });
 
-    BakerProfile.belongsTo(User, {
+    shop.belongsTo(User, {
         foreignKey: 'user_id',
         as: 'user'
     });
