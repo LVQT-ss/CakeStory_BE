@@ -19,6 +19,8 @@ import CakeOrder from "./cake_order.model.js";
 import Review from "./review.model.js";
 import Transaction from "./transaction.model.js";
 import Subscription from "./subscription.model.js";
+import AlbumPost from './album_post.model.js';
+import GroupPost from './group_post.model.js';
 
 function setupAssociations() {
   // User ↔ Shop (1-1)
