@@ -61,6 +61,60 @@ export const followUser = async (req, res) => {
     }
 };
 
+export const unfollowUser = async (req, res) => {
+    try {
+        const followerId = req.userId;
+        const followedId = req.params.id;
+
+        // Check if trying to unfollow self
+        if (followerId === followedId) {
+            return res.status(400).json({
+                message: 'You cannot unfollow yourself'
+            });
+        }
+
+        // Check if both users exist
+        const [follower, followed] = await Promise.all([
+            User.findByPk(followerId),
+            User.findByPk(followedId)
+        ]);
+
+        if (!follower || !followed) {
+            return res.status(404).json({
+                message: 'User not found'
+            });
+        }
+
+        // Check if follow relationship exists
+        const existingFollow = await Following.findOne({
+            where: {
+                follower_id: followerId,
+                followed_id: followedId
+            }
+        });
+
+        if (!existingFollow) {
+            return res.status(400).json({
+                message: 'You are not following this user'
+            });
+        }
+
+        // Unfollow
+        await existingFollow.destroy();
+        return res.status(200).json({
+            message: 'Successfully unfollowed user',
+            isFollowing: false
+        });
+
+    } catch (error) {
+        console.error('Error in unfollow operation:', error);
+        return res.status(500).json({
+            message: 'Error in unfollow operation',
+            error: error.message
+        });
+    }
+};
+
 export const viewProfile = async (req, res) => {
     try {
         const userId = req.params.id;

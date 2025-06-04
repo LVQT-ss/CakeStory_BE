@@ -1,5 +1,5 @@
 import express from 'express';
-import { updateProfile, viewProfile, followUser } from '../controllers/user.controller.js';
+import { updateProfile, viewProfile, followUser, unfollowUser } from '../controllers/user.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
@@ -32,21 +32,38 @@ const router = express.Router();
  *                 message:
  *                   type: string
  *                   example: Successfully followed user
- *                 following:
- *                   type: object
- *                   properties:
- *                     follower_id:
- *                       type: integer
- *                       example: 1
- *                     following_id:
- *                       type: integer
- *                       example: 2
- *                     created_at:
- *                       type: string
- *                       format: date-time
- *                       example: "2024-03-20T10:00:00Z"
+ *                 isFollowing:
+ *                   type: boolean
+ *                   example: true
  *       400:
  *         description: Bad Request - Cannot follow yourself or already following
+ *       404:
+ *         description: User to follow not found
+ *       500:
+ *         description: Server error
+ */
+router.post('/follow/:id', verifyToken, followUser);
+
+/**
+ * @swagger
+ * /api/users/follow/{id}:
+ *   delete:
+ *     tags:
+ *       - User Profile
+ *     summary: Unfollow a user
+ *     description: Unfollow a user you are currently following
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID of the user to unfollow
+ *     responses:
+ *       200:
+ *         description: Successfully unfollowed user
  *         content:
  *           application/json:
  *             schema:
@@ -54,13 +71,18 @@ const router = express.Router();
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Cannot follow yourself
+ *                   example: Successfully unfollowed user
+ *                 isFollowing:
+ *                   type: boolean
+ *                   example: false
+ *       400:
+ *         description: Bad Request - Cannot unfollow yourself or not following the user
  *       404:
- *         description: User to follow not found
+ *         description: User to unfollow not found
  *       500:
  *         description: Server error
  */
-router.post('/follow/:id', verifyToken, followUser);
+router.delete('/follow/:id', verifyToken, unfollowUser);
 
 /**
  * @swagger
