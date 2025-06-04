@@ -1,6 +1,6 @@
 import express from 'express';
 import { updateProfile, viewProfile, followUser } from '../controllers/user.controller.js';
-import { authenticateToken } from '../middleware/auth.middleware.js';
+import { verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
 
@@ -60,7 +60,7 @@ const router = express.Router();
  *       500:
  *         description: Server error
  */
-router.post('/follow/:id', authenticateToken, followUser);
+router.post('/follow/:id', verifyToken, followUser);
 
 /**
  * @swagger

@@ -1,7 +1,64 @@
 import User from '../models/User.model.js';
+import Following from '../models/following.model.js';
 
-export const followUser = async () => {
+export const followUser = async (req, res) => {
+    try {
+        const followerId = req.userId; // Get the authenticated user's ID from verifyToken middleware
+        const followedId = req.params.id; // Get the user to follow from URL params
 
+        // Check if trying to follow self
+        if (followerId === followedId) {
+            return res.status(400).json({
+                message: 'You cannot follow yourself'
+            });
+        }
+
+        // Check if both users exist
+        const [follower, followed] = await Promise.all([
+            User.findByPk(followerId),
+            User.findByPk(followedId)
+        ]);
+
+        if (!follower || !followed) {
+            return res.status(404).json({
+                message: 'User not found'
+            });
+        }
+
+        // Check if follow relationship already exists
+        const existingFollow = await Following.findOne({
+            where: {
+                follower_id: followerId,
+                followed_id: followedId
+            }
+        });
+
+        if (existingFollow) {
+            // Unfollow
+            await existingFollow.destroy();
+            return res.status(200).json({
+                message: 'Successfully unfollowed user',
+                isFollowing: false
+            });
+        } else {
+            // Follow
+            await Following.create({
+                follower_id: followerId,
+                followed_id: followedId
+            });
+            return res.status(200).json({
+                message: 'Successfully followed user',
+                isFollowing: true
+            });
+        }
+
+    } catch (error) {
+        console.error('Error in follow/unfollow operation:', error);
+        return res.status(500).json({
+            message: 'Error in follow/unfollow operation',
+            error: error.message
+        });
+    }
 };
 
 export const viewProfile = async (req, res) => {

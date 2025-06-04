@@ -17,15 +17,16 @@ const options = {
     },
     components: {
       securitySchemes: {
-        Authorization: {
-          type: "http",
-          scheme: "bearer",
-          bearerFormat: "JWT",
-          value: "Bearer <JWT token here>"
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
         }
       }
     },
-
+    security: [{
+      bearerAuth: []
+    }],
     servers: [
       {
         url: "http://localhost:3000",
@@ -42,7 +43,20 @@ const options = {
 const swaggerSpec = swaggerJsdoc(options);
 
 function swaggerDocs(app, port) {
-  app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  // Swagger UI options
+  const swaggerUiOptions = {
+    swaggerOptions: {
+      persistAuthorization: true,
+      docExpansion: 'none',
+      filter: true,
+      showCommonExtensions: true,
+      syntaxHighlight: {
+        theme: 'monokai'
+      }
+    }
+  };
+
+  app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
 
   app.get('/docs.json', (req, res) => {
     res.setHeader('Content-Type', 'application/json');
