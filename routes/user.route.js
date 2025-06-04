@@ -1,7 +1,66 @@
 import express from 'express';
-import { updateProfile, viewProfile } from '../controllers/user.controller.js';
+import { updateProfile, viewProfile, followUser } from '../controllers/user.controller.js';
+import { authenticateToken } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
+
+/**
+ * @swagger
+ * /api/users/follow/{id}:
+ *   post:
+ *     tags:
+ *       - User Profile
+ *     summary: Follow a user
+ *     description: Follow another user to stay updated with their activities
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID of the user to follow
+ *     responses:
+ *       200:
+ *         description: Successfully followed user
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Successfully followed user
+ *                 following:
+ *                   type: object
+ *                   properties:
+ *                     follower_id:
+ *                       type: integer
+ *                       example: 1
+ *                     following_id:
+ *                       type: integer
+ *                       example: 2
+ *                     created_at:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2024-03-20T10:00:00Z"
+ *       400:
+ *         description: Bad Request - Cannot follow yourself or already following
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Cannot follow yourself
+ *       404:
+ *         description: User to follow not found
+ *       500:
+ *         description: Server error
+ */
+router.post('/follow/:id', authenticateToken, followUser);
 
 /**
  * @swagger

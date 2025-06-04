@@ -1,5 +1,9 @@
 import User from '../models/User.model.js';
 
+export const followUser = async () => {
+
+};
+
 export const viewProfile = async (req, res) => {
     try {
         const userId = req.params.id;
@@ -22,6 +26,8 @@ export const viewProfile = async (req, res) => {
                 username: user.username,
                 email: user.email,
                 full_name: user.full_name,
+                address: user.address,
+                phone_number: user.phone_number,
                 avatar: user.avatar,
                 is_Baker: user.is_Baker,
                 created_at: user.created_at,
