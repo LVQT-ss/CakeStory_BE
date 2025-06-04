@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import initDB from './database/init.js';
 import swaggerDocs from './utils/swagger.js';
 import authRoutes from './routes/auth.route.js';
+import userRoutes from './routes/user.route.js';
 
 setupAssociations();
 dotenv.config();
@@ -19,6 +20,7 @@ app.use(cors());
 
 // Register the routes
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 
 // Initialize and synchronize the database
 initDB().then(() => {
