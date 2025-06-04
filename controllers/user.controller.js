@@ -1,5 +1,42 @@
 import User from '../models/User.model.js';
 
+export const viewProfile = async (req, res) => {
+    try {
+        const userId = req.params.id;
+
+        // Find user by ID
+        const user = await User.findByPk(userId, {
+            attributes: { exclude: ['password'] } // Exclude sensitive data
+        });
+
+        if (!user) {
+            return res.status(404).json({
+                message: 'User not found'
+            });
+        }
+
+        // Return user profile data
+        return res.status(200).json({
+            user: {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                full_name: user.full_name,
+                avatar: user.avatar,
+                is_Baker: user.is_Baker,
+                created_at: user.created_at,
+                updated_at: user.updated_at
+            }
+        });
+
+    } catch (error) {
+        console.error('Error viewing profile:', error);
+        return res.status(500).json({
+            message: 'Error viewing profile',
+            error: error.message
+        });
+    }
+};
 
 export const updateProfile = async (req, res) => {
     try {
