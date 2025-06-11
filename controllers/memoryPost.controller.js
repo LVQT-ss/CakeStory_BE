@@ -152,4 +152,8 @@ export const getMemoryPostById = async (req, res) => {
             error: error.message
         });
     }
+};
+
+export const updateMemoryPostById = async (req, res) => {
+
 }; 

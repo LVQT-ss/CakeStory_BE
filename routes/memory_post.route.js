@@ -1,5 +1,5 @@
 import express from 'express';
-import { createMemoryPost, getMemoryPostById } from '../controllers/memoryPost.controller.js';
+import { createMemoryPost, getMemoryPostById, updateMemoryPostById } from '../controllers/memoryPost.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
@@ -296,5 +296,194 @@ router.post('/', verifyToken, createMemoryPost);
  *                   example: "Database connection error"
  */
 router.get('/:id', getMemoryPostById);
+
+/**
+ * @swagger
+ * /api/memory-posts/{id}:
+ *   put:
+ *     tags:
+ *       - Memory Posts
+ *     summary: Update a memory post by ID
+ *     description: Update an existing memory post. Only the post owner or admin can update a memory post. All fields are optional - only provided fields will be updated.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the memory post to update
+ *         example: 1
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 example: "Updated: My Amazing Birthday Cake"
+ *                 description: New title for the memory post
+ *               description:
+ *                 type: string
+ *                 example: "Updated description of this beautiful cake I made for my birthday celebration!"
+ *                 description: New detailed description of the memory
+ *               event_date:
+ *                 type: string
+ *                 format: date
+ *                 example: "2024-03-21"
+ *                 description: Updated date when the memory/event occurred
+ *               event_type:
+ *                 type: string
+ *                 example: "Birthday Celebration"
+ *                 description: Updated type of event or occasion
+ *               is_public:
+ *                 type: boolean
+ *                 example: false
+ *                 description: Whether the memory post should be visible to other users
+ *               media:
+ *                 type: array
+ *                 description: Updated array of media attachments (replaces all existing media)
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     image_url:
+ *                       type: string
+ *                       example: "https://example.com/updated-cake-image.jpg"
+ *                       description: URL of an image
+ *                     video_url:
+ *                       type: string
+ *                       example: "https://example.com/updated-cake-video.mp4"
+ *                       description: URL of a video
+ *     responses:
+ *       200:
+ *         description: Memory post updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Memory post updated successfully"
+ *                 post:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     title:
+ *                       type: string
+ *                       example: "Updated: My Amazing Birthday Cake"
+ *                     description:
+ *                       type: string
+ *                       example: "Updated description of this beautiful cake."
+ *                     post_type:
+ *                       type: string
+ *                       example: "memory"
+ *                     user_id:
+ *                       type: integer
+ *                       example: 1
+ *                     is_public:
+ *                       type: boolean
+ *                       example: false
+ *                     created_at:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2024-03-20T10:00:00Z"
+ *                     updated_at:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2024-03-21T14:30:00Z"
+ *                     user:
+ *                       type: object
+ *                       description: "Information about the user who posted this memory"
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 1
+ *                         username:
+ *                           type: string
+ *                           example: "johndoe"
+ *                         full_name:
+ *                           type: string
+ *                           example: "John Doe"
+ *                         avatar:
+ *                           type: string
+ *                           example: "https://example.com/avatar.jpg"
+ *                     MemoryPost:
+ *                       type: object
+ *                       properties:
+ *                         event_date:
+ *                           type: string
+ *                           format: date
+ *                           example: "2024-03-21"
+ *                         event_type:
+ *                           type: string
+ *                           example: "Birthday Celebration"
+ *                     media:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 2
+ *                           image_url:
+ *                             type: string
+ *                             example: "https://example.com/updated-cake-image.jpg"
+ *                           video_url:
+ *                             type: string
+ *                             example: null
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Access denied. No token provided."
+ *       403:
+ *         description: Forbidden - Not authorized to update this post
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "You can only update your own memory posts"
+ *       404:
+ *         description: Memory post not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Memory post not found"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Error updating memory post"
+ *                 error:
+ *                   type: string
+ *                   example: "Database connection error"
+ */
+router.put('/:id', verifyToken, updateMemoryPostById);
 
 export default router;
