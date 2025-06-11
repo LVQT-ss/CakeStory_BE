@@ -1,6 +1,7 @@
 import Post from '../models/post.model.js';
 import MemoryPost from '../models/memory_post.model.js';
 import PostData from '../models/post_data.model.js';
+import User from '../models/User.model.js';
 import sequelize from '../database/db.js';
 
 export const createMemoryPost = async (req, res) => {
@@ -93,4 +94,8 @@ export const createMemoryPost = async (req, res) => {
             error: error.message
         });
     }
+};
+
+export const getMemoryPostById = async () => {
+
 }; 
