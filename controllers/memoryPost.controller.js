@@ -302,5 +302,95 @@ export const updateMemoryPostById = async (req, res) => {
 };
 
 export const deleteMemoryPostById = async (req, res) => {
+    const transaction = await sequelize.transaction();
 
+    try {
+        const { id } = req.params;
+
+        // Get user ID from verified token
+        const user_id = req.userId;
+
+        // Find the existing memory post
+        const existingPost = await Post.findOne({
+            where: {
+                id: id,
+                post_type: 'memory'
+            },
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: ['id', 'username', 'full_name']
+                },
+                {
+                    model: MemoryPost,
+                    attributes: ['event_date', 'event_type']
+                },
+                {
+                    model: PostData,
+                    as: 'media',
+                    attributes: ['id', 'image_url', 'video_url']
+                }
+            ]
+        });
+
+        if (!existingPost) {
+            await transaction.rollback();
+            return res.status(404).json({
+                message: 'Memory post not found'
+            });
+        }
+
+        // Authorization: Only post owner can delete
+        if (existingPost.user_id !== user_id) {
+            await transaction.rollback();
+            return res.status(403).json({
+                message: 'You can only delete your own memory posts'
+            });
+        }
+
+        // Store post info for response before deletion
+        const postInfo = {
+            id: existingPost.id,
+            title: existingPost.title,
+            user: {
+                id: existingPost.user.id,
+                username: existingPost.user.username,
+                full_name: existingPost.user.full_name
+            }
+        };
+
+        // Delete in correct order due to foreign key constraints
+        // 1. Delete PostData (media) first
+        await PostData.destroy({
+            where: { post_id: id },
+            transaction
+        });
+
+        // 2. Delete MemoryPost record
+        await MemoryPost.destroy({
+            where: { post_id: id },
+            transaction
+        });
+
+        // 3. Finally delete the main Post
+        await existingPost.destroy({ transaction });
+
+        // Commit transaction
+        await transaction.commit();
+
+        res.status(200).json({
+            message: 'Memory post deleted successfully',
+            deletedPost: postInfo
+        });
+
+    } catch (error) {
+        await transaction.rollback();
+        console.error('Error deleting memory post:', error);
+
+        res.status(500).json({
+            message: 'Error deleting memory post',
+            error: error.message
+        });
+    }
 }; 
