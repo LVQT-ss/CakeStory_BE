@@ -155,5 +155,148 @@ export const getMemoryPostById = async (req, res) => {
 };
 
 export const updateMemoryPostById = async (req, res) => {
+    const transaction = await sequelize.transaction();
 
+    try {
+        const { id } = req.params;
+        const {
+            title,
+            description,
+            event_date,
+            event_type,
+            is_public,
+            media // Array of { image_url?, video_url? }
+        } = req.body;
+
+        // Get user ID from verified token
+        const user_id = req.userId;
+        const is_admin = req.is_admin;
+
+        // Find the existing memory post
+        const existingPost = await Post.findOne({
+            where: {
+                id: id,
+                post_type: 'memory'
+            },
+            include: [
+                {
+                    model: MemoryPost,
+                    attributes: ['event_date', 'event_type']
+                },
+                {
+                    model: PostData,
+                    as: 'media',
+                    attributes: ['id', 'image_url', 'video_url']
+                }
+            ]
+        });
+
+        if (!existingPost) {
+            await transaction.rollback();
+            return res.status(404).json({
+                message: 'Memory post not found'
+            });
+        }
+
+        // Authorization: Only post owner or admin can update
+        if (existingPost.user_id !== user_id && !is_admin) {
+            await transaction.rollback();
+            return res.status(403).json({
+                message: 'You can only update your own memory posts'
+            });
+        }
+
+        // Update the main post fields if provided
+        const updateData = {};
+        if (title !== undefined) updateData.title = title;
+        if (description !== undefined) updateData.description = description;
+        if (is_public !== undefined) updateData.is_public = is_public;
+
+        if (Object.keys(updateData).length > 0) {
+            await existingPost.update(updateData, { transaction });
+        }
+
+        // Update memory post specific fields if provided
+        const memoryUpdateData = {};
+        if (event_date !== undefined) memoryUpdateData.event_date = event_date ? new Date(event_date) : null;
+        if (event_type !== undefined) memoryUpdateData.event_type = event_type;
+
+        if (Object.keys(memoryUpdateData).length > 0) {
+            await MemoryPost.update(memoryUpdateData, {
+                where: { post_id: id },
+                transaction
+            });
+        }
+
+        // Handle media updates if provided
+        if (media !== undefined && Array.isArray(media)) {
+            // Delete existing media
+            await PostData.destroy({
+                where: { post_id: id },
+                transaction
+            });
+
+            // Add new media if any
+            if (media.length > 0) {
+                const mediaPromises = media.map(item => {
+                    if (item.image_url || item.video_url) {
+                        return PostData.create({
+                            post_id: id,
+                            image_url: item.image_url || null,
+                            video_url: item.video_url || null
+                        }, { transaction });
+                    }
+                    return null;
+                }).filter(Boolean);
+
+                await Promise.all(mediaPromises);
+            }
+        }
+
+        // Commit transaction
+        await transaction.commit();
+
+        // Fetch the updated post with all relations
+        const updatedPost = await Post.findByPk(id, {
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: [
+                        'id',
+                        'username',
+                        'full_name',
+                        'avatar',
+                        'is_Baker',
+                        'created_at',
+                        'address',
+                        'phone_number'
+                    ]
+                },
+                {
+                    model: MemoryPost,
+                    attributes: ['event_date', 'event_type']
+                },
+                {
+                    model: PostData,
+                    as: 'media',
+                    attributes: ['id', 'image_url', 'video_url']
+                }
+            ]
+        });
+
+        res.status(200).json({
+            message: 'Memory post updated successfully',
+            post: updatedPost
+        });
+
+    } catch (error) {
+        await transaction.rollback();
+        console.error('Error updating memory post:', error);
+
+        res.status(500).json({
+            message: 'Error updating memory post',
+            error: error.message
+        });
+    }
 }; 
