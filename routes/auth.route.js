@@ -1,11 +1,12 @@
 import express from 'express';
 import {
     register,
-    login
+    login,
+    changePassword
     // requestPasswordReset,
     // resetPassword,
 } from '../controllers/auth.controller.js';
-// import { verifyToken } from '../middleware/verifyUser.js';
+import { verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
 
@@ -235,5 +236,100 @@ router.post('/register', register);
  *                   type: string
  */
 router.post('/login', login);
+
+/**
+ * @swagger
+ * /api/auth/change-password:
+ *   put:
+ *     tags:
+ *     - Auth Controller
+ *     summary: Change user password
+ *     description: Allows authenticated users to change their password by providing current password and new password. Updates the password in the PostgreSQL database.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - currentPassword
+ *               - newPassword
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *                 description: User's current password for verification
+ *                 example: "OldPassword123"
+ *               newPassword:
+ *                 type: string
+ *                 description: New password (must be at least 6 characters)
+ *                 example: "NewPassword456"
+ *     responses:
+ *       200:
+ *         description: Password changed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Password changed successfully"
+ *       400:
+ *         description: Bad Request - Missing fields or invalid input
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   examples:
+ *                     missing_fields:
+ *                       value: "Current password and new password are required"
+ *                     weak_password:
+ *                       value: "New password must be at least 6 characters long"
+ *                     same_password:
+ *                       value: "New password must be different from current password"
+ *       401:
+ *         description: Unauthorized - Invalid current password or missing token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   examples:
+ *                     wrong_password:
+ *                       value: "Current password is incorrect"
+ *                     no_token:
+ *                       value: "Access denied. No token provided."
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "User not found"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Error changing password"
+ *                 error:
+ *                   type: string
+ *                   example: "Database connection error"
+ */
+router.put('/change-password', verifyToken, changePassword);
 
 export default router;
