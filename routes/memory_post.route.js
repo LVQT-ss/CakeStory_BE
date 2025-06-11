@@ -1,5 +1,5 @@
 import express from 'express';
-import { createMemoryPost, getMemoryPostById, updateMemoryPostById } from '../controllers/memoryPost.controller.js';
+import { createMemoryPost, getMemoryPostById, updateMemoryPostById, deleteMemoryPostById } from '../controllers/memoryPost.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
@@ -485,5 +485,105 @@ router.get('/:id', getMemoryPostById);
  *                   example: "Database connection error"
  */
 router.put('/:id', verifyToken, updateMemoryPostById);
+
+/**
+ * @swagger
+ * /api/memory-posts/{id}:
+ *   delete:
+ *     tags:
+ *       - Memory Posts
+ *     summary: Delete a memory post by ID
+ *     description: Delete an existing memory post. Only the post owner can delete their own memory post. This action will permanently remove the post and all associated media.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the memory post to delete
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: Memory post deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Memory post deleted successfully"
+ *                 deletedPost:
+ *                   type: object
+ *                   description: "Information about the deleted post for confirmation"
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     title:
+ *                       type: string
+ *                       example: "My Amazing Birthday Cake"
+ *                     user:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 1
+ *                         username:
+ *                           type: string
+ *                           example: "johndoe"
+ *                         full_name:
+ *                           type: string
+ *                           example: "John Doe"
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Access denied. No token provided."
+ *       403:
+ *         description: Forbidden - Only post owner can delete
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "You can only delete your own memory posts"
+ *       404:
+ *         description: Memory post not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Memory post not found"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Error deleting memory post"
+ *                 error:
+ *                   type: string
+ *                   example: "Database connection error"
+ */
+router.delete('/:id', verifyToken, deleteMemoryPostById);
 
 export default router;

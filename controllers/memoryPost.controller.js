@@ -299,4 +299,8 @@ export const updateMemoryPostById = async (req, res) => {
             error: error.message
         });
     }
+};
+
+export const deleteMemoryPostById = async (req, res) => {
+
 }; 
