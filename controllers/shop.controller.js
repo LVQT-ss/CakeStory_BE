@@ -109,4 +109,29 @@ export const updateShop = async (req, res) => {
     }
 };
 
+// "Xóa" shop bằng cách đặt is_active = false
+export const deleteShop = async (req, res) => {
+    try {
+        const { userId } = req.params;
 
+        const shop = await BakerProfile.findByPk(userId);
+        if (!shop || !shop.is_active) {
+            return res.status(404).json({ message: 'Active shop not found' });
+        }
+
+        shop.is_active = false;
+        await shop.save();
+
+        return res.status(200).json({
+            message: 'Shop deactivated successfully',
+            shop: {
+                user_id: shop.user_id,
+                business_name: shop.business_name,
+                is_active: shop.is_active
+            }
+        });
+    } catch (error) {
+        console.error('Error deactivating shop:', error);
+        return res.status(500).json({ message: 'Error deactivating shop', error: error.message });
+    }
+};
