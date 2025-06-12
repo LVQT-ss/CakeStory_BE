@@ -90,3 +90,23 @@ export const getShopByUserId = async (req, res) => {
     }
 };
 
+// Cập nhật thông tin shop
+export const updateShop = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const updates = req.body;
+
+        const shop = await BakerProfile.findByPk(userId);
+        if (!shop) {
+            return res.status(404).json({ message: 'Shop not found' });
+        }
+
+        await shop.update(updates);
+        return res.status(200).json({ message: 'Shop updated successfully', shop });
+    } catch (error) {
+        console.error('Error updating shop:', error);
+        return res.status(500).json({ message: 'Error updating shop', error: error.message });
+    }
+};
+
+
