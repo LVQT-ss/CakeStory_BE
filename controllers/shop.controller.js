@@ -46,3 +46,26 @@ export const getAllShops = async (req, res) => {
         return res.status(500).json({ message: 'Error retrieving shops', error: error.message });
     }
 };
+export const getShopByName = async (req, res) => {
+    try {
+        const { name } = req.params;
+
+        const shops = await BakerProfile.findAll({
+            where: {
+                business_name: { [Op.iLike]: `%${name}%` },
+                is_active: true
+            },
+            include: [{ model: User, as: 'user', attributes: ['id', 'username', 'email'] }]
+        });
+
+        if (shops.length === 0) {
+            return res.status(404).json({ message: 'No active shops found matching name' });
+        }
+
+        return res.status(200).json({ message: 'Shops retrieved by name successfully', shops });
+    } catch (error) {
+        console.error('Error retrieving shop by name:', error);
+        return res.status(500).json({ message: 'Error retrieving shop by name', error: error.message });
+    }
+};
+
