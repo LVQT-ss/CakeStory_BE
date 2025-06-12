@@ -33,4 +33,16 @@ export const createShop = async (req, res) => {
     }
 };
 
-
+// Lấy tất cả shop đang hoạt động (is_active = true)
+export const getAllShops = async (req, res) => {
+    try {
+        const shops = await BakerProfile.findAll({
+            where: { is_active: true },
+            include: [{ model: User, as: 'user', attributes: ['id', 'username', 'email'] }]
+        });
+        return res.status(200).json({ message: 'Shops retrieved successfully', shops });
+    } catch (error) {
+        console.error('Error retrieving shops:', error);
+        return res.status(500).json({ message: 'Error retrieving shops', error: error.message });
+    }
+};
