@@ -32,7 +32,7 @@ const options = {
         url: "http://localhost:3000",
         description: "Local server"
       }, {
-        url: "https://vsos-be.onrender.com",
+        url: "https://cakestory-be.onrender.com",
         description: "Live server"
       },
     ]
