@@ -1,7 +1,7 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../database/db.js';
 
-const BakerProfile = sequelize.define('shop', {
+const shop = sequelize.define('shop', {
     user_id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -52,4 +52,4 @@ const BakerProfile = sequelize.define('shop', {
 
 
 
-export default BakerProfile; 
+export default shop; 
