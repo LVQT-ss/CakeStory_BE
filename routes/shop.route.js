@@ -5,7 +5,8 @@ import {
   getShopByUserId,
   updateShop,
   deleteShop,
-  getShopByName
+  getShopByName,
+  createMarketplacePost
 } from '../controllers/shop.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
@@ -68,7 +69,7 @@ router.post('/', verifyToken, createShop);
  *     tags:
  *       - Shop
  *     summary: Get all shops
- *     description: Retrieve all shops
+ *     description: Retrieve all active shops
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -78,6 +79,30 @@ router.post('/', verifyToken, createShop);
  *         description: Server error
  */
 router.get('/', verifyToken, getAllShops);
+
+/**
+ * @swagger
+ * /api/shops/name/{name}:
+ *   get:
+ *     tags:
+ *       - Shop
+ *     summary: Get shops by name
+ *     description: Retrieve active shops matching the name
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: name
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Shops found
+ *       404:
+ *         description: No shop matches
+ */
+router.get('/name/:name', verifyToken, getShopByName);
 
 /**
  * @swagger
@@ -97,11 +122,9 @@ router.get('/', verifyToken, getAllShops);
  *           type: integer
  *     responses:
  *       200:
- *         description: Shop retrieved successfully
+ *         description: Shop retrieved
  *       404:
  *         description: Shop not found
- *       500:
- *         description: Server error
  */
 router.get('/:userId', verifyToken, getShopByUserId);
 
@@ -112,7 +135,7 @@ router.get('/:userId', verifyToken, getShopByUserId);
  *     tags:
  *       - Shop
  *     summary: Update shop
- *     description: Update an existing shop by user ID
+ *     description: Update shop info by user ID
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -145,11 +168,9 @@ router.get('/:userId', verifyToken, getShopByUserId);
  *                 type: number
  *     responses:
  *       200:
- *         description: Shop updated successfully
+ *         description: Shop updated
  *       404:
  *         description: Shop not found
- *       500:
- *         description: Server error
  */
 router.put('/:userId', verifyToken, updateShop);
 
@@ -159,8 +180,8 @@ router.put('/:userId', verifyToken, updateShop);
  *   delete:
  *     tags:
  *       - Shop
- *     summary: Delete shop
- *     description: Delete a shop by user ID
+ *     summary: Deactivate shop
+ *     description: 'Soft delete a shop by user ID (is_active = false)'
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -171,39 +192,62 @@ router.put('/:userId', verifyToken, updateShop);
  *           type: integer
  *     responses:
  *       200:
- *         description: Shop deleted successfully
+ *         description: Shop deactivated
  *       404:
  *         description: Shop not found
- *       500:
- *         description: Server error
  */
 router.delete('/:userId', verifyToken, deleteShop);
 
 /**
  * @swagger
- * /api/shops/name/{name}:
- *   get:
+ * /api/shops/marketplace-post:
+ *   post:
  *     tags:
  *       - Shop
- *     summary: Get shops by name
- *     description: Retrieve active shops whose names match the given keyword
+ *     summary: Create a marketplace post
+ *     description: Create a marketplace post under an active shop
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: name
- *         required: true
- *         schema:
- *           type: string
- *         description: Keyword to match in shop name
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - price
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               price:
+ *                 type: integer
+ *               available:
+ *                 type: boolean
+ *               expiry_date:
+ *                 type: string
+ *                 format: date
+ *               is_public:
+ *                 type: boolean
+ *               media:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     image_url:
+ *                       type: string
+ *                     video_url:
+ *                       type: string
  *     responses:
- *       200:
- *         description: Shops retrieved successfully
- *       404:
- *         description: No matching shops found
+ *       201:
+ *         description: Marketplace post created
+ *       403:
+ *         description: No active shop
  *       500:
  *         description: Server error
  */
-router.get('/name/:name', verifyToken, getShopByName);
+router.post('/marketplace-post', verifyToken, createMarketplacePost);
 
 export default router;
