@@ -150,4 +150,21 @@ export const getMarketplacePostById = async (req, res) => {
     }
 };
 
+// Cập nhật marketplace post
+export const updateMarketplacePost = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+
+        const post = await MarketplacePost.findByPk(id);
+        if (!post) return res.status(404).json({ message: 'Marketplace post not found' });
+
+        await post.update(updates);
+        return res.status(200).json({ message: 'Marketplace post updated', post });
+    } catch (error) {
+        console.error('Error updating marketplace post:', error);
+        return res.status(500).json({ message: 'Error updating marketplace post', error: error.message });
+    }
+};
+
 
