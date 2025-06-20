@@ -5,8 +5,8 @@ import {
   getShopByUserId,
   updateShop,
   deleteShop,
-  getShopByName,
-  createMarketplacePost
+  getShopByName
+
 } from '../controllers/shop.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
@@ -198,56 +198,6 @@ router.put('/:userId', verifyToken, updateShop);
  */
 router.delete('/:userId', verifyToken, deleteShop);
 
-/**
- * @swagger
- * /api/shops/marketplace-post:
- *   post:
- *     tags:
- *       - Shop
- *     summary: Create a marketplace post
- *     description: Create a marketplace post under an active shop
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - title
- *               - price
- *             properties:
- *               title:
- *                 type: string
- *               description:
- *                 type: string
- *               price:
- *                 type: integer
- *               available:
- *                 type: boolean
- *               expiry_date:
- *                 type: string
- *                 format: date
- *               is_public:
- *                 type: boolean
- *               media:
- *                 type: array
- *                 items:
- *                   type: object
- *                   properties:
- *                     image_url:
- *                       type: string
- *                     video_url:
- *                       type: string
- *     responses:
- *       201:
- *         description: Marketplace post created
- *       403:
- *         description: No active shop
- *       500:
- *         description: Server error
- */
-router.post('/marketplace-post', verifyToken, createMarketplacePost);
+
 
 export default router;
