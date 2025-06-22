@@ -24,8 +24,15 @@ import GroupPost from './group_post.model.js';
 
 function setupAssociations() {
   // User ↔ Shop (1-1)
-  User.hasOne(Shop, { foreignKey: "user_id", as: "shop" });
-  Shop.belongsTo(User, { foreignKey: "user_id", as: "user" });
+  User.hasOne(Shop, {
+    foreignKey: "user_id",
+    as: "shop",
+    onDelete: "CASCADE"
+  });
+  Shop.belongsTo(User, {
+    foreignKey: "user_id",
+    as: "user"
+  });
 
   // User ↔ Post (1-N)
   User.hasMany(Post, { foreignKey: "user_id", as: "posts" });
@@ -44,8 +51,8 @@ function setupAssociations() {
   Album.belongsTo(User, { foreignKey: "user_id" });
 
   // Post ↔ MarketplacePost (1-1)
-  Post.hasOne(MarketplacePost, { foreignKey: "post_id" });
-  MarketplacePost.belongsTo(Post, { foreignKey: "post_id" });
+  Post.hasOne(MarketplacePost, { foreignKey: 'post_id', as: 'marketplacePost' });
+  MarketplacePost.belongsTo(Post, { foreignKey: 'post_id' });
 
   // Shop ↔ MarketplacePost (1-N)
   Shop.hasMany(MarketplacePost, { foreignKey: "shop_id" });

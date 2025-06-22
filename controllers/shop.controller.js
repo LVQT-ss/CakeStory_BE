@@ -1,6 +1,8 @@
+import sequelize from '../database/db.js';
 import BakerProfile from '../models/shop.model.js';
 import User from '../models/User.model.js';
 import { Op } from 'sequelize';
+
 // Tạo shop mới (1 user chỉ được 1 shop)
 export const createShop = async (req, res) => {
     try {
@@ -9,7 +11,7 @@ export const createShop = async (req, res) => {
             specialty, bio, is_active, longtitue, latitude
         } = req.body;
 
-        const existing = await BakerProfile.findByPk(user_id);
+        const existing = await BakerProfile.findOne({ where: { user_id } });
         if (existing) {
             return res.status(400).json({ message: 'Shop already exists for this user' });
         }
@@ -22,7 +24,7 @@ export const createShop = async (req, res) => {
             specialty,
             bio,
             is_active,
-            longtitue,
+            longitude: longtitue, // fix typo nếu cần
             latitude
         });
 
@@ -33,7 +35,7 @@ export const createShop = async (req, res) => {
     }
 };
 
-// Lấy tất cả shop đang hoạt động (is_active = true)
+// Lấy tất cả shop đang hoạt động
 export const getAllShops = async (req, res) => {
     try {
         const shops = await BakerProfile.findAll({
@@ -46,6 +48,8 @@ export const getAllShops = async (req, res) => {
         return res.status(500).json({ message: 'Error retrieving shops', error: error.message });
     }
 };
+
+// Lấy shop theo tên
 export const getShopByName = async (req, res) => {
     try {
         const { name } = req.params;
@@ -69,7 +73,7 @@ export const getShopByName = async (req, res) => {
     }
 };
 
-// Lấy shop theo userId nếu shop đang hoạt động
+// Lấy shop theo userId
 export const getShopByUserId = async (req, res) => {
     try {
         const { userId } = req.params;
@@ -96,7 +100,7 @@ export const updateShop = async (req, res) => {
         const { userId } = req.params;
         const updates = req.body;
 
-        const shop = await BakerProfile.findByPk(userId);
+        const shop = await BakerProfile.findOne({ where: { user_id: userId } });
         if (!shop) {
             return res.status(404).json({ message: 'Shop not found' });
         }
@@ -114,8 +118,8 @@ export const deleteShop = async (req, res) => {
     try {
         const { userId } = req.params;
 
-        const shop = await BakerProfile.findByPk(userId);
-        if (!shop || !shop.is_active) {
+        const shop = await BakerProfile.findOne({ where: { user_id: userId, is_active: true } });
+        if (!shop) {
             return res.status(404).json({ message: 'Active shop not found' });
         }
 
@@ -135,3 +139,5 @@ export const deleteShop = async (req, res) => {
         return res.status(500).json({ message: 'Error deactivating shop', error: error.message });
     }
 };
+
+
