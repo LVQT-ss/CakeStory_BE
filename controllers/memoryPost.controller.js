@@ -3,6 +3,7 @@ import MemoryPost from '../models/memory_post.model.js';
 import PostData from '../models/post_data.model.js';
 import User from '../models/User.model.js';
 import sequelize from '../database/db.js';
+import Like from '../models/like.model.js';
 
 export const createMemoryPost = async (req, res) => {
     const transaction = await sequelize.transaction();
@@ -422,6 +423,11 @@ export const getAllMemoryPosts = async (req, res) => {
                             model: User,
                             as: 'user',
                             attributes: ['id', 'username', 'full_name', 'avatar', 'is_Baker']
+                        },
+                        {
+                            model: Like,
+                            attributes: [],
+                            required: false
                         }
                     ]
                 }
@@ -430,9 +436,27 @@ export const getAllMemoryPosts = async (req, res) => {
             order: [[Post, 'created_at', 'DESC']]
         });
 
+        // Count likes for each post
+        const postsWithLikes = await Promise.all(memoryPosts.map(async (memoryPost) => {
+            const likeCount = await Like.count({
+                where: {
+                    post_id: memoryPost.Post.id,
+                    design_id: null
+                }
+            });
+
+            return {
+                ...memoryPost.toJSON(),
+                Post: {
+                    ...memoryPost.Post.toJSON(),
+                    total_likes: likeCount
+                }
+            };
+        }));
+
         res.status(200).json({
             message: 'Memory posts retrieved successfully',
-            posts: memoryPosts
+            posts: postsWithLikes
         });
 
     } catch (error) {
