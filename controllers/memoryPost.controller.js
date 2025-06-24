@@ -393,4 +393,54 @@ export const deleteMemoryPostById = async (req, res) => {
             error: error.message
         });
     }
-}; 
+};
+
+export const getAllMemoryPosts = async (req, res) => {
+    try {
+        const memoryPosts = await MemoryPost.findAll({
+            include: [
+                {
+                    model: Post,
+                    where: {
+                        is_public: true
+                    },
+                    attributes: [
+                        'id',
+                        'title',
+                        'description',
+                        'post_type',
+                        'is_public',
+                        'created_at',
+                        'updated_at'
+                    ],
+                    include: [
+                        {
+                            model: PostData,
+                            as: 'media',
+                            attributes: ['id', 'image_url', 'video_url']
+                        },
+                        {
+                            model: User,
+                            as: 'user',
+                            attributes: ['id', 'username', 'full_name', 'avatar', 'is_Baker']
+                        }
+                    ]
+                }
+            ],
+            attributes: ['event_date', 'event_type'],
+            order: [[Post, 'created_at', 'DESC']]
+        });
+
+        res.status(200).json({
+            message: 'Memory posts retrieved successfully',
+            posts: memoryPosts
+        });
+
+    } catch (error) {
+        console.error('Error retrieving memory posts:', error);
+        res.status(500).json({
+            message: 'Error retrieving memory posts',
+            error: error.message
+        });
+    }
+};
