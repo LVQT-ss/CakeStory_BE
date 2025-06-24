@@ -445,6 +445,7 @@ export const getAllMemoryPosts = async (req, res) => {
 };
 
 export const getAllMemoryPostsByUserId = async (req, res) => {
+
     try {
         const { userId } = req.params;
 
