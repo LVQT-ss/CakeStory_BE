@@ -1,5 +1,5 @@
 import express from 'express';
-import { createMemoryPost, getMemoryPostById, updateMemoryPostById, deleteMemoryPostById } from '../controllers/memoryPost.controller.js';
+import { createMemoryPost, getMemoryPostById, updateMemoryPostById, deleteMemoryPostById, getAllMemoryPosts } from '../controllers/memoryPost.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
@@ -585,5 +585,108 @@ router.put('/:id', verifyToken, updateMemoryPostById);
  *                   example: "Database connection error"
  */
 router.delete('/:id', verifyToken, deleteMemoryPostById);
+
+/**
+ * @swagger
+ * /api/memory-posts:
+ *   get:
+ *     tags:
+ *       - Memory Posts
+ *     summary: Get all public memory posts
+ *     description: Retrieve all public memory posts with their associated user information and media attachments
+ *     responses:
+ *       200:
+ *         description: Memory posts retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Memory posts retrieved successfully"
+ *                 posts:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       title:
+ *                         type: string
+ *                         example: "My Amazing Birthday Cake"
+ *                       description:
+ *                         type: string
+ *                         example: "This is the beautiful cake I made for my birthday celebration."
+ *                       post_type:
+ *                         type: string
+ *                         example: "memory"
+ *                       is_public:
+ *                         type: boolean
+ *                         example: true
+ *                       created_at:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2024-03-20T10:00:00Z"
+ *                       user:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 1
+ *                           username:
+ *                             type: string
+ *                             example: "johndoe"
+ *                           full_name:
+ *                             type: string
+ *                             example: "John Doe"
+ *                           avatar:
+ *                             type: string
+ *                             example: "https://example.com/avatar.jpg"
+ *                           is_Baker:
+ *                             type: boolean
+ *                             example: true
+ *                       MemoryPost:
+ *                         type: object
+ *                         properties:
+ *                           event_date:
+ *                             type: string
+ *                             format: date
+ *                             example: "2024-03-20"
+ *                           event_type:
+ *                             type: string
+ *                             example: "Birthday"
+ *                       media:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             id:
+ *                               type: integer
+ *                               example: 1
+ *                             image_url:
+ *                               type: string
+ *                               example: "https://example.com/cake-image.jpg"
+ *                             video_url:
+ *                               type: string
+ *                               example: null
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Error retrieving memory posts"
+ *                 error:
+ *                   type: string
+ *                   example: "Database connection error"
+ */
+router.get('/', getAllMemoryPosts);
+
+
 
 export default router;
