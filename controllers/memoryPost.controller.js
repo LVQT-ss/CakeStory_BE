@@ -410,8 +410,7 @@ export const getAllMemoryPosts = async (req, res) => {
                         'description',
                         'post_type',
                         'is_public',
-                        'created_at',
-                        'updated_at'
+                        'created_at'
                     ],
                     include: [
                         {
@@ -440,6 +439,65 @@ export const getAllMemoryPosts = async (req, res) => {
         console.error('Error retrieving memory posts:', error);
         res.status(500).json({
             message: 'Error retrieving memory posts',
+            error: error.message
+        });
+    }
+};
+
+export const getAllMemoryPostsByUserId = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        // Validate user exists
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({
+                message: 'User not found'
+            });
+        }
+
+        const memoryPosts = await MemoryPost.findAll({
+            include: [
+                {
+                    model: Post,
+                    where: {
+                        user_id: userId
+                    },
+                    attributes: [
+                        'id',
+                        'title',
+                        'description',
+                        'post_type',
+                        'is_public',
+                        'created_at'
+                    ],
+                    include: [
+                        {
+                            model: PostData,
+                            as: 'media',
+                            attributes: ['id', 'image_url', 'video_url']
+                        },
+                        {
+                            model: User,
+                            as: 'user',
+                            attributes: ['id', 'username', 'full_name', 'avatar', 'is_Baker']
+                        }
+                    ]
+                }
+            ],
+            attributes: ['event_date', 'event_type'],
+            order: [[Post, 'created_at', 'DESC']]
+        });
+
+        res.status(200).json({
+            message: 'User memory posts retrieved successfully',
+            posts: memoryPosts
+        });
+
+    } catch (error) {
+        console.error('Error retrieving user memory posts:', error);
+        res.status(500).json({
+            message: 'Error retrieving user memory posts',
             error: error.message
         });
     }

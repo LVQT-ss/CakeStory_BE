@@ -1,5 +1,5 @@
 import express from 'express';
-import { createMemoryPost, getMemoryPostById, updateMemoryPostById, deleteMemoryPostById, getAllMemoryPosts } from '../controllers/memoryPost.controller.js';
+import { createMemoryPost, getMemoryPostById, updateMemoryPostById, deleteMemoryPostById, getAllMemoryPosts, getAllMemoryPostsByUserId } from '../controllers/memoryPost.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
@@ -687,6 +687,123 @@ router.delete('/:id', verifyToken, deleteMemoryPostById);
  */
 router.get('/', getAllMemoryPosts);
 
-
+/**
+ * @swagger
+ * /api/memory-posts/user/{userId}:
+ *   get:
+ *     tags:
+ *       - Memory Posts
+ *     summary: Get all memory posts of a specific user
+ *     description: Retrieve all memory posts created by a specific user, including post details and media attachments
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the user whose memory posts to retrieve
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: User memory posts retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "User memory posts retrieved successfully"
+ *                 posts:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       event_date:
+ *                         type: string
+ *                         format: date
+ *                         example: "2024-03-20"
+ *                       event_type:
+ *                         type: string
+ *                         example: "Birthday"
+ *                       Post:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 1
+ *                           title:
+ *                             type: string
+ *                             example: "My Amazing Birthday Cake"
+ *                           description:
+ *                             type: string
+ *                             example: "This is the beautiful cake I made for my birthday celebration."
+ *                           post_type:
+ *                             type: string
+ *                             example: "memory"
+ *                           is_public:
+ *                             type: boolean
+ *                             example: true
+ *                           created_at:
+ *                             type: string
+ *                             format: date-time
+ *                             example: "2024-03-20T10:00:00Z"
+ *                           media:
+ *                             type: array
+ *                             items:
+ *                               type: object
+ *                               properties:
+ *                                 id:
+ *                                   type: integer
+ *                                   example: 1
+ *                                 image_url:
+ *                                   type: string
+ *                                   example: "https://example.com/cake-image.jpg"
+ *                                 video_url:
+ *                                   type: string
+ *                                   example: null
+ *                           user:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 1
+ *                               username:
+ *                                 type: string
+ *                                 example: "johndoe"
+ *                               full_name:
+ *                                 type: string
+ *                                 example: "John Doe"
+ *                               avatar:
+ *                                 type: string
+ *                                 example: "https://example.com/avatar.jpg"
+ *                               is_Baker:
+ *                                 type: boolean
+ *                                 example: true
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "User not found"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Error retrieving user memory posts"
+ *                 error:
+ *                   type: string
+ *                   example: "Database connection error"
+ */
+router.get('/user/:userId', getAllMemoryPostsByUserId);
 
 export default router;
