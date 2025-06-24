@@ -6,9 +6,9 @@ const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'VSOS API',
+      title: 'CakeStory API',
       version: '1.0.0',
-      description: "API endpoints for a VSOS service documented using Swagger",
+      description: "API endpoints for a CakeStory service documented using Swagger",
       contact: {
         name: "QUOCTHINH",
         email: "levietquocthinh@gmail.com",
