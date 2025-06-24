@@ -88,6 +88,10 @@ function setupAssociations() {
   Like.belongsTo(Post, { foreignKey: "post_id" });
   Like.belongsTo(CakeDesign, { foreignKey: "design_id" });
 
+  // User ↔ Like (1-N)
+  User.hasMany(Like, { foreignKey: "user_id" });
+  Like.belongsTo(User, { foreignKey: "user_id" });
+
   // Following - self-association
   User.hasMany(Following, { foreignKey: "follower_id", as: "following" });
   User.hasMany(Following, { foreignKey: "followed_id", as: "followers" });
