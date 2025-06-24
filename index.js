@@ -11,6 +11,7 @@ import adminRoutes from './routes/admin.route.js';
 import memoryPostRoutes from './routes/memory_post.route.js';
 import shopRoutes from './routes/shop.route.js';
 import marketplaceRoutes from './routes/marketplace_post.route.js';
+import likeRoutes from './routes/like.route.js';
 
 setupAssociations();
 dotenv.config();
@@ -29,6 +30,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/memory-posts', memoryPostRoutes);
 app.use('/api/marketplace-posts', marketplaceRoutes);
 app.use('/api/shops', shopRoutes);
+app.use('/api/likes', likeRoutes);
+
 // Initialize and synchronize the database
 initDB().then(() => {
     app.listen(port, () => {
