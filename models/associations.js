@@ -21,6 +21,7 @@ import Transaction from "./transaction.model.js";
 import Subscription from "./subscription.model.js";
 import AlbumPost from './album_post.model.js';
 import GroupPost from './group_post.model.js';
+import ShopMember from "./shop_member.model.js";
 
 function setupAssociations() {
   // User ↔ Shop (1-1)
@@ -54,9 +55,13 @@ function setupAssociations() {
   Post.hasOne(MarketplacePost, { foreignKey: 'post_id', as: 'marketplacePost' });
   MarketplacePost.belongsTo(Post, { foreignKey: 'post_id' });
 
-  // Shop ↔ MarketplacePost (1-N)
-  Shop.hasMany(MarketplacePost, { foreignKey: "shop_id" });
-  MarketplacePost.belongsTo(Shop, { foreignKey: "shop_id" });
+  // Shop ↔ ShopMember (1-N)
+  Shop.hasMany(ShopMember, { foreignKey: "shop_id", as: "members" });
+  ShopMember.belongsTo(Shop, { foreignKey: "shop_id" });
+
+  // User ↔ ShopMember (1-N)
+  User.hasMany(ShopMember, { foreignKey: "user_id", as: "shopMemberships" });
+  ShopMember.belongsTo(User, { foreignKey: "user_id" });
 
   // User ↔ CakeDesign (1-N)
   User.hasMany(CakeDesign, { foreignKey: "user_id" });
@@ -146,6 +151,18 @@ function setupAssociations() {
   // Post ↔ GroupPost (1-1)
   Post.hasOne(GroupPost, { foreignKey: "post_id" });
   GroupPost.belongsTo(Post, { foreignKey: "post_id" });
+
+  // Shop ↔ CakeDesign (1-N)
+  Shop.hasMany(CakeDesign, { foreignKey: "shop_id" });
+  CakeDesign.belongsTo(Shop, { foreignKey: "shop_id" });
+
+  // User ↔ MarketplacePost (1-N)
+  User.hasMany(MarketplacePost, { foreignKey: "user_id" });
+  MarketplacePost.belongsTo(User, { foreignKey: "user_id" });
+
+  // Post ↔ ChallengePost (1-1)
+  Post.hasOne(ChallengePost, { foreignKey: "post_id" });
+  ChallengePost.belongsTo(Post, { foreignKey: "post_id" });
 }
 
 export default setupAssociations;
