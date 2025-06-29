@@ -140,4 +140,20 @@ export const deleteShop = async (req, res) => {
     }
 };
 
+// Lấy tất cả shop, bao gồm cả shop đã bị vô hiệu hóa (is_active = false)
+export const getAllShopsInactive = async (req, res) => {
+    try {
+        const shops = await BakerProfile.findAll({
+            include: [{
+                model: User,
+                as: 'user',
+                attributes: ['id', 'username', 'email']
+            }]
+        });
 
+        return res.status(200).json({ message: 'All shops retrieved successfully', shops });
+    } catch (error) {
+        console.error('Error retrieving all shops (including inactive):', error);
+        return res.status(500).json({ message: 'Error retrieving all shops', error: error.message });
+    }
+};
