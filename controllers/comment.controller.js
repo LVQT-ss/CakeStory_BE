@@ -92,5 +92,58 @@ export const getCommentsByPostId = async (req, res) => {
 };
 
 export const updateComment = async (req, res) => {
+    try {
+        const { comment_id } = req.params;
+        const { content } = req.body;
+        const user_id = req.userId;
 
+        // Validate required fields
+        if (!content) {
+            return res.status(400).json({
+                message: 'Comment content is required'
+            });
+        }
+
+        // Find the comment
+        const comment = await Comment.findByPk(comment_id);
+        if (!comment) {
+            return res.status(404).json({
+                message: 'Comment not found'
+            });
+        }
+
+        // Check if user owns the comment
+        if (comment.user_id !== user_id) {
+            return res.status(403).json({
+                message: 'You can only update your own comments'
+            });
+        }
+
+        // Update comment
+        await comment.update({
+            content,
+            updated_at: new Date()
+        });
+
+        // Get updated comment with user info
+        const updatedComment = await Comment.findOne({
+            where: { id: comment_id },
+            include: [{
+                model: User,
+                attributes: ['id', 'username', 'full_name', 'avatar']
+            }]
+        });
+
+        res.status(200).json({
+            message: 'Comment updated successfully',
+            comment: updatedComment
+        });
+
+    } catch (error) {
+        console.error('Error updating comment:', error);
+        res.status(500).json({
+            message: 'Error updating comment',
+            error: error.message
+        });
+    }
 };
