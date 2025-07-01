@@ -5,8 +5,8 @@ import {
   getShopByUserId,
   updateShop,
   deleteShop,
-  getShopByName
-
+  getShopByName,
+  getAllShopsInactive
 } from '../controllers/shop.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
@@ -61,6 +61,25 @@ const router = express.Router();
  *         description: Server error
  */
 router.post('/', verifyToken, createShop);
+
+/**
+ * @swagger
+ * /api/shops/all:
+ *   get:
+ *     tags:
+ *       - Shop
+ *     summary: Get all shops (including inactive)
+ *     description: Retrieve all shops regardless of is_active status
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: All shops retrieved
+ *       500:
+ *         description: Server error
+ */
+
+router.get('/all', verifyToken, getAllShopsInactive);
 
 /**
  * @swagger

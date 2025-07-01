@@ -1,10 +1,12 @@
 import sequelize from '../database/db.js';
 import BakerProfile from '../models/shop.model.js';
 import User from '../models/User.model.js';
+import ShopMember from '../models/shop_member.model.js';
 import { Op } from 'sequelize';
 
 // Tạo shop mới (1 user chỉ được 1 shop)
 export const createShop = async (req, res) => {
+    const transaction = await sequelize.transaction();
     try {
         const {
             user_id, business_name, business_address, phone_number,
@@ -16,6 +18,7 @@ export const createShop = async (req, res) => {
             return res.status(400).json({ message: 'Shop already exists for this user' });
         }
 
+        // Tạo shop mới
         const createdShop = await BakerProfile.create({
             user_id,
             business_name,
@@ -26,10 +29,30 @@ export const createShop = async (req, res) => {
             is_active,
             longitude: longtitue, // fix typo nếu cần
             latitude
-        });
+        }, { transaction });
 
-        return res.status(201).json({ message: 'Shop created successfully', shop: createdShop });
+        // Tạo shop member (chủ shop)
+        await ShopMember.create({
+            shop_id: createdShop.shop_id,
+            user_id,
+            is_admin: true,
+            joined_at: new Date()
+        }, { transaction });
+
+        // Cập nhật user thành baker
+        await User.update(
+            { is_Baker: true },
+            { where: { id: user_id }, transaction }
+        );
+
+        await transaction.commit();
+
+        return res.status(201).json({
+            message: 'Shop and shop member created successfully. User is now a baker.',
+            shop: createdShop
+        });
     } catch (error) {
+        if (!transaction.finished) await transaction.rollback();
         console.error('Error creating shop:', error);
         return res.status(500).json({ message: 'Error creating shop', error: error.message });
     }
@@ -140,4 +163,20 @@ export const deleteShop = async (req, res) => {
     }
 };
 
+// Lấy tất cả shop, bao gồm cả shop đã bị vô hiệu hóa (is_active = false)
+export const getAllShopsInactive = async (req, res) => {
+    try {
+        const shops = await BakerProfile.findAll({
+            include: [{
+                model: User,
+                as: 'user',
+                attributes: ['id', 'username', 'email']
+            }]
+        });
 
+        return res.status(200).json({ message: 'All shops retrieved successfully', shops });
+    } catch (error) {
+        console.error('Error retrieving all shops (including inactive):', error);
+        return res.status(500).json({ message: 'Error retrieving all shops', error: error.message });
+    }
+};
