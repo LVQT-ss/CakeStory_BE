@@ -54,4 +54,7 @@ export const createComment = async (req, res) => {
     }
 };
 
+export const getCommentsByPostId = async (req, res) => {
+
+};
 
