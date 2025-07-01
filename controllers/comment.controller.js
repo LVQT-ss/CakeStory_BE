@@ -149,5 +149,37 @@ export const updateComment = async (req, res) => {
 };
 
 export const deleteComment = async (req, res) => {
+    try {
+        const { comment_id } = req.params;
+        const user_id = req.userId;
 
+        // Find the comment
+        const comment = await Comment.findByPk(comment_id);
+        if (!comment) {
+            return res.status(404).json({
+                message: 'Comment not found'
+            });
+        }
+
+        // Check if user owns the comment
+        if (comment.user_id !== user_id) {
+            return res.status(403).json({
+                message: 'You can only delete your own comments'
+            });
+        }
+
+        // Delete comment
+        await comment.destroy();
+
+        res.status(200).json({
+            message: 'Comment deleted successfully'
+        });
+
+    } catch (error) {
+        console.error('Error deleting comment:', error);
+        res.status(500).json({
+            message: 'Error deleting comment',
+            error: error.message
+        });
+    }
 }; 
