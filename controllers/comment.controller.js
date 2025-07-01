@@ -91,3 +91,6 @@ export const getCommentsByPostId = async (req, res) => {
     }
 };
 
+export const updateComment = async (req, res) => {
+
+};

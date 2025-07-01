@@ -1,5 +1,5 @@
 import express from 'express';
-import { createComment, getCommentsByPostId } from '../controllers/comment.controller.js';
+import { createComment, getCommentsByPostId, updateComment } from '../controllers/comment.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
@@ -158,5 +158,48 @@ router.post('/post/:post_id', verifyToken, createComment);
  *         description: Server error
  */
 router.get('/post/:post_id', getCommentsByPostId);
+
+/**
+ * @swagger
+ * /api/comments/{comment_id}:
+ *   put:
+ *     tags:
+ *       - Comments
+ *     summary: Update a comment
+ *     description: Update the content of a specific comment (only by comment owner)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: comment_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the comment to update
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - content
+ *             properties:
+ *               content:
+ *                 type: string
+ *                 example: "Updated comment content"
+ *     responses:
+ *       200:
+ *         description: Comment updated successfully
+ *       400:
+ *         description: Bad request - Missing content
+ *       403:
+ *         description: Forbidden - Not comment owner
+ *       404:
+ *         description: Comment not found
+ *       500:
+ *         description: Server error
+ */
+router.put('/:comment_id', verifyToken, updateComment);
 
 export default router; 
