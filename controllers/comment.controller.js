@@ -55,6 +55,39 @@ export const createComment = async (req, res) => {
 };
 
 export const getCommentsByPostId = async (req, res) => {
+    try {
+        const { post_id } = req.params;
 
+        // Check if post exists
+        const post = await Post.findByPk(post_id);
+        if (!post) {
+            return res.status(404).json({
+                message: 'Post not found'
+            });
+        }
+
+        // Get all comments for the post with user information
+        const comments = await Comment.findAll({
+            where: { post_id },
+            include: [{
+                model: User,
+                attributes: ['id', 'username', 'full_name', 'avatar']
+            }],
+            order: [['created_at', 'DESC']]
+        });
+
+        res.status(200).json({
+            message: 'Comments retrieved successfully',
+            comments: comments,
+            total_comments: comments.length
+        });
+
+    } catch (error) {
+        console.error('Error retrieving comments:', error);
+        res.status(500).json({
+            message: 'Error retrieving comments',
+            error: error.message
+        });
+    }
 };
 
