@@ -1,5 +1,5 @@
 import express from 'express';
-import { createComment, getCommentsByPostId, updateComment } from '../controllers/comment.controller.js';
+import { createComment, getCommentsByPostId, updateComment, deleteComment } from '../controllers/comment.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
@@ -201,5 +201,34 @@ router.get('/post/:post_id', getCommentsByPostId);
  *         description: Server error
  */
 router.put('/:comment_id', verifyToken, updateComment);
+
+/**
+ * @swagger
+ * /api/comments/{comment_id}:
+ *   delete:
+ *     tags:
+ *       - Comments
+ *     summary: Delete a comment
+ *     description: Delete a specific comment (only by comment owner)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: comment_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the comment to delete
+ *     responses:
+ *       200:
+ *         description: Comment deleted successfully
+ *       403:
+ *         description: Forbidden - Not comment owner
+ *       404:
+ *         description: Comment not found
+ *       500:
+ *         description: Server error
+ */
+router.delete('/:comment_id', verifyToken, deleteComment);
 
 export default router; 
