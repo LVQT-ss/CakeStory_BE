@@ -82,12 +82,10 @@ const router = express.Router();
  *                     firebase_uid:
  *                       type: string
  *                       example: firebase-uid-string
- *                     is_Baker:
- *                       type: boolean
- *                       example: false
- *                     is_admin:
- *                       type: boolean
- *                       example: false
+ *                     role:
+ *                       type: string
+ *                       enum: [user, account_staff, complaint_handler, admin, baker]
+ *                       example: user
  *                     created_at:
  *                       type: string
  *                       format: date-time
@@ -193,12 +191,10 @@ router.post('/register', register);
  *                     firebase_uid:
  *                       type: string
  *                       example: firebase-uid-string
- *                     is_Baker:
- *                       type: boolean
- *                       example: false
- *                     is_admin:
- *                       type: boolean
- *                       example: false
+ *                     role:
+ *                       type: string
+ *                       enum: [user, account_staff, complaint_handler, admin, baker]
+ *                       example: user
  *                 firebaseUid:
  *                   type: string
  *                   example: firebase-uid-string
