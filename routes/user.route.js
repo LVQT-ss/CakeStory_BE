@@ -131,9 +131,10 @@ router.delete('/follow/:id', verifyToken, unfollowUser);
  *                     avatar:
  *                       type: string
  *                       example: https://example.com/avatar.jpg
- *                     is_Baker:
- *                       type: boolean
- *                       example: true
+ *                     role:
+ *                       type: string
+ *                       enum: [user, account_staff, complaint_handler, admin, baker]
+ *                       example: baker
  *                     created_at:
  *                       type: string
  *                       format: date-time
@@ -187,9 +188,10 @@ router.get('/:id', viewProfile);
  *               avatar:
  *                 type: string
  *                 example: https://example.com/avatar.jpg
- *               is_Baker:
- *                 type: boolean
- *                 example: true
+ *               role:
+ *                 type: string
+ *                 enum: [user, account_staff, complaint_handler, admin, baker]
+ *                 example: baker
  *     responses:
  *       200:
  *         description: Profile updated successfully
@@ -225,9 +227,10 @@ router.get('/:id', viewProfile);
  *                     avatar:
  *                       type: string
  *                       example: https://example.com/avatar.jpg
- *                     is_Baker:
- *                       type: boolean
- *                       example: true
+ *                     role:
+ *                       type: string
+ *                       enum: [user, account_staff, complaint_handler, admin, baker]
+ *                       example: baker
  *       404:
  *         description: User not found
  *       500:
