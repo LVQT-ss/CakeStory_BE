@@ -31,7 +31,7 @@ const User = sequelize.define('User', {
     address: {
         type: DataTypes.STRING(255),
         allowNull: true,
-      },
+    },
     phone_number: {
         type: DataTypes.STRING(20),
         allowNull: true,
@@ -45,29 +45,25 @@ const User = sequelize.define('User', {
         allowNull: true,
         unique: true,
     },
-    is_admin: {
-        type: DataTypes.BOOLEAN,
+    role: {
+        type: DataTypes.ENUM('user', 'account_staff', 'complaint_handler', 'admin', 'baker'),
         allowNull: false,
-        defaultValue: false,
-    },
-    is_Baker: {
-        type: DataTypes.BOOLEAN,
-        allowNull: false,
-        defaultValue: false,
+        defaultValue: 'user',
     },
     is_active: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: true,
-      },
-      isPremium: {
+    },
+    isPremium: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: false,
-      }
+    }
 }, {
     tableName: 'user',
     timestamps: true,
     underscored: true,
 });
+
 export default User;

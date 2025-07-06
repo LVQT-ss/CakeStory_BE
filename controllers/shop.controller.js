@@ -41,7 +41,7 @@ export const createShop = async (req, res) => {
 
         // Cập nhật user thành baker
         await User.update(
-            { is_Baker: true },
+            { role: 'baker' },
             { where: { id: user_id }, transaction }
         );
 
