@@ -1,3 +1,4 @@
+/* eslint-env node */
 import bcryptjs from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
@@ -51,8 +52,6 @@ export const register = async (req, res) => {
             password: hashedPassword,
             full_name: full_name || null,
             avatar: avatar || null,
-            is_baker: false,
-            is_admin: false,
             firebase_uid: firebaseUid
         });
 
@@ -72,7 +71,7 @@ export const register = async (req, res) => {
         });
 
         // Remove password from response
-        const { password: _, ...userWithoutPassword } = user.dataValues;
+        const { password: _, ...userWithoutPassword } = user.dataValues; // eslint-disable-line no-unused-vars
 
         res.status(201).json({
             message: 'User successfully registered!',
@@ -143,8 +142,7 @@ export const login = async (req, res) => {
                 id: user.id,
                 username: user.username,
                 email: user.email,
-                is_admin: user.is_admin,
-                is_baker: user.is_baker,
+                role: user.role,
                 firebaseUid: firebaseUid
             },
             process.env.JWT_SECRET,
@@ -152,7 +150,7 @@ export const login = async (req, res) => {
         );
 
         // Remove password from response
-        const { password: _, ...userWithoutPassword } = user.dataValues;
+        const { password: _, ...userWithoutPassword } = user.dataValues; // eslint-disable-line no-unused-vars
 
         res.status(200).json({
             message: "Login successful",
