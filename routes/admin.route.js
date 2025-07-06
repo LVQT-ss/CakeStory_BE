@@ -48,12 +48,10 @@ const router = express.Router();
  *                       firebase_uid:
  *                         type: string
  *                         example: firebase_uid_123
- *                       is_admin:
- *                         type: boolean
- *                         example: false
- *                       is_Baker:
- *                         type: boolean
- *                         example: true
+ *                       role:
+ *                         type: string
+ *                         enum: [user, account_staff, complaint_handler, admin, baker]
+ *                         example: baker
  *                       created_at:
  *                         type: string
  *                         format: date-time
@@ -156,12 +154,10 @@ router.get('/users/premium', verifyToken, getAllUsersByPremium);
  *                     firebase_uid:
  *                       type: string
  *                       example: firebase_uid_123
- *                     is_admin:
- *                       type: boolean
- *                       example: false
- *                     is_Baker:
- *                       type: boolean
- *                       example: true
+ *                     role:
+ *                       type: string
+ *                       enum: [user, account_staff, complaint_handler, admin, baker]
+ *                       example: baker
  *                     created_at:
  *                       type: string
  *                       format: date-time
