@@ -230,10 +230,11 @@ router.post('/', verifyToken, createMemoryPost);
  *                         avatar:
  *                           type: string
  *                           example: "https://example.com/avatar.jpg"
- *                         is_Baker:
- *                           type: boolean
- *                           example: true
- *                           description: "Whether this user is a professional baker"
+ *                         role:
+ *                           type: string
+ *                           enum: [user, account_staff, complaint_handler, admin, baker]
+ *                           example: baker
+ *                           description: "User's role in the system"
  *                         created_at:
  *                           type: string
  *                           format: date-time
@@ -644,9 +645,10 @@ router.delete('/:id', verifyToken, deleteMemoryPostById);
  *                           avatar:
  *                             type: string
  *                             example: "https://example.com/avatar.jpg"
- *                           is_Baker:
- *                             type: boolean
- *                             example: true
+ *                           role:
+ *                             type: string
+ *                             enum: [user, account_staff, complaint_handler, admin, baker]
+ *                             example: baker
  *                       MemoryPost:
  *                         type: object
  *                         properties:
@@ -777,9 +779,10 @@ router.get('/', getAllMemoryPosts);
  *                               avatar:
  *                                 type: string
  *                                 example: "https://example.com/avatar.jpg"
- *                               is_Baker:
- *                                 type: boolean
- *                                 example: true
+ *                               role:
+ *                                 type: string
+ *                                 enum: [user, account_staff, complaint_handler, admin, baker]
+ *                                 example: baker
  *       404:
  *         description: User not found
  *         content:
