@@ -117,7 +117,7 @@ export const getMemoryPostById = async (req, res) => {
                         'username',
                         'full_name',
                         'avatar',
-                        'is_Baker',
+                        'role',
                         'created_at',
                         'address',
                         'phone_number'
@@ -171,7 +171,7 @@ export const updateMemoryPostById = async (req, res) => {
 
         // Get user ID from verified token
         const user_id = req.userId;
-        const is_admin = req.is_admin;
+        const user_role = req.role;
 
         // Find the existing memory post
         const existingPost = await Post.findOne({
@@ -200,7 +200,7 @@ export const updateMemoryPostById = async (req, res) => {
         }
 
         // Authorization: Only post owner or admin can update
-        if (existingPost.user_id !== user_id && !is_admin) {
+        if (existingPost.user_id !== user_id && user_role !== 'admin') {
             await transaction.rollback();
             return res.status(403).json({
                 message: 'You can only update your own memory posts'
@@ -268,7 +268,7 @@ export const updateMemoryPostById = async (req, res) => {
                         'username',
                         'full_name',
                         'avatar',
-                        'is_Baker',
+                        'role',
                         'created_at',
                         'address',
                         'phone_number'
@@ -422,7 +422,7 @@ export const getAllMemoryPosts = async (req, res) => {
                         {
                             model: User,
                             as: 'user',
-                            attributes: ['id', 'username', 'full_name', 'avatar', 'is_Baker']
+                            attributes: ['id', 'username', 'full_name', 'avatar', 'role']
                         },
                         {
                             model: Like,
@@ -505,7 +505,7 @@ export const getAllMemoryPostsByUserId = async (req, res) => {
                         {
                             model: User,
                             as: 'user',
-                            attributes: ['id', 'username', 'full_name', 'avatar', 'is_Baker']
+                            attributes: ['id', 'username', 'full_name', 'avatar', 'role']
                         }
                     ]
                 }
