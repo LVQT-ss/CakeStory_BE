@@ -140,7 +140,7 @@ export const viewProfile = async (req, res) => {
                 address: user.address,
                 phone_number: user.phone_number,
                 avatar: user.avatar,
-                is_Baker: user.is_Baker,
+                role: user.role,
                 created_at: user.created_at,
                 updated_at: user.updated_at
             }
@@ -164,7 +164,7 @@ export const updateProfile = async (req, res) => {
             address,
             phone_number,
             avatar,
-            is_Baker
+            role
         } = req.body;
 
         // Find user by ID
@@ -181,7 +181,9 @@ export const updateProfile = async (req, res) => {
         if (address) user.address = address;
         if (phone_number) user.phone_number = phone_number;
         if (avatar) user.avatar = avatar;
-        if (typeof is_Baker === 'boolean') user.is_Baker = is_Baker;
+        if (role && ['user', 'account_staff', 'complaint_handler', 'admin', 'baker'].includes(role)) {
+            user.role = role;
+        }
 
         // Save the updated user
         await user.save();
@@ -197,7 +199,7 @@ export const updateProfile = async (req, res) => {
                 address: user.address,
                 phone_number: user.phone_number,
                 avatar: user.avatar,
-                is_Baker: user.is_Baker
+                role: user.role
             }
         });
 
