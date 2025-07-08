@@ -4,6 +4,7 @@ import PostData from '../models/post_data.model.js';
 import User from '../models/User.model.js';
 import sequelize from '../database/db.js';
 import Like from '../models/like.model.js';
+import Comment from '../models/comment.model.js';
 
 export const createMemoryPost = async (req, res) => {
     const transaction = await sequelize.transaction();
@@ -430,6 +431,11 @@ export const getAllMemoryPosts = async (req, res) => {
                             model: Like,
                             attributes: [],
                             required: false
+                        },
+                        {
+                            model: Comment,
+                            attributes: [],
+                            required: false
                         }
                     ]
                 }
@@ -438,27 +444,35 @@ export const getAllMemoryPosts = async (req, res) => {
             order: [[Post, 'created_at', 'ASC']]
         });
 
-        // Count likes for each post
-        const postsWithLikes = await Promise.all(memoryPosts.map(async (memoryPost) => {
-            const likeCount = await Like.count({
-                where: {
-                    post_id: memoryPost.Post.id,
-                    design_id: null
-                }
-            });
+        // Count likes and comments for each post
+        const postsWithLikesAndComments = await Promise.all(memoryPosts.map(async (memoryPost) => {
+            const [likeCount, commentCount] = await Promise.all([
+                Like.count({
+                    where: {
+                        post_id: memoryPost.Post.id,
+                        design_id: null
+                    }
+                }),
+                Comment.count({
+                    where: {
+                        post_id: memoryPost.Post.id
+                    }
+                })
+            ]);
 
             return {
                 ...memoryPost.toJSON(),
                 Post: {
                     ...memoryPost.Post.toJSON(),
-                    total_likes: likeCount
+                    total_likes: likeCount,
+                    total_comments: commentCount
                 }
             };
         }));
 
         res.status(200).json({
             message: 'Memory posts retrieved successfully',
-            posts: postsWithLikes
+            posts: postsWithLikesAndComments
         });
 
     } catch (error) {
