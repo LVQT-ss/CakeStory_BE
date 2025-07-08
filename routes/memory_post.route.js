@@ -1,5 +1,5 @@
 import express from 'express';
-import { createMemoryPost, getMemoryPostById, updateMemoryPostById, deleteMemoryPostById, getAllMemoryPosts, getAllMemoryPostsByUserId } from '../controllers/memoryPost.controller.js';
+import { createMemoryPost, getMemoryPostById, updateMemoryPostById, updateMemoryPostVisibility, deleteMemoryPostById, getAllMemoryPosts, getAllMemoryPostsByUserId } from '../controllers/memoryPost.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
@@ -486,6 +486,131 @@ router.get('/:id', getMemoryPostById);
  *                   example: "Database connection error"
  */
 router.put('/:id', verifyToken, updateMemoryPostById);
+
+/**
+ * @swagger
+ * /api/memory-posts/{id}/visibility:
+ *   patch:
+ *     tags:
+ *       - Memory Posts
+ *     summary: Update memory post visibility (public/private)
+ *     description: Update the visibility status of a memory post. Only the post owner or admin can change visibility settings.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the memory post to update
+ *         example: 1
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - is_public
+ *             properties:
+ *               is_public:
+ *                 type: boolean
+ *                 example: false
+ *                 description: Set to true for public, false for private
+ *     responses:
+ *       200:
+ *         description: Memory post visibility updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Memory post visibility updated to private successfully"
+ *                 post:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     title:
+ *                       type: string
+ *                       example: "My Amazing Birthday Cake"
+ *                     is_public:
+ *                       type: boolean
+ *                       example: false
+ *                     user:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 1
+ *                         username:
+ *                           type: string
+ *                           example: "johndoe"
+ *                         full_name:
+ *                           type: string
+ *                           example: "John Doe"
+ *       400:
+ *         description: Bad Request - Invalid is_public value
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "is_public must be a boolean value (true or false)"
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Access denied. No token provided."
+ *       403:
+ *         description: Forbidden - Only post owner or admin can update
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "You can only update visibility of your own memory posts"
+ *       404:
+ *         description: Memory post not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Memory post not found"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Error updating memory post visibility"
+ *                 error:
+ *                   type: string
+ *                   example: "Database connection error"
+ */
+router.patch('/:id/visibility', verifyToken, updateMemoryPostVisibility);
 
 /**
  * @swagger

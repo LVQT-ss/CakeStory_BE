@@ -303,6 +303,76 @@ export const updateMemoryPostById = async (req, res) => {
     }
 };
 
+export const updateMemoryPostVisibility = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { is_public } = req.body;
+
+        // Get user ID from verified token
+        const user_id = req.userId;
+        const user_role = req.role;
+
+        // Validate is_public parameter
+        if (typeof is_public !== 'boolean') {
+            return res.status(400).json({
+                message: 'is_public must be a boolean value (true or false)'
+            });
+        }
+
+        // Find the existing memory post
+        const existingPost = await Post.findOne({
+            where: {
+                id: id,
+                post_type: 'memory'
+            },
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: ['id', 'username', 'full_name']
+                }
+            ]
+        });
+
+        if (!existingPost) {
+            return res.status(404).json({
+                message: 'Memory post not found'
+            });
+        }
+
+        // Authorization: Only post owner or admin can update visibility
+        if (existingPost.user_id !== user_id && user_role !== 'admin') {
+            return res.status(403).json({
+                message: 'You can only update visibility of your own memory posts'
+            });
+        }
+
+        // Update the is_public field
+        await existingPost.update({ is_public });
+
+        res.status(200).json({
+            message: `Memory post visibility updated to ${is_public ? 'public' : 'private'} successfully`,
+            post: {
+                id: existingPost.id,
+                title: existingPost.title,
+                is_public: is_public,
+                user: {
+                    id: existingPost.user.id,
+                    username: existingPost.user.username,
+                    full_name: existingPost.user.full_name
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('Error updating memory post visibility:', error);
+        res.status(500).json({
+            message: 'Error updating memory post visibility',
+            error: error.message
+        });
+    }
+};
+
 export const deleteMemoryPostById = async (req, res) => {
     const transaction = await sequelize.transaction();
 
