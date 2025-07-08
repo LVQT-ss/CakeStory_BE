@@ -417,7 +417,9 @@ export const getAllMemoryPosts = async (req, res) => {
                         {
                             model: PostData,
                             as: 'media',
-                            attributes: ['id', 'image_url', 'video_url']
+                            attributes: ['id', 'image_url', 'video_url'],
+                            order: [['id', 'ASC']],
+                            separate: true
                         },
                         {
                             model: User,
@@ -433,7 +435,7 @@ export const getAllMemoryPosts = async (req, res) => {
                 }
             ],
             attributes: ['event_date', 'event_type'],
-            order: [[Post, 'created_at', 'DESC']]
+            order: [[Post, 'created_at', 'ASC']]
         });
 
         // Count likes for each post
@@ -500,7 +502,8 @@ export const getAllMemoryPostsByUserId = async (req, res) => {
                         {
                             model: PostData,
                             as: 'media',
-                            attributes: ['id', 'image_url', 'video_url']
+                            attributes: ['id', 'image_url', 'video_url'],
+                            order: [['id', 'ASC']]
                         },
                         {
                             model: User,
