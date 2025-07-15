@@ -163,6 +163,10 @@ function setupAssociations() {
   // Post ↔ ChallengePost (1-1)
   Post.hasOne(ChallengePost, { foreignKey: "post_id" });
   ChallengePost.belongsTo(Post, { foreignKey: "post_id" });
+
+  // MarketplacePost ↔ Shop (N-1)
+  MarketplacePost.belongsTo(Shop, { foreignKey: 'shop_id', as: 'shop' });
+  Shop.hasMany(MarketplacePost, { foreignKey: 'shop_id', as: 'marketplacePosts' });
 }
 
 export default setupAssociations;
