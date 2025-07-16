@@ -83,4 +83,32 @@ export const deleteShopMember = async (req, res) => {
   }
 };
 
+// 4. Cập nhật is_active (chỉ cho phép nếu current user là thành viên không phải admin)
+export const updateShopMember = async (req, res) => {
+  try {
+    const currentUserId = req.userId;
 
+    // Kiểm tra xem user hiện tại có là thành viên không và không phải admin
+    const currentMember = await ShopMember.findOne({ where: { user_id: currentUserId } });
+
+    if (!currentMember) {
+      return res.status(403).json({ message: 'You are not a shop member' });
+    }
+
+    if (currentMember.is_admin) {
+      return res.status(403).json({ message: 'Admins cannot perform this update' });
+    }
+
+    if (currentMember.is_active) {
+      return res.status(400).json({ message: 'Your account is already active' });
+    }
+
+    currentMember.is_active = true;
+    await currentMember.save();
+
+    return res.status(200).json({ message: 'Account activated successfully', member: currentMember });
+  } catch (error) {
+    console.error('Error updating shop member:', error);
+    return res.status(500).json({ message: 'Error updating shop member', error: error.message });
+  }
+};
