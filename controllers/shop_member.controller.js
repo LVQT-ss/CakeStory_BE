@@ -30,4 +30,23 @@ export const createShopMember = async (req, res) => {
   }
 };
 
+// 2. Xem tất cả member trong shop hiện tại
+export const getMyShopMembers = async (req, res) => {
+  try {
+    const currentUserId = req.userId;
+
+    const shop = await BakerProfile.findOne({ where: { user_id: currentUserId } });
+    if (!shop) return res.status(403).json({ message: 'You do not own a shop' });
+
+    const members = await ShopMember.findAll({
+      where: { shop_id: shop.shop_id },
+      include: [{ model: User, attributes: ['id', 'username', 'email'] }]
+    });
+
+    return res.status(200).json({ message: 'Shop members retrieved', members });
+  } catch (error) {
+    console.error('Error retrieving shop members:', error);
+    return res.status(500).json({ message: 'Error retrieving shop members', error: error.message });
+  }
+};
 
