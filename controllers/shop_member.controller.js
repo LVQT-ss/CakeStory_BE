@@ -50,3 +50,37 @@ export const getMyShopMembers = async (req, res) => {
   }
 };
 
+// 3. Xóa shop member (chỉ admin cùng shop, không xóa chính mình)
+export const deleteShopMember = async (req, res) => {
+  try {
+    const currentUserId = req.userId;
+    const { userIdToRemove } = req.params;
+
+    const admin = await ShopMember.findOne({
+      where: { user_id: currentUserId, is_admin: true }
+    });
+
+    if (!admin) return res.status(403).json({ message: 'Only shop admins can remove members' });
+
+    if (parseInt(userIdToRemove) === currentUserId) {
+      return res.status(400).json({ message: 'You cannot remove yourself' });
+    }
+
+    const memberToDelete = await ShopMember.findOne({
+      where: { user_id: userIdToRemove, shop_id: admin.shop_id }
+    });
+
+    if (!memberToDelete) {
+      return res.status(404).json({ message: 'This user is not in your shop' });
+    }
+
+    await memberToDelete.destroy();
+
+    return res.status(200).json({ message: 'Shop member removed successfully' });
+  } catch (error) {
+    console.error('Error deleting shop member:', error);
+    return res.status(500).json({ message: 'Error deleting shop member', error: error.message });
+  }
+};
+
+
