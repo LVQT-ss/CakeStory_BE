@@ -39,16 +39,10 @@ export const createShop = async (req, res) => {
             joined_at: new Date()
         }, { transaction });
 
-        // Cập nhật user thành baker
-        await User.update(
-            { role: 'baker' },
-            { where: { id: user_id }, transaction }
-        );
-
         await transaction.commit();
 
         return res.status(201).json({
-            message: 'Shop and shop member created successfully. User is now a baker.',
+            message: 'Shop and shop member created successfully.',
             shop: createdShop
         });
     } catch (error) {
