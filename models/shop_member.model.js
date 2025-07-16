@@ -24,6 +24,10 @@ const ShopMember = sequelize.define('shop_member', {
     type: DataTypes.BOOLEAN,
     defaultValue: false
   },
+  is_active: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
   joined_at: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
