@@ -132,6 +132,16 @@ export const getMemoryPostById = async (req, res) => {
                     model: PostData,
                     as: 'media',
                     attributes: ['id', 'image_url', 'video_url']
+                },
+                {
+                    model: Like,
+                    attributes: [],
+                    required: false
+                },
+                {
+                    model: Comment,
+                    attributes: [],
+                    required: false
                 }
             ]
         });
@@ -142,9 +152,31 @@ export const getMemoryPostById = async (req, res) => {
             });
         }
 
+        // Count likes and comments
+        const [likeCount, commentCount] = await Promise.all([
+            Like.count({
+                where: {
+                    post_id: id,
+                    design_id: null
+                }
+            }),
+            Comment.count({
+                where: {
+                    post_id: id
+                }
+            })
+        ]);
+
+        // Add counts to the response
+        const postWithCounts = {
+            ...memoryPost.toJSON(),
+            total_likes: likeCount,
+            total_comments: commentCount
+        };
+
         res.status(200).json({
             message: 'Memory post retrieved successfully',
-            post: memoryPost
+            post: postWithCounts
         });
 
     } catch (error) {
