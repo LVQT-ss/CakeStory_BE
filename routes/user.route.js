@@ -1,5 +1,5 @@
 import express from 'express';
-import { updateProfile, viewProfile, followUser, unfollowUser, getAllUsers } from '../controllers/user.controller.js';
+import { updateProfile, viewProfile, followUser, unfollowUser, getAllUsers, getFollowers } from '../controllers/user.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
@@ -83,6 +83,63 @@ router.post('/follow/:id', verifyToken, followUser);
  *         description: Server error
  */
 router.delete('/follow/:id', verifyToken, unfollowUser);
+
+/**
+ * @swagger
+ * /api/users/{id}/followers:
+ *   get:
+ *     tags:
+ *       - User Profile
+ *     summary: Get user's followers
+ *     description: Retrieve all users who are following the specified user
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID of the user whose followers to retrieve
+ *     responses:
+ *       200:
+ *         description: Followers retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Followers retrieved successfully
+ *                 followers:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       username:
+ *                         type: string
+ *                         example: johndoe
+ *                       full_name:
+ *                         type: string
+ *                         example: John Doe
+ *                       avatar:
+ *                         type: string
+ *                         example: https://example.com/avatar.jpg
+ *                       role:
+ *                         type: string
+ *                         enum: [user, account_staff, complaint_handler, admin, baker]
+ *                         example: baker
+ *                 totalFollowers:
+ *                   type: integer
+ *                   example: 15
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Server error
+ */
+router.get('/:id/followers', getFollowers);
 
 /**
  * @swagger

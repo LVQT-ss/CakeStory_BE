@@ -100,6 +100,8 @@ function setupAssociations() {
   // Following - self-association
   User.hasMany(Following, { foreignKey: "follower_id", as: "following" });
   User.hasMany(Following, { foreignKey: "followed_id", as: "followers" });
+  Following.belongsTo(User, { foreignKey: "follower_id", as: "follower" });
+  Following.belongsTo(User, { foreignKey: "followed_id", as: "followed" });
 
   // Challenge ↔ ChallengePost (1-N)
   Challenge.hasMany(ChallengePost, { foreignKey: "challenge_id" });
