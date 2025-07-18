@@ -34,8 +34,6 @@ const router = express.Router();
  *               - longtitue
  *               - latitude
  *             properties:
- *               user_id:
- *                 type: integer
  *               business_name:
  *                 type: string
  *               business_address:

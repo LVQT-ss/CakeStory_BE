@@ -9,9 +9,11 @@ export const createShop = async (req, res) => {
     const transaction = await sequelize.transaction();
     try {
         const {
-            user_id, business_name, business_address, phone_number,
+            business_name, business_address, phone_number,
             specialty, bio, is_active, longtitue, latitude
         } = req.body;
+        
+        const user_id = req.userId;
 
         const existing = await BakerProfile.findOne({ where: { user_id } });
         if (existing) {
@@ -36,6 +38,7 @@ export const createShop = async (req, res) => {
             shop_id: createdShop.shop_id,
             user_id,
             is_admin: true,
+            is_active: true,
             joined_at: new Date()
         }, { transaction });
 
