@@ -1,10 +1,10 @@
 import Post from '../models/post.model.js';
+import User from '../models/User.model.js';
 import MemoryPost from '../models/memory_post.model.js';
 import PostData from '../models/post_data.model.js';
-import User from '../models/User.model.js';
-import sequelize from '../database/db.js';
 import Like from '../models/like.model.js';
 import Comment from '../models/comment.model.js';
+import sequelize from '../database/db.js';
 
 export const createMemoryPost = async (req, res) => {
     const transaction = await sequelize.transaction();
@@ -678,6 +678,114 @@ export const getAllMemoryPostsByUserId = async (req, res) => {
         console.error('Error retrieving user memory posts:', error);
         res.status(500).json({
             message: 'Error retrieving user memory posts',
+            error: error.message
+        });
+    }
+};
+
+export const getAllMemoryPostsPaginated = async (req, res) => {
+    try {
+        // Get page and limit from query parameters, with defaults
+        const page = parseInt(req.query.page) || 1;
+        const limit = Math.min(parseInt(req.query.limit) || 10, 10); // Max 10 items per page
+
+        // Validate page number
+        if (page < 1) {
+            return res.status(400).json({
+                message: "Page number must be greater than 0"
+            });
+        }
+
+        // Calculate offset
+        const offset = (page - 1) * limit;
+
+        // Get total count of memory posts
+        const totalPosts = await Post.count({
+            where: {
+                post_type: 'memory',
+                is_public: true
+            },
+            include: [{
+                model: MemoryPost,
+                required: true
+            }]
+        });
+
+        // Calculate total pages
+        const totalPages = Math.ceil(totalPosts / limit);
+
+        // Validate page number against total pages
+        if (page > totalPages && totalPosts > 0) {
+            return res.status(400).json({
+                message: `Page number ${page} exceeds total pages ${totalPages}`
+            });
+        }
+
+        // Get paginated memory posts
+        const posts = await Post.findAll({
+            where: {
+                post_type: 'memory',
+                is_public: true
+            },
+            attributes: ['id', 'title', 'description', 'post_type', 'is_public', 'created_at'],
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: ['id', 'username', 'full_name', 'avatar', 'role']
+                },
+                {
+                    model: MemoryPost,
+                    attributes: ['event_date', 'event_type'],
+                    required: true
+                },
+                {
+                    model: PostData,
+                    as: 'media',
+                    attributes: ['id', 'image_url', 'video_url'],
+                    required: false
+                }
+            ],
+            order: [['created_at', 'ASC']],
+            limit: limit,
+            offset: offset,
+            distinct: true
+        });
+
+        // Get likes and comments count for each post
+        const postsWithCounts = await Promise.all(posts.map(async (post) => {
+            const [likesCount, commentsCount] = await Promise.all([
+                Like.count({ where: { post_id: post.id } }),
+                Comment.count({ where: { post_id: post.id } })
+            ]);
+
+            return {
+                id: post.id,
+                title: post.title,
+                description: post.description,
+                post_type: post.post_type,
+                is_public: post.is_public,
+                created_at: post.created_at,
+                user: post.user,
+                MemoryPost: post.MemoryPost,
+                media: post.media,
+                total_likes: likesCount,
+                total_comments: commentsCount
+            };
+        }));
+
+        return res.status(200).json({
+            message: "Memory posts retrieved successfully",
+            currentPage: page,
+            totalPages: totalPages,
+            totalPosts: totalPosts,
+            posts: postsWithCounts
+        });
+
+    } catch (error) {
+        console.error('Error in getAllMemoryPostsPaginated:', error);
+        return res.status(500).json({
+            message: "Error retrieving memory posts",
             error: error.message
         });
     }

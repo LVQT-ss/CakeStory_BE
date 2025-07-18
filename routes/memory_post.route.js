@@ -1,5 +1,5 @@
 import express from 'express';
-import { createMemoryPost, getMemoryPostById, updateMemoryPostById, updateMemoryPostVisibility, deleteMemoryPostById, getAllMemoryPosts, getAllMemoryPostsByUserId } from '../controllers/memoryPost.controller.js';
+import { createMemoryPost, getMemoryPostById, updateMemoryPostById, updateMemoryPostVisibility, deleteMemoryPostById, getAllMemoryPosts, getAllMemoryPostsByUserId, getAllMemoryPostsPaginated } from '../controllers/memoryPost.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
@@ -160,6 +160,153 @@ router.post('/', verifyToken, createMemoryPost);
 
 /**
  * @swagger
+ * /api/memory-posts/paginatedPosts:
+ *   get:
+ *     tags:
+ *       - Memory Posts
+ *     summary: Get paginated public memory posts
+ *     description: Retrieve paginated public memory posts with their associated user information and media attachments
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: The page number (starting from 1)
+ *         example: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 10
+ *           default: 10
+ *         description: Number of items per page (max 10)
+ *         example: 10
+ *     responses:
+ *       200:
+ *         description: Memory posts retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Memory posts retrieved successfully"
+ *                 currentPage:
+ *                   type: integer
+ *                   example: 1
+ *                 totalPages:
+ *                   type: integer
+ *                   example: 5
+ *                 totalPosts:
+ *                   type: integer
+ *                   example: 48
+ *                 posts:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       title:
+ *                         type: string
+ *                         example: "My Amazing Birthday Cake"
+ *                       description:
+ *                         type: string
+ *                         example: "This is the beautiful cake I made for my birthday celebration."
+ *                       post_type:
+ *                         type: string
+ *                         example: "memory"
+ *                       is_public:
+ *                         type: boolean
+ *                         example: true
+ *                       created_at:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2024-03-20T10:00:00Z"
+ *                       user:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 1
+ *                           username:
+ *                             type: string
+ *                             example: "johndoe"
+ *                           full_name:
+ *                             type: string
+ *                             example: "John Doe"
+ *                           avatar:
+ *                             type: string
+ *                             example: "https://example.com/avatar.jpg"
+ *                           role:
+ *                             type: string
+ *                             enum: [user, account_staff, complaint_handler, admin, baker]
+ *                             example: baker
+ *                       MemoryPost:
+ *                         type: object
+ *                         properties:
+ *                           event_date:
+ *                             type: string
+ *                             format: date
+ *                             example: "2024-03-20"
+ *                           event_type:
+ *                             type: string
+ *                             example: "Birthday"
+ *                       media:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             id:
+ *                               type: integer
+ *                               example: 1
+ *                             image_url:
+ *                               type: string
+ *                               example: "https://example.com/cake-image.jpg"
+ *                             video_url:
+ *                               type: string
+ *                               example: null
+ *                       total_likes:
+ *                         type: integer
+ *                         example: 5
+ *                         description: "Total number of likes for this post"
+ *                       total_comments:
+ *                         type: integer
+ *                         example: 3
+ *                         description: "Total number of comments for this post"
+ *       400:
+ *         description: Bad Request - Invalid pagination parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Page number must be greater than 0"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Error retrieving memory posts"
+ *                 error:
+ *                   type: string
+ *                   example: "Database connection error"
+ */
+router.get('/paginatedPosts', getAllMemoryPostsPaginated);
+
+/**
+ * @swagger
  * /api/memory-posts/{id}:
  *   get:
  *     tags:
@@ -234,7 +381,6 @@ router.post('/', verifyToken, createMemoryPost);
  *                           type: string
  *                           enum: [user, account_staff, complaint_handler, admin, baker]
  *                           example: baker
- *                           description: "User's role in the system"
  *                         created_at:
  *                           type: string
  *                           format: date-time
