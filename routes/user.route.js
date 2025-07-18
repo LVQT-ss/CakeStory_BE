@@ -1,5 +1,5 @@
 import express from 'express';
-import { updateProfile, viewProfile, followUser, unfollowUser } from '../controllers/user.controller.js';
+import { updateProfile, viewProfile, followUser, unfollowUser, getAllUsers } from '../controllers/user.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
@@ -237,5 +237,72 @@ router.get('/:id', viewProfile);
  *         description: Server error
  */
 router.put('/:id', updateProfile);
+
+/**
+ * @swagger
+ * /api/users:
+ *   get:
+ *     tags:
+ *       - User Profile
+ *     summary: Get all active users
+ *     description: Retrieve all active users in the system (where is_active = true)
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Active users retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Users retrieved successfully
+ *                 users:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       username:
+ *                         type: string
+ *                         example: johndoe
+ *                       full_name:
+ *                         type: string
+ *                         example: John Doe
+ *                       address:
+ *                         type: string
+ *                         example: 123 Main Street, City, Country
+ *                       phone_number:
+ *                         type: string
+ *                         example: "+1234567890"
+ *                       avatar:
+ *                         type: string
+ *                         example: https://example.com/avatar.jpg
+ *                       role:
+ *                         type: string
+ *                         enum: [user, account_staff, complaint_handler, admin]
+ *                         example: user
+ *                       is_active:
+ *                         type: boolean
+ *                         example: true
+ *                       isPremium:
+ *                         type: boolean
+ *                         example: false
+ *                       created_at:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2024-03-20T10:00:00Z"
+ *                       updated_at:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2024-03-20T10:00:00Z"
+ *       500:
+ *         description: Server error
+ */
+router.get('/', getAllUsers);
 
 export default router;
