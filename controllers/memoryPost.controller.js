@@ -625,6 +625,16 @@ export const getAllMemoryPostsByUserId = async (req, res) => {
                             model: User,
                             as: 'user',
                             attributes: ['id', 'username', 'full_name', 'avatar', 'role']
+                        },
+                        {
+                            model: Like,
+                            attributes: [],
+                            required: false
+                        },
+                        {
+                            model: Comment,
+                            attributes: [],
+                            required: false
                         }
                     ]
                 }
@@ -633,9 +643,35 @@ export const getAllMemoryPostsByUserId = async (req, res) => {
             order: [[Post, 'created_at', 'DESC']]
         });
 
+        // Count likes and comments for each post
+        const postsWithLikesAndComments = await Promise.all(memoryPosts.map(async (memoryPost) => {
+            const [likeCount, commentCount] = await Promise.all([
+                Like.count({
+                    where: {
+                        post_id: memoryPost.Post.id,
+                        design_id: null
+                    }
+                }),
+                Comment.count({
+                    where: {
+                        post_id: memoryPost.Post.id
+                    }
+                })
+            ]);
+
+            return {
+                ...memoryPost.toJSON(),
+                Post: {
+                    ...memoryPost.Post.toJSON(),
+                    total_likes: likeCount,
+                    total_comments: commentCount
+                }
+            };
+        }));
+
         res.status(200).json({
             message: 'User memory posts retrieved successfully',
-            posts: memoryPosts
+            posts: postsWithLikesAndComments
         });
 
     } catch (error) {
