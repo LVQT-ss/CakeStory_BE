@@ -22,6 +22,7 @@ import Subscription from "./subscription.model.js";
 import AlbumPost from './album_post.model.js';
 import GroupPost from './group_post.model.js';
 import ShopMember from "./shop_member.model.js";
+import AiGeneratedImage from "./ai_generated_image.model.js";
 
 function setupAssociations() {
   // User ↔ Shop (1-1)
@@ -169,6 +170,10 @@ function setupAssociations() {
   // MarketplacePost ↔ Shop (N-1)
   MarketplacePost.belongsTo(Shop, { foreignKey: 'shop_id', as: 'shop' });
   Shop.hasMany(MarketplacePost, { foreignKey: 'shop_id', as: 'marketplacePosts' });
+
+
+  User.hasMany(AiGeneratedImage, { foreignKey: "user_id" });
+  AiGeneratedImage.belongsTo(User, { foreignKey: "user_id" });
 }
 
 export default setupAssociations;
