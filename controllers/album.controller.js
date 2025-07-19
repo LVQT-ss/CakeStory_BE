@@ -349,4 +349,114 @@ const updateAlbum = async (req, res) => {
     }
 }
 
-export { createAlbum, createAlbumPost, getAlbumById, getAlbumPostById, getAllAlbums, updateAlbum };
+const updateAlbumPost = async (req, res) => {
+    const transaction = await sequelize.transaction();
+
+    try {
+        const { id } = req.params;
+        const { title, description, is_public, media } = req.body;
+        const user_id = req.userId;
+
+        // Find album post and verify ownership
+        const albumPost = await AlbumPost.findOne({
+            where: { id },
+            include: [{
+                model: Post,
+                where: { user_id }
+            }]
+        });
+
+        if (!albumPost) {
+            await transaction.rollback();
+            return res.status(404).json({
+                message: 'Album post not found or access denied'
+            });
+        }
+
+        if (!title) {
+            await transaction.rollback();
+            return res.status(400).json({
+                message: 'Title is required'
+            });
+        }
+
+        // Update the main post
+        await Post.update({
+            title,
+            description: description || null,
+            is_public: is_public !== undefined ? is_public : true
+        }, {
+            where: { id: albumPost.post_id },
+            transaction
+        });
+
+        // Update album post
+        await albumPost.update({
+            name: title,
+            description: description || null
+        }, { transaction });
+
+        // Update media if provided
+        if (media && Array.isArray(media)) {
+            // Delete existing media
+            await PostData.destroy({
+                where: { post_id: albumPost.post_id },
+                transaction
+            });
+
+            // Add new media
+            if (media.length > 0) {
+                const mediaPromises = media.map(item => {
+                    if (item.image_url || item.video_url) {
+                        return PostData.create({
+                            post_id: albumPost.post_id,
+                            image_url: item.image_url || null,
+                            video_url: item.video_url || null
+                        }, { transaction });
+                    }
+                    return null;
+                }).filter(Boolean);
+
+                await Promise.all(mediaPromises);
+            }
+        }
+
+        await transaction.commit();
+
+        // Fetch updated album post with all relations
+        const updatedAlbumPost = await AlbumPost.findByPk(id, {
+            include: [
+                {
+                    model: Album,
+                    include: [{
+                        model: User,
+                        attributes: ['id', 'username', 'full_name', 'avatar', 'role']
+                    }]
+                },
+                {
+                    model: Post,
+                    include: [{
+                        model: PostData,
+                        as: 'media',
+                        attributes: ['id', 'image_url', 'video_url']
+                    }]
+                }
+            ]
+        });
+
+        res.status(200).json({
+            message: 'Album post updated successfully',
+            albumPost: updatedAlbumPost
+        });
+
+    } catch (error) {
+        await transaction.rollback();
+        console.error('Error updating album post:', error);
+        res.status(500).json({
+            message: 'Error updating album post',
+            error: error.message
+        });
+    }
+}
+
+export { createAlbum, createAlbumPost, getAlbumById, getAlbumPostById, getAllAlbums, updateAlbum, updateAlbumPost };

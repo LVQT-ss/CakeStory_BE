@@ -1,5 +1,5 @@
 import express from 'express';
-import { createAlbum, createAlbumPost, getAlbumById, getAlbumPostById, getAllAlbums, updateAlbum } from '../controllers/album.controller.js';
+import { createAlbum, createAlbumPost, getAlbumById, getAlbumPostById, getAllAlbums, updateAlbum, updateAlbumPost } from '../controllers/album.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
@@ -766,5 +766,163 @@ router.get('/posts/:id', getAlbumPostById);
  *                   example: "Database connection error"
  */
 router.put('/:id', verifyToken, updateAlbum);
+
+/**
+ * @swagger
+ * /api/albums/posts/{id}:
+ *   put:
+ *     tags:
+ *       - Albums
+ *     summary: Update an album post
+ *     description: Update an album post's details including post and media. Only the post owner can update it.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the album post to update
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 example: "Updated Post Title"
+ *               description:
+ *                 type: string
+ *                 example: "Updated post description"
+ *               is_public:
+ *                 type: boolean
+ *                 example: true
+ *               media:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     image_url:
+ *                       type: string
+ *                       example: "https://example.com/new-photo.jpg"
+ *                     video_url:
+ *                       type: string
+ *                       example: "https://example.com/new-video.mp4"
+ *     responses:
+ *       200:
+ *         description: Album post updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Album post updated successfully"
+ *                 albumPost:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     name:
+ *                       type: string
+ *                       example: "Updated Post Title"
+ *                     description:
+ *                       type: string
+ *                       example: "Updated post description"
+ *                     Album:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 1
+ *                         name:
+ *                           type: string
+ *                           example: "Album Name"
+ *                         user:
+ *                           type: object
+ *                           properties:
+ *                             id:
+ *                               type: integer
+ *                             username:
+ *                               type: string
+ *                             full_name:
+ *                               type: string
+ *                             avatar:
+ *                               type: string
+ *                             role:
+ *                               type: string
+ *                     Post:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 1
+ *                         title:
+ *                           type: string
+ *                           example: "Updated Post Title"
+ *                         description:
+ *                           type: string
+ *                           example: "Updated post description"
+ *                         is_public:
+ *                           type: boolean
+ *                           example: true
+ *                         media:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 1
+ *                               image_url:
+ *                                 type: string
+ *                                 example: "https://example.com/new-photo.jpg"
+ *                               video_url:
+ *                                 type: string
+ *                                 example: null
+ *       400:
+ *         description: Bad request - Missing required fields
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Title is required"
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       404:
+ *         description: Album post not found or access denied
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Album post not found or access denied"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Error updating album post"
+ *                 error:
+ *                   type: string
+ *                   example: "Database connection error"
+ */
+router.put('/posts/:id', verifyToken, updateAlbumPost);
 
 export default router;
