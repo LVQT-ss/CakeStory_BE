@@ -1,5 +1,5 @@
 import express from 'express';
-import { createAlbum, createAlbumPost, getAlbumById, getAlbumPostById, getAllAlbums } from '../controllers/album.controller.js';
+import { createAlbum, createAlbumPost, getAlbumById, getAlbumPostById, getAllAlbums, updateAlbum } from '../controllers/album.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
@@ -632,5 +632,139 @@ router.post('/posts', verifyToken, createAlbumPost);
  *                   example: "Database connection error"
  */
 router.get('/posts/:id', getAlbumPostById);
+
+/**
+ * @swagger
+ * /api/albums/{id}:
+ *   put:
+ *     tags:
+ *       - Albums
+ *     summary: Update an album
+ *     description: Update an album's details. Only the album owner can update it.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the album to update
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "Updated Album Name"
+ *               description:
+ *                 type: string
+ *                 example: "Updated album description"
+ *     responses:
+ *       200:
+ *         description: Album updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Album updated successfully"
+ *                 album:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     name:
+ *                       type: string
+ *                       example: "Updated Album Name"
+ *                     description:
+ *                       type: string
+ *                       example: "Updated album description"
+ *                     created_at:
+ *                       type: string
+ *                       format: date-time
+ *                     user:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                         username:
+ *                           type: string
+ *                         full_name:
+ *                           type: string
+ *                         avatar:
+ *                           type: string
+ *                         role:
+ *                           type: string
+ *                     album_posts:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                           name:
+ *                             type: string
+ *                           description:
+ *                             type: string
+ *                           post:
+ *                             type: object
+ *                             properties:
+ *                               media:
+ *                                 type: array
+ *                                 items:
+ *                                   type: object
+ *                                   properties:
+ *                                     id:
+ *                                       type: integer
+ *                                     image_url:
+ *                                       type: string
+ *                                     video_url:
+ *                                       type: string
+ *       400:
+ *         description: Bad request - Missing required fields
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Name is required"
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       404:
+ *         description: Album not found or access denied
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Album not found or access denied"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Error updating album"
+ *                 error:
+ *                   type: string
+ *                   example: "Database connection error"
+ */
+router.put('/:id', verifyToken, updateAlbum);
 
 export default router;

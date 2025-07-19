@@ -286,4 +286,67 @@ const getAllAlbums = async (req, res) => {
     }
 }
 
-export { createAlbum, createAlbumPost, getAlbumById, getAlbumPostById, getAllAlbums };
+const updateAlbum = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, description } = req.body;
+        const user_id = req.userId;
+
+        // Find album and verify ownership
+        const album = await Album.findOne({
+            where: { id, user_id }
+        });
+
+        if (!album) {
+            return res.status(404).json({
+                message: 'Album not found or access denied'
+            });
+        }
+
+        if (!name) {
+            return res.status(400).json({
+                message: 'Name is required'
+            });
+        }
+
+        // Update album
+        await album.update({
+            name,
+            description: description || null
+        });
+
+        // Get updated album with relations
+        const updatedAlbum = await Album.findByPk(id, {
+            include: [
+                {
+                    model: User,
+                    attributes: ['id', 'username', 'full_name', 'avatar', 'role']
+                },
+                {
+                    model: AlbumPost,
+                    include: [{
+                        model: Post,
+                        include: [{
+                            model: PostData,
+                            as: 'media',
+                            attributes: ['id', 'image_url', 'video_url']
+                        }]
+                    }]
+                }
+            ]
+        });
+
+        res.status(200).json({
+            message: 'Album updated successfully',
+            album: updatedAlbum
+        });
+    } catch (error) {
+        console.error('Error updating album:', error);
+        res.status(500).json({
+            message: 'Error updating album',
+            error: error.message
+        });
+    }
+}
+
+export { createAlbum, createAlbumPost, getAlbumById, getAlbumPostById, getAllAlbums, updateAlbum };
