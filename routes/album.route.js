@@ -1,5 +1,5 @@
 import express from 'express';
-import { createAlbum, createAlbumPost } from '../controllers/album.controller.js';
+import { createAlbum, createAlbumPost, getAlbumById } from '../controllers/album.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
@@ -42,6 +42,151 @@ const router = express.Router();
  *         description: Server error
  */
 router.post('/', verifyToken, createAlbum);
+
+/**
+ * @swagger
+ * /api/albums/{id}:
+ *   get:
+ *     tags:
+ *       - Albums
+ *     summary: Get an album by ID
+ *     description: Retrieve a specific album and its posts by ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the album to retrieve
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: Album retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Album retrieved successfully"
+ *                 album:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     name:
+ *                       type: string
+ *                       example: "My Birthday Album"
+ *                     description:
+ *                       type: string
+ *                       example: "Collection of photos from my birthday celebration"
+ *                     created_at:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2024-03-20T10:00:00Z"
+ *                     user:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 1
+ *                         username:
+ *                           type: string
+ *                           example: "johndoe"
+ *                         full_name:
+ *                           type: string
+ *                           example: "John Doe"
+ *                         avatar:
+ *                           type: string
+ *                           example: "https://example.com/avatar.jpg"
+ *                         role:
+ *                           type: string
+ *                           enum: [user, account_staff, complaint_handler, admin, baker]
+ *                           example: baker
+ *                         created_at:
+ *                           type: string
+ *                           format: date-time
+ *                           example: "2024-01-15T08:30:00Z"
+ *                         address:
+ *                           type: string
+ *                           example: "123 Baker Street, New York, NY"
+ *                         phone_number:
+ *                           type: string
+ *                           example: "+1-555-0123"
+ *                     album_posts:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 1
+ *                           name:
+ *                             type: string
+ *                             example: "Birthday Party Photos"
+ *                           description:
+ *                             type: string
+ *                             example: "Photos from the party"
+ *                           created_at:
+ *                             type: string
+ *                             format: date-time
+ *                             example: "2024-03-20T10:00:00Z"
+ *                           post:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 1
+ *                               title:
+ *                                 type: string
+ *                                 example: "Birthday Party Photos"
+ *                               description:
+ *                                 type: string
+ *                                 example: "Photos from the party"
+ *                               is_public:
+ *                                 type: boolean
+ *                                 example: true
+ *                               media:
+ *                                 type: array
+ *                                 items:
+ *                                   type: object
+ *                                   properties:
+ *                                     id:
+ *                                       type: integer
+ *                                       example: 1
+ *                                     image_url:
+ *                                       type: string
+ *                                       example: "https://example.com/photo1.jpg"
+ *                                     video_url:
+ *                                       type: string
+ *                                       example: null
+ *       404:
+ *         description: Album not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Album not found"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Error retrieving album"
+ *                 error:
+ *                   type: string
+ *                   example: "Database connection error"
+ */
+router.get('/:id', getAlbumById);
 
 /**
  * @swagger

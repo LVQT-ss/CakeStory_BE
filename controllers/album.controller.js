@@ -2,6 +2,7 @@ import Post from '../models/post.model.js';
 import Album from '../models/album.model.js';
 import AlbumPost from '../models/album_post.model.js';
 import PostData from '../models/post_data.model.js';
+import User from '../models/User.model.js';
 import sequelize from '../database/db.js';
 
 const createAlbum = async (req, res) => {
@@ -141,4 +142,51 @@ const createAlbumPost = async (req, res) => {
     }
 }
 
-export { createAlbum, createAlbumPost };
+const getAlbumById = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const album = await Album.findByPk(id, {
+            include: [
+                {
+                    model: User,
+                    attributes: ['id', 'username', 'full_name', 'avatar', 'role', 'created_at', 'address', 'phone_number']
+                },
+                {
+                    model: AlbumPost,
+                    include: [
+                        {
+                            model: Post,
+                            include: [
+                                {
+                                    model: PostData,
+                                    as: 'media',
+                                    attributes: ['id', 'image_url', 'video_url']
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        });
+
+        if (!album) {
+            return res.status(404).json({
+                message: 'Album not found'
+            });
+        }
+
+        res.status(200).json({
+            message: 'Album retrieved successfully',
+            album
+        });
+    } catch (error) {
+        console.error('Error retrieving album:', error);
+        res.status(500).json({
+            message: 'Error retrieving album',
+            error: error.message
+        });
+    }
+}
+
+export { createAlbum, createAlbumPost, getAlbumById };
