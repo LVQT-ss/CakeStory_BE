@@ -189,4 +189,49 @@ const getAlbumById = async (req, res) => {
     }
 }
 
-export { createAlbum, createAlbumPost, getAlbumById };
+const getAlbumPostById = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const albumPost = await AlbumPost.findByPk(id, {
+            include: [
+                {
+                    model: Album,
+                    include: [{
+                        model: User,
+                        attributes: ['id', 'username', 'full_name', 'avatar', 'role', 'created_at']
+                    }]
+                },
+                {
+                    model: Post,
+                    include: [
+                        {
+                            model: PostData,
+                            as: 'media',
+                            attributes: ['id', 'image_url', 'video_url']
+                        }
+                    ]
+                }
+            ]
+        });
+
+        if (!albumPost) {
+            return res.status(404).json({
+                message: 'Album post not found'
+            });
+        }
+
+        res.status(200).json({
+            message: 'Album post retrieved successfully',
+            albumPost
+        });
+    } catch (error) {
+        console.error('Error retrieving album post:', error);
+        res.status(500).json({
+            message: 'Error retrieving album post',
+            error: error.message
+        });
+    }
+}
+
+export { createAlbum, createAlbumPost, getAlbumById, getAlbumPostById };
