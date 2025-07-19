@@ -71,3 +71,25 @@ export const generateImage = async (req, res) => {
     }
 };
 
+export const getUserGeneratedImages = async (req, res) => {
+    try {
+        const userId = req.userId;
+
+        const images = await AiGeneratedImage.findAll({
+            where: { user_id: userId },
+            order: [['created_at', 'DESC']]
+        });
+
+        res.status(200).json({
+            message: 'Images retrieved successfully',
+            data: images
+        });
+
+    } catch (error) {
+        console.error('Error fetching images:', error);
+        res.status(500).json({
+            message: 'Error fetching images',
+            error: error.message
+        });
+    }
+};

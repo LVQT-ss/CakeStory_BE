@@ -1,7 +1,7 @@
 import express from 'express';
 import {
     generateImage,
-    // getUserGeneratedImages
+    getUserGeneratedImages
 } from '../controllers/ai_generate.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
@@ -55,6 +55,6 @@ router.post('/generate', verifyToken, generateImage);
  *       500:
  *         description: Server error
  */
-// router.get('/images', verifyToken, getUserGeneratedImages);
+router.get('/images', verifyToken, getUserGeneratedImages);
 
 export default router;
