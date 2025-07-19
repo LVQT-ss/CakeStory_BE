@@ -444,9 +444,24 @@ const updateAlbumPost = async (req, res) => {
             ]
         });
 
+        const albumPostResponse = {
+            id: updatedAlbumPost.id,
+            post_id: updatedAlbumPost.post_id,
+            album_id: updatedAlbumPost.album,
+            title: updatedAlbumPost.Post.title,
+            description: updatedAlbumPost.Post.description,
+            is_public: updatedAlbumPost.Post.is_public,
+            post_type: updatedAlbumPost.Post.post_type,
+            created_at: updatedAlbumPost.Post.created_at,
+            media: updatedAlbumPost.Post.media,
+            album: {
+                id: updatedAlbumPost.Album.id,
+
+            }
+        };
         res.status(200).json({
             message: 'Album post updated successfully',
-            albumPost: updatedAlbumPost
+            albumPost: albumPostResponse
         });
 
     } catch (error) {
@@ -458,5 +473,6 @@ const updateAlbumPost = async (req, res) => {
         });
     }
 }
+
 
 export { createAlbum, createAlbumPost, getAlbumById, getAlbumPostById, getAllAlbums, updateAlbum, updateAlbumPost };
