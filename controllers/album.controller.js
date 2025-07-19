@@ -234,4 +234,56 @@ const getAlbumPostById = async (req, res) => {
     }
 }
 
-export { createAlbum, createAlbumPost, getAlbumById, getAlbumPostById };
+const getAllAlbums = async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = (page - 1) * limit;
+
+        const { count, rows: albums } = await Album.findAndCountAll({
+            include: [
+                {
+                    model: User,
+                    attributes: ['id', 'username', 'full_name', 'avatar', 'role']
+                },
+                {
+                    model: AlbumPost,
+                    include: [{
+                        model: Post,
+                        include: [{
+                            model: PostData,
+                            as: 'media',
+                            attributes: ['id', 'image_url', 'video_url']
+                        }]
+                    }]
+                }
+            ],
+            order: [['created_at', 'DESC']],
+            limit,
+            offset
+        });
+
+        const totalPages = Math.ceil(count / limit);
+
+        res.status(200).json({
+            message: 'Albums retrieved successfully',
+            data: {
+                albums,
+                pagination: {
+                    total: count,
+                    totalPages,
+                    currentPage: page,
+                    hasMore: page < totalPages
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error retrieving albums:', error);
+        res.status(500).json({
+            message: 'Error retrieving albums',
+            error: error.message
+        });
+    }
+}
+
+export { createAlbum, createAlbumPost, getAlbumById, getAlbumPostById, getAllAlbums };

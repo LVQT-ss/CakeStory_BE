@@ -1,8 +1,142 @@
 import express from 'express';
-import { createAlbum, createAlbumPost, getAlbumById, getAlbumPostById } from '../controllers/album.controller.js';
+import { createAlbum, createAlbumPost, getAlbumById, getAlbumPostById, getAllAlbums } from '../controllers/album.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
+
+/**
+ * @swagger
+ * /api/albums:
+ *   get:
+ *     tags:
+ *       - Albums
+ *     summary: Get all albums
+ *     description: Retrieve a paginated list of all albums with their posts and media
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of items per page
+ *     responses:
+ *       200:
+ *         description: Albums retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Albums retrieved successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     albums:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 1
+ *                           name:
+ *                             type: string
+ *                             example: "My Birthday Album"
+ *                           description:
+ *                             type: string
+ *                             example: "Collection of birthday photos"
+ *                           created_at:
+ *                             type: string
+ *                             format: date-time
+ *                             example: "2024-03-20T10:00:00Z"
+ *                           user:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 1
+ *                               username:
+ *                                 type: string
+ *                                 example: "johndoe"
+ *                               full_name:
+ *                                 type: string
+ *                                 example: "John Doe"
+ *                               avatar:
+ *                                 type: string
+ *                                 example: "https://example.com/avatar.jpg"
+ *                               role:
+ *                                 type: string
+ *                                 enum: [user, account_staff, complaint_handler, admin, baker]
+ *                                 example: user
+ *                           album_posts:
+ *                             type: array
+ *                             items:
+ *                               type: object
+ *                               properties:
+ *                                 id:
+ *                                   type: integer
+ *                                   example: 1
+ *                                 name:
+ *                                   type: string
+ *                                   example: "Birthday Party Photos"
+ *                                 description:
+ *                                   type: string
+ *                                   example: "Photos from the party"
+ *                                 post:
+ *                                   type: object
+ *                                   properties:
+ *                                     media:
+ *                                       type: array
+ *                                       items:
+ *                                         type: object
+ *                                         properties:
+ *                                           id:
+ *                                             type: integer
+ *                                             example: 1
+ *                                           image_url:
+ *                                             type: string
+ *                                             example: "https://example.com/photo1.jpg"
+ *                                           video_url:
+ *                                             type: string
+ *                                             example: null
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         total:
+ *                           type: integer
+ *                           example: 50
+ *                         totalPages:
+ *                           type: integer
+ *                           example: 5
+ *                         currentPage:
+ *                           type: integer
+ *                           example: 1
+ *                         hasMore:
+ *                           type: boolean
+ *                           example: true
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Error retrieving albums"
+ *                 error:
+ *                   type: string
+ *                   example: "Database connection error"
+ */
+router.get('/', getAllAlbums);
 
 /**
  * @swagger
