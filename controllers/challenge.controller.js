@@ -104,3 +104,23 @@ export const updateChallenge = async (req, res) => {
   }
 };
 
+// Delete Challenge (Soft delete)
+export const deleteChallenge = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const challenge = await Challenge.findByPk(id);
+    if (!challenge || challenge.status === 'unAvailable') {
+      return res.status(404).json({ message: 'Challenge not found' });
+    }
+
+    await Challenge.update(
+      { status: 'unAvailable' },
+      { where: { id } }
+    );
+
+    res.status(200).json({ message: 'Challenge deleted (soft)' });
+  } catch (err) {
+    res.status(500).json({ message: 'Error deleting challenge', error: err.message });
+  }
+};
