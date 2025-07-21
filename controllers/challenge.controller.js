@@ -46,3 +46,19 @@ export const createChallenge = async (req, res) => {
   }
 };
 
+// Get All Challenges
+export const getAllChallenges = async (req, res) => {
+  try {
+    const challenges = await Challenge.findAll({
+      where: {
+        status: {
+          [Op.not]: 'unAvailable'
+        }
+      }
+    });
+    res.status(200).json({ challenges });
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching challenges', error: err.message });
+  }
+};
+
