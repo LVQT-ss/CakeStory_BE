@@ -14,6 +14,7 @@ import marketplaceRoutes from './routes/marketplace_post.route.js';
 import likeRoutes from './routes/like.route.js';
 import commentRoutes from './routes/comment.route.js';
 import shopMemberRoutes from './routes/shop_member.route.js';
+import ingredient from './routes/ingredient.route.js';
 setupAssociations();
 dotenv.config();
 const app = express();
@@ -34,6 +35,7 @@ app.use('/api/shops', shopRoutes);
 app.use('/api/likes', likeRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/shop-members', shopMemberRoutes);
+app.use('/api/ingredients', ingredient);
 // Initialize and synchronize the database
 initDB().then(() => {
     app.listen(port, () => {
