@@ -22,7 +22,7 @@ import Subscription from "./subscription.model.js";
 import AlbumPost from './album_post.model.js';
 import GroupPost from './group_post.model.js';
 import ShopMember from "./shop_member.model.js";
-
+import Ingredient from './Ingredient.model.js';
 function setupAssociations() {
   // User ↔ Shop (1-1)
   User.hasOne(Shop, {
@@ -167,6 +167,16 @@ function setupAssociations() {
   // MarketplacePost ↔ Shop (N-1)
   MarketplacePost.belongsTo(Shop, { foreignKey: 'shop_id', as: 'shop' });
   Shop.hasMany(MarketplacePost, { foreignKey: 'shop_id', as: 'marketplacePosts' });
+  //markerplace - ingredient (1 - N)
+  MarketplacePost.hasMany(Ingredient, {
+    foreignKey: 'marketplace_post_id',
+    as: 'ingredients'
+  });
+  
+  Ingredient.belongsTo(MarketplacePost, {
+    foreignKey: 'marketplace_post_id',
+    as: 'marketplace_post'
+  });
 }
 
 export default setupAssociations;
