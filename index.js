@@ -15,6 +15,9 @@ import marketplaceRoutes from './routes/marketplace_post.route.js';
 import likeRoutes from './routes/like.route.js';
 import commentRoutes from './routes/comment.route.js';
 import shopMemberRoutes from './routes/shop_member.route.js';
+import ingredient from './routes/ingredient.route.js';
+import challengeRoutes from './routes/challenge.route.js';
+
 import aiGenerateRoutes from './routes/ai_generate.route.js';
 
 setupAssociations();
@@ -39,6 +42,8 @@ app.use('/api/marketplace', marketplaceRoutes);
 app.use('/api/likes', likeRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/shop-members', shopMemberRoutes);
+app.use('/api/ingredients', ingredient);
+app.use('/api/challenges', challengeRoutes);
 app.use('/api/ai', aiGenerateRoutes);
 
 // Initialize and synchronize the database

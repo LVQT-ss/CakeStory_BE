@@ -1,6 +1,6 @@
 import express from 'express';
 import { getAllUsers, getUserById, deleteUser, getAllUsersByPremium } from '../controllers/admin.controller.js';
-import { verifyToken } from '../middleware/verifyUser.js';
+import { verifyAdmin, verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
 
@@ -61,7 +61,7 @@ const router = express.Router();
  *       500:
  *         description: Server error
  */
-router.get('/users', verifyToken, getAllUsers);
+router.get('/users', verifyToken, verifyAdmin , getAllUsers);
 
 /**
  * @swagger
@@ -103,7 +103,7 @@ router.get('/users', verifyToken, getAllUsers);
  *       500:
  *         description: Server error
  */
-router.get('/users/premium', verifyToken, getAllUsersByPremium);
+router.get('/users/premium', verifyToken, verifyAdmin, getAllUsersByPremium);
 
 /**
  * @swagger
@@ -169,7 +169,7 @@ router.get('/users/premium', verifyToken, getAllUsersByPremium);
  *       500:
  *         description: Server error
  */
-router.get('/users/:id', verifyToken, getUserById);
+router.get('/users/:id', verifyToken, verifyAdmin ,getUserById);
 
 /**
  * @swagger
@@ -219,6 +219,6 @@ router.get('/users/:id', verifyToken, getUserById);
  *       500:
  *         description: Server error
  */
-router.delete('/users/:id', verifyToken, deleteUser);
+router.delete('/users/:id', verifyToken, verifyAdmin,deleteUser);
 
 export default router;
