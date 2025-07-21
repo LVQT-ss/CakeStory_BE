@@ -23,6 +23,9 @@ import AlbumPost from './album_post.model.js';
 import GroupPost from './group_post.model.js';
 import ShopMember from "./shop_member.model.js";
 import Ingredient from './Ingredient.model.js';
+import AiGeneratedImage from "./ai_generated_image.model.js";
+import Wallet from "./wallet.model.js";
+
 function setupAssociations() {
   // User ↔ Shop (1-1)
   User.hasOne(Shop, {
@@ -100,6 +103,8 @@ function setupAssociations() {
   // Following - self-association
   User.hasMany(Following, { foreignKey: "follower_id", as: "following" });
   User.hasMany(Following, { foreignKey: "followed_id", as: "followers" });
+  Following.belongsTo(User, { foreignKey: "follower_id", as: "follower" });
+  Following.belongsTo(User, { foreignKey: "followed_id", as: "followed" });
 
   // Challenge ↔ ChallengePost (1-N)
   Challenge.hasMany(ChallengePost, { foreignKey: "challenge_id" });
@@ -167,6 +172,7 @@ function setupAssociations() {
   // MarketplacePost ↔ Shop (N-1)
   MarketplacePost.belongsTo(Shop, { foreignKey: 'shop_id', as: 'shop' });
   Shop.hasMany(MarketplacePost, { foreignKey: 'shop_id', as: 'marketplacePosts' });
+
   //markerplace - ingredient (1 - N)
   MarketplacePost.hasMany(Ingredient, {
     foreignKey: 'marketplace_post_id',
@@ -177,6 +183,16 @@ function setupAssociations() {
     foreignKey: 'marketplace_post_id',
     as: 'marketplace_post'
   });
+
+
+
+  User.hasMany(AiGeneratedImage, { foreignKey: "user_id" });
+  AiGeneratedImage.belongsTo(User, { foreignKey: "user_id" });
+
+  // User ↔ Wallet (1-1)
+  User.hasOne(Wallet, { foreignKey: "user_id" });
+  Wallet.belongsTo(User, { foreignKey: "user_id" });
+
 }
 
 export default setupAssociations;

@@ -9,6 +9,7 @@ import authRoutes from './routes/auth.route.js';
 import userRoutes from './routes/user.route.js';
 import adminRoutes from './routes/admin.route.js';
 import memoryPostRoutes from './routes/memory_post.route.js';
+import albumRoutes from './routes/album.route.js';
 import shopRoutes from './routes/shop.route.js';
 import marketplaceRoutes from './routes/marketplace_post.route.js';
 import likeRoutes from './routes/like.route.js';
@@ -16,28 +17,35 @@ import commentRoutes from './routes/comment.route.js';
 import shopMemberRoutes from './routes/shop_member.route.js';
 import ingredient from './routes/ingredient.route.js';
 import challengeRoutes from './routes/challenge.route.js';
+
+import aiGenerateRoutes from './routes/ai_generate.route.js';
+
 setupAssociations();
 dotenv.config();
+
 const app = express();
 const port = process.env.PORT || 3000;
 
 // Middleware
+app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors());
 
-// Register the routes
+// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/memory-posts', memoryPostRoutes);
-app.use('/api/marketplace-posts', marketplaceRoutes);
+app.use('/api/albums', albumRoutes);
 app.use('/api/shops', shopRoutes);
+app.use('/api/marketplace', marketplaceRoutes);
 app.use('/api/likes', likeRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/shop-members', shopMemberRoutes);
 app.use('/api/ingredients', ingredient);
 app.use('/api/challenges', challengeRoutes);
+app.use('/api/ai', aiGenerateRoutes);
+
 // Initialize and synchronize the database
 initDB().then(() => {
     app.listen(port, () => {

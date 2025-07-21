@@ -236,3 +236,83 @@ export const getAllUsers = async (req, res) => {
         });
     }
 };
+
+export const getFollowing = async (req, res) => {
+    try {
+        const userId = req.params.id;
+
+        // Check if user exists
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({
+                message: 'User not found'
+            });
+        }
+
+        // Get all users that this user follows
+        const following = await Following.findAll({
+            where: {
+                follower_id: userId
+            },
+            include: [{
+                model: User,
+                as: 'followed',
+                attributes: ['id', 'username', 'full_name', 'avatar', 'role']
+            }],
+            order: [['created_at', 'DESC']]
+        });
+
+        return res.status(200).json({
+            message: 'Following list retrieved successfully',
+            following: following.map(follow => follow.followed),
+            totalFollowing: following.length
+        });
+
+    } catch (error) {
+        console.error('Error getting following list:', error);
+        return res.status(500).json({
+            message: 'Error getting following list',
+            error: error.message
+        });
+    }
+};
+
+export const getFollowers = async (req, res) => {
+    try {
+        const userId = req.params.id;
+
+        // Check if user exists
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({
+                message: 'User not found'
+            });
+        }
+
+        // Get all followers
+        const followers = await Following.findAll({
+            where: {
+                followed_id: userId
+            },
+            include: [{
+                model: User,
+                as: 'follower',
+                attributes: ['id', 'username', 'full_name', 'avatar', 'role']
+            }],
+            order: [['created_at', 'DESC']]
+        });
+
+        return res.status(200).json({
+            message: 'Followers retrieved successfully',
+            followers: followers.map(follow => follow.follower),
+            totalFollowers: followers.length
+        });
+
+    } catch (error) {
+        console.error('Error getting followers:', error);
+        return res.status(500).json({
+            message: 'Error getting followers',
+            error: error.message
+        });
+    }
+};

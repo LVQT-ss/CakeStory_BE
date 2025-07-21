@@ -6,7 +6,7 @@ const Post = sequelize.define('Post', {
   title: { type: DataTypes.STRING(255), allowNull: false },
   description: { type: DataTypes.TEXT },
   post_type: {
-    type: DataTypes.ENUM('memory', 'marketplace', 'group', 'challenge'),
+    type: DataTypes.ENUM('memory', 'marketplace', 'group', 'challenge', 'album'),
     allowNull: false
   },
   created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
