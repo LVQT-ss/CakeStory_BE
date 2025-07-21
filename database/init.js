@@ -25,6 +25,7 @@ import Review from '../models/review.model.js';
 import Transaction from '../models/transaction.model.js';
 import Subscription from '../models/subscription.model.js';
 import AiGeneratedImage from '../models/ai_generated_image.model.js';
+import Wallet from '../models/wallet.model.js';
 const initDB = async () => {
     try {
         await sequelize.authenticate();
