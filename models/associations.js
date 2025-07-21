@@ -24,6 +24,7 @@ import GroupPost from './group_post.model.js';
 import ShopMember from "./shop_member.model.js";
 import AiGeneratedImage from "./ai_generated_image.model.js";
 import Wallet from "./wallet.model.js";
+import DepositRecords from "./deposit_records.model.js";
 
 function setupAssociations() {
   // User ↔ Shop (1-1)
@@ -179,6 +180,10 @@ function setupAssociations() {
   // User ↔ Wallet (1-1)
   User.hasOne(Wallet, { foreignKey: "user_id" });
   Wallet.belongsTo(User, { foreignKey: "user_id" });
+
+  // User ↔ DepositRecords (1-1)
+  User.hasOne(DepositRecords, { foreignKey: "user_id" });
+  DepositRecords.belongsTo(User, { foreignKey: "user_id" });
 }
 
 export default setupAssociations;
