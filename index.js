@@ -19,7 +19,7 @@ import ingredient from './routes/ingredient.route.js';
 import challengeRoutes from './routes/challenge.route.js';
 
 import aiGenerateRoutes from './routes/ai_generate.route.js';
-
+import walletRoutes from './routes/wallet.route.js';
 setupAssociations();
 dotenv.config();
 
@@ -45,7 +45,7 @@ app.use('/api/shop-members', shopMemberRoutes);
 app.use('/api/ingredients', ingredient);
 app.use('/api/challenges', challengeRoutes);
 app.use('/api/ai', aiGenerateRoutes);
-
+app.use('/api/wallet', walletRoutes);
 // Initialize and synchronize the database
 initDB().then(() => {
     app.listen(port, () => {
