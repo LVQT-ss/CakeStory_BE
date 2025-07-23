@@ -201,7 +201,7 @@ export const payOSWebhook = async (req, res) => {
             await DepositRecords.update(
                 { status: 'cancelled' },
                 {
-                    where: { deposit_code: orderCode },
+                    where: { id: orderCode }, // ← FIXED: Use id instead of deposit_code
                     transaction: dbTransaction
                 }
             );
@@ -212,9 +212,9 @@ export const payOSWebhook = async (req, res) => {
             });
         }
 
-        // Find deposit record
+        // Find deposit record by ID (not deposit_code)
         const depositRecord = await DepositRecords.findOne({
-            where: { deposit_code: orderCode },
+            where: { id: orderCode }, // ← FIXED: Use id instead of deposit_code
             transaction: dbTransaction
         });
 
