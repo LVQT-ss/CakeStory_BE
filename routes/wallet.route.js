@@ -69,7 +69,7 @@ router.post('/deposit', verifyToken, walletDeposit);
 
 /**
  * @swagger
- * /api/transactions/payos-webhook:
+ * /api/wallet/payos-webhook:
  *   post:
  *     tags:
  *       - PayOS Payment System
