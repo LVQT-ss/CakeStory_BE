@@ -139,3 +139,137 @@ export const walletDeposit = async (req, res) => {
     }
 };
 
+export const payOSWebhook = async (req, res) => {
+    const dbTransaction = await sequelize.transaction();
+
+    try {
+        console.log('PayOS Webhook received:', {
+            method: req.method,
+            headers: req.headers,
+            body: req.body
+        });
+
+        // Handle GET request (for webhook testing)
+        if (req.method === 'GET') {
+            return res.status(200).json({
+                success: true,
+                message: "PayOS Webhook endpoint is active"
+            });
+        }
+
+        const webhookData = req.body;
+
+        // Handle empty webhook (PayOS validation test)
+        if (!webhookData || Object.keys(webhookData).length === 0) {
+            console.log('Empty webhook - PayOS validation test');
+            return res.status(200).json({
+                success: true,
+                message: 'Webhook received successfully'
+            });
+        }
+
+        // Verify webhook signature
+        const signature = req.headers['x-payos-signature'];
+        if (!signature) {
+            throw new Error('Missing PayOS signature');
+        }
+
+        const isValidSignature = payOS.verifyPaymentWebhookSignature(
+            signature,
+            webhookData
+        );
+
+        if (!isValidSignature) {
+            console.error('Invalid webhook signature');
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid signature'
+            });
+        }
+
+        // Extract payment information
+        const { data } = webhookData;
+        if (!data || !data.orderCode) {
+            throw new Error('Invalid webhook data format');
+        }
+
+        const { orderCode, amount, status } = data;
+        const isSuccessful = status === 'PAID';
+
+        if (!isSuccessful) {
+            console.log(`Payment not successful for order ${orderCode}`);
+            await DepositRecords.update(
+                { status: 'cancelled' },
+                {
+                    where: { deposit_code: orderCode },
+                    transaction: dbTransaction
+                }
+            );
+            await dbTransaction.commit();
+            return res.status(200).json({
+                success: true,
+                message: 'Payment status updated to cancelled'
+            });
+        }
+
+        // Find deposit record
+        const depositRecord = await DepositRecords.findOne({
+            where: { deposit_code: orderCode },
+            transaction: dbTransaction
+        });
+
+        if (!depositRecord) {
+            throw new Error(`Deposit record not found for order ${orderCode}`);
+        }
+
+        if (depositRecord.status === 'completed') {
+            console.log(`Deposit ${orderCode} already processed`);
+            await dbTransaction.commit();
+            return res.status(200).json({
+                success: true,
+                message: 'Payment already processed'
+            });
+        }
+
+        // Update wallet balance
+        const wallet = await Wallet.findOne({
+            where: { user_id: depositRecord.user_id },
+            transaction: dbTransaction
+        });
+
+        if (!wallet) {
+            throw new Error(`Wallet not found for user ${depositRecord.user_id}`);
+        }
+
+        // Verify amount matches
+        if (Number(depositRecord.amount) !== Number(amount)) {
+            throw new Error(`Amount mismatch: expected ${depositRecord.amount}, got ${amount}`);
+        }
+
+        // Update wallet balance and deposit record
+        await wallet.update({
+            balance: sequelize.literal(`balance + ${amount}`),
+            updated_at: new Date()
+        }, { transaction: dbTransaction });
+
+        await depositRecord.update({
+            status: 'completed'
+        }, { transaction: dbTransaction });
+
+        await dbTransaction.commit();
+
+        console.log(`Successfully processed deposit ${orderCode} for amount ${amount}`);
+        return res.status(200).json({
+            success: true,
+            message: 'Payment processed successfully'
+        });
+
+    } catch (error) {
+        await dbTransaction.rollback();
+        console.error('Webhook error:', error);
+        return res.status(500).json({
+            success: false,
+            message: error.message || 'Failed to process webhook'
+        });
+    }
+};
