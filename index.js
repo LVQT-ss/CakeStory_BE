@@ -38,7 +38,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/memory-posts', memoryPostRoutes);
 app.use('/api/albums', albumRoutes);
 app.use('/api/shops', shopRoutes);
-app.use('/api/marketplace', marketplaceRoutes);
+app.use('/api/marketplace-posts', marketplaceRoutes);
 app.use('/api/likes', likeRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/shop-members', shopMemberRoutes);

@@ -105,6 +105,7 @@ export const getAllMarketplacePosts = async (req, res) => {
             include: [
                 {
                     model: Post,
+                    as: 'post',
                     attributes: ['id', 'title', 'description', 'is_public', 'created_at'],
                     include: [{ model: PostData, as: 'media' }]
                 },
@@ -131,6 +132,7 @@ export const getMarketplacePostById = async (req, res) => {
             include: [
                 {
                     model: Post,
+                    as: 'post',
                     include: [{ model: PostData, as: 'media' }]
                 },
                 {
