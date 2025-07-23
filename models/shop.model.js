@@ -1,3 +1,4 @@
+// models/shop.model.js
 import { DataTypes } from 'sequelize';
 import sequelize from '../database/db.js';
 
@@ -28,7 +29,11 @@ const Shop = sequelize.define('shop', {
     defaultValue: true
   },
   longitude: DataTypes.FLOAT,
-  latitude: DataTypes.FLOAT
+  latitude: DataTypes.FLOAT,
+  business_hours: DataTypes.TEXT,
+  delivery_area: DataTypes.TEXT,
+  background_image: DataTypes.STRING(255),
+  avatar_image: DataTypes.STRING(255)
 }, {
   tableName: 'shop',
   timestamps: false

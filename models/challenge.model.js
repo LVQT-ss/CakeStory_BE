@@ -10,7 +10,7 @@ const Challenge = sequelize.define('Challenge', {
   winning_challenge_id: { type: DataTypes.INTEGER },
   prize_description: { type: DataTypes.TEXT },
   status: {
-    type: DataTypes.ENUM("notStart", "onGoing", "ended")
+    type: DataTypes.ENUM("notStart", "onGoing", "ended", "unAvailable")
   },
   created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }
 }, {

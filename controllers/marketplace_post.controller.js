@@ -105,6 +105,7 @@ export const getAllMarketplacePosts = async (req, res) => {
             include: [
                 {
                     model: Post,
+                    as: 'post',
                     attributes: ['id', 'title', 'description', 'is_public', 'created_at'],
                     include: [{ model: PostData, as: 'media' }]
                 },
@@ -131,6 +132,7 @@ export const getMarketplacePostById = async (req, res) => {
             include: [
                 {
                     model: Post,
+                    as: 'post',
                     include: [{ model: PostData, as: 'media' }]
                 },
                 {
@@ -152,18 +154,54 @@ export const getMarketplacePostById = async (req, res) => {
 
 // Cập nhật marketplace post
 export const updateMarketplacePost = async (req, res) => {
+    const transaction = await sequelize.transaction();
     try {
         const { id } = req.params;
-        const updates = req.body;
+        const {
+            title, description, is_public,
+            price, available, expiry_date
+        } = req.body;
 
-        const post = await MarketplacePost.findByPk(id);
-        if (!post) return res.status(404).json({ message: 'Marketplace post not found' });
+        // Tìm marketplace post kèm post liên quan
+        const marketplacePost = await MarketplacePost.findByPk(id, {
+            include: [{ model: Post, as: 'post' }],
+            transaction
+        });
 
-        await post.update(updates);
-        return res.status(200).json({ message: 'Marketplace post updated', post });
+        if (!marketplacePost) {
+            await transaction.rollback();
+            return res.status(404).json({ message: 'Marketplace post not found' });
+        }
+
+        // Cập nhật MarketplacePost
+        await marketplacePost.update({
+            price,
+            available,
+            expiry_date: expiry_date ? new Date(expiry_date) : null
+        }, { transaction });
+
+        // Cập nhật Post liên quan nếu có thay đổi
+        if (marketplacePost.post) {
+            await marketplacePost.post.update({
+                title,
+                description,
+                is_public
+            }, { transaction });
+        }
+
+        await transaction.commit();
+
+        return res.status(200).json({
+            message: 'Marketplace post and post updated successfully',
+            post: marketplacePost
+        });
     } catch (error) {
-        console.error('Error updating marketplace post:', error);
-        return res.status(500).json({ message: 'Error updating marketplace post', error: error.message });
+        if (!transaction.finished) await transaction.rollback();
+        console.error('Error updating marketplace post and post:', error);
+        return res.status(500).json({
+            message: 'Error updating marketplace post and post',
+            error: error.message
+        });
     }
 };
 

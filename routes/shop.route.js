@@ -1,3 +1,4 @@
+// routes/shop.route.js
 import express from 'express';
 import {
   createShop,
@@ -29,7 +30,6 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             required:
- *               - user_id
  *               - business_name
  *               - longtitue
  *               - latitude
@@ -50,6 +50,14 @@ const router = express.Router();
  *                 type: number
  *               latitude:
  *                 type: number
+ *               business_hours:
+ *                 type: string
+ *               delivery_area:
+ *                 type: string
+ *               background_image:
+ *                 type: string
+ *               avatar_image:
+ *                 type: string
  *     responses:
  *       201:
  *         description: Shop created successfully
@@ -76,7 +84,6 @@ router.post('/', verifyToken, createShop);
  *       500:
  *         description: Server error
  */
-
 router.get('/all', verifyToken, getAllShopsInactive);
 
 /**
@@ -183,6 +190,14 @@ router.get('/:userId', verifyToken, getShopByUserId);
  *                 type: number
  *               latitude:
  *                 type: number
+ *               business_hours:
+ *                 type: string
+ *               delivery_area:
+ *                 type: string
+ *               background_image:
+ *                 type: string
+ *               avatar_image:
+ *                 type: string
  *     responses:
  *       200:
  *         description: Shop updated
@@ -214,7 +229,5 @@ router.put('/:userId', verifyToken, updateShop);
  *         description: Shop not found
  */
 router.delete('/:userId', verifyToken, deleteShop);
-
-
 
 export default router;

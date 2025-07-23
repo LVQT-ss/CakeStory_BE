@@ -1,18 +1,19 @@
+// controllers/shop.controller.js
 import sequelize from '../database/db.js';
 import BakerProfile from '../models/shop.model.js';
 import User from '../models/User.model.js';
 import ShopMember from '../models/shop_member.model.js';
 import { Op } from 'sequelize';
 
-// Tạo shop mới (1 user chỉ được 1 shop)
 export const createShop = async (req, res) => {
     const transaction = await sequelize.transaction();
     try {
         const {
             business_name, business_address, phone_number,
-            specialty, bio, is_active, longtitue, latitude
+            specialty, bio, is_active, longtitue, latitude,
+            business_hours, delivery_area, background_image, avatar_image
         } = req.body;
-        
+
         const user_id = req.userId;
 
         const existing = await BakerProfile.findOne({ where: { user_id } });
@@ -20,7 +21,6 @@ export const createShop = async (req, res) => {
             return res.status(400).json({ message: 'Shop already exists for this user' });
         }
 
-        // Tạo shop mới
         const createdShop = await BakerProfile.create({
             user_id,
             business_name,
@@ -29,11 +29,14 @@ export const createShop = async (req, res) => {
             specialty,
             bio,
             is_active,
-            longitude: longtitue, // fix typo nếu cần
-            latitude
+            longitude: longtitue,
+            latitude,
+            business_hours,
+            delivery_area,
+            background_image,
+            avatar_image
         }, { transaction });
 
-        // Tạo shop member (chủ shop)
         await ShopMember.create({
             shop_id: createdShop.shop_id,
             user_id,
@@ -55,7 +58,6 @@ export const createShop = async (req, res) => {
     }
 };
 
-// Lấy tất cả shop đang hoạt động
 export const getAllShops = async (req, res) => {
     try {
         const shops = await BakerProfile.findAll({
@@ -69,11 +71,9 @@ export const getAllShops = async (req, res) => {
     }
 };
 
-// Lấy shop theo tên
 export const getShopByName = async (req, res) => {
     try {
         const { name } = req.params;
-
         const shops = await BakerProfile.findAll({
             where: {
                 business_name: { [Op.iLike]: `%${name}%` },
@@ -81,11 +81,9 @@ export const getShopByName = async (req, res) => {
             },
             include: [{ model: User, as: 'user', attributes: ['id', 'username', 'email'] }]
         });
-
         if (shops.length === 0) {
             return res.status(404).json({ message: 'No active shops found matching name' });
         }
-
         return res.status(200).json({ message: 'Shops retrieved by name successfully', shops });
     } catch (error) {
         console.error('Error retrieving shop by name:', error);
@@ -93,20 +91,16 @@ export const getShopByName = async (req, res) => {
     }
 };
 
-// Lấy shop theo userId
 export const getShopByUserId = async (req, res) => {
     try {
         const { userId } = req.params;
-
         const shop = await BakerProfile.findOne({
             where: { user_id: userId, is_active: true },
             include: [{ model: User, as: 'user', attributes: ['id', 'username', 'email'] }]
         });
-
         if (!shop) {
             return res.status(404).json({ message: 'Active shop not found for this user' });
         }
-
         return res.status(200).json({ message: 'Shop retrieved successfully', shop });
     } catch (error) {
         console.error('Error retrieving shop:', error);
@@ -114,7 +108,6 @@ export const getShopByUserId = async (req, res) => {
     }
 };
 
-// Cập nhật thông tin shop
 export const updateShop = async (req, res) => {
     try {
         const { userId } = req.params;
@@ -133,19 +126,15 @@ export const updateShop = async (req, res) => {
     }
 };
 
-// "Xóa" shop bằng cách đặt is_active = false
 export const deleteShop = async (req, res) => {
     try {
         const { userId } = req.params;
-
         const shop = await BakerProfile.findOne({ where: { user_id: userId, is_active: true } });
         if (!shop) {
             return res.status(404).json({ message: 'Active shop not found' });
         }
-
         shop.is_active = false;
         await shop.save();
-
         return res.status(200).json({
             message: 'Shop deactivated successfully',
             shop: {
@@ -160,17 +149,11 @@ export const deleteShop = async (req, res) => {
     }
 };
 
-// Lấy tất cả shop, bao gồm cả shop đã bị vô hiệu hóa (is_active = false)
 export const getAllShopsInactive = async (req, res) => {
     try {
         const shops = await BakerProfile.findAll({
-            include: [{
-                model: User,
-                as: 'user',
-                attributes: ['id', 'username', 'email']
-            }]
+            include: [{ model: User, as: 'user', attributes: ['id', 'username', 'email'] }]
         });
-
         return res.status(200).json({ message: 'All shops retrieved successfully', shops });
     } catch (error) {
         console.error('Error retrieving all shops (including inactive):', error);
