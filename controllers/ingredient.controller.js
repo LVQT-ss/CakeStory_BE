@@ -76,4 +76,26 @@ export const getIngredientById = async (req, res) => {
   }
 };
 
+// Update ingredient
+export const updateIngredient = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, price } = req.body;
+
+    const ingredient = await Ingredient.findByPk(id);
+    if (!ingredient || ingredient.is_deleted) {
+      return res.status(404).json({ message: 'Ingredient not found or has been deleted' });
+    }
+
+    ingredient.name = name ?? ingredient.name;
+    ingredient.price = price ?? ingredient.price;
+
+    await ingredient.save();
+
+    return res.status(200).json({ message: 'Ingredient updated', ingredient });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error updating ingredient', error: error.message });
+  }
+};
+
 
