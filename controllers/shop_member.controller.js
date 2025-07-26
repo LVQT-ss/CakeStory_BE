@@ -40,7 +40,7 @@ export const getMyShopMembers = async (req, res) => {
 
     const members = await ShopMember.findAll({
       where: { shop_id: shop.shop_id },
-      include: [{ model: User, attributes: ['id', 'username', 'email'] }]
+      include: [{ model: User, attributes: ['id', 'username', 'email', 'avatar'] }]
     });
 
     return res.status(200).json({ message: 'Shop members retrieved', members });
