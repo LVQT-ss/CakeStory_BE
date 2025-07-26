@@ -27,3 +27,25 @@ export const createIngredient = async (req, res) => {
   }
 };
 
+export const getAllIngredients = async (req, res) => {
+  try {
+    const { shop_id } = req.query;
+
+    if (!shop_id) {
+      return res.status(400).json({ message: 'shop_id is required' });
+    }
+
+    const ingredients = await Ingredient.findAll({
+      where: {
+        shop_id,
+        is_deleted: false
+      }
+    });
+
+    return res.status(200).json({ ingredients });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error fetching ingredients', error: error.message });
+  }
+};
+
+
