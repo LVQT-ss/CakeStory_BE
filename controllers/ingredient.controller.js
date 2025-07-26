@@ -48,4 +48,32 @@ export const getAllIngredients = async (req, res) => {
   }
 };
 
+// Get ingredient by ID (chỉ lấy nếu chưa bị xóa)
+export const getIngredientById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { shop_id } = req.query;
+
+    if (!shop_id) {
+      return res.status(400).json({ message: 'shop_id is required to fetch ingredient by id' });
+    }
+
+    const ingredient = await Ingredient.findOne({
+      where: {
+        id,
+        shop_id,
+        is_deleted: false
+      }
+    });
+
+    if (!ingredient) {
+      return res.status(404).json({ message: 'Ingredient not found for this shop' });
+    }
+
+    return res.status(200).json({ ingredient });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error fetching ingredient', error: error.message });
+  }
+};
+
 
