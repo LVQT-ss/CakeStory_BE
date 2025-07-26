@@ -49,6 +49,16 @@ const router = express.Router();
  *                 format: date
  *               prize_description:
  *                 type: string
+ *               max_participants:
+ *                 type: integer
+ *               min_participants:
+ *                 type: integer
+ *               hashtag:
+ *                 type: string
+ *               rules:
+ *                 type: string
+ *               requirements:
+ *                 type: string
  *     responses:
  *       201:
  *         description: Challenge created successfully
@@ -71,6 +81,15 @@ router.post('/', verifyToken, createChallenge);
  *     responses:
  *       200:
  *         description: Challenges retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 challenges:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Challenge'
  *       500:
  *         description: Server error
  */
@@ -95,6 +114,13 @@ router.get('/', verifyToken, getAllChallenges);
  *     responses:
  *       200:
  *         description: Challenge retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 challenge:
+ *                   $ref: '#/components/schemas/Challenge'
  *       404:
  *         description: Challenge not found
  *       500:
@@ -136,12 +162,29 @@ router.get('/:id', verifyToken, getChallengeById);
  *                 format: date
  *               prize_description:
  *                 type: string
+ *               max_participants:
+ *                 type: integer
+ *               min_participants:
+ *                 type: integer
+ *               hashtag:
+ *                 type: string
+ *               rules:
+ *                 type: string
+ *               requirements:
+ *                 type: string
  *               status:
  *                 type: string
- *                 enum: [notStart, onGoing, ended]
+ *                 enum: [notStart, onGoing, ended, unAvailable]
  *     responses:
  *       200:
  *         description: Challenge updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 challenge:
+ *                   $ref: '#/components/schemas/Challenge'
  *       404:
  *         description: Challenge not found
  *       500:
@@ -174,5 +217,44 @@ router.put('/:id', verifyToken, updateChallenge);
  *         description: Server error
  */
 router.delete('/:id', verifyToken, deleteChallenge);
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Challenge:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *         title:
+ *           type: string
+ *         description:
+ *           type: string
+ *         start_date:
+ *           type: string
+ *           format: date
+ *         end_date:
+ *           type: string
+ *           format: date
+ *         prize_description:
+ *           type: string
+ *         max_participants:
+ *           type: integer
+ *         min_participants:
+ *           type: integer
+ *         hashtag:
+ *           type: string
+ *         rules:
+ *           type: string
+ *         requirements:
+ *           type: string
+ *         status:
+ *           type: string
+ *           enum: [notStart, onGoing, ended, unAvailable]
+ *         created_at:
+ *           type: string
+ *           format: date-time
+ */
 
 export default router;
