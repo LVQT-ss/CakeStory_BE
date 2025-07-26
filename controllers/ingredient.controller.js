@@ -98,4 +98,21 @@ export const updateIngredient = async (req, res) => {
   }
 };
 
+// Soft delete ingredient
+export const deleteIngredient = async (req, res) => {
+  try {
+    const { id } = req.params;
 
+    const ingredient = await Ingredient.findByPk(id);
+    if (!ingredient || ingredient.is_deleted) {
+      return res.status(404).json({ message: 'Ingredient not found or already deleted' });
+    }
+
+    ingredient.is_deleted = true;
+    await ingredient.save();
+
+    return res.status(200).json({ message: 'Ingredient soft deleted successfully' });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error soft deleting ingredient', error: error.message });
+  }
+};
