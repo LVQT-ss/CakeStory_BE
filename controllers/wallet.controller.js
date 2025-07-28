@@ -265,5 +265,18 @@ export const payOSWebhook = async (req, res) => {
 
 
 export const walletGetBalance = async (req, res) => {
-
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'User not authenticated' });
+        }
+        const wallet = await Wallet.findOne({ where: { user_id: userId } });
+        if (!wallet) {
+            return res.status(404).json({ success: false, message: 'Wallet not found' });
+        }
+        return res.status(200).json({ success: true, wallet });
+    } catch (error) {
+        console.error('walletGetBalance error:', error);
+        return res.status(500).json({ success: false, message: 'Internal server error' });
+    }
 };
