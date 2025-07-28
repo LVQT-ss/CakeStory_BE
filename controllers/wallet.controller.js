@@ -262,3 +262,8 @@ export const payOSWebhook = async (req, res) => {
         });
     }
 };
+
+
+export const walletGetBalance = async (req, res) => {
+
+};
