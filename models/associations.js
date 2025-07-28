@@ -174,18 +174,9 @@ function setupAssociations() {
   MarketplacePost.belongsTo(Shop, { foreignKey: 'shop_id', as: 'shop' });
   Shop.hasMany(MarketplacePost, { foreignKey: 'shop_id', as: 'marketplacePosts' });
 
-  //markerplace - ingredient (1 - N)
-  MarketplacePost.hasMany(Ingredient, {
-    foreignKey: 'marketplace_post_id',
-    as: 'ingredients'
-  });
-  
-  Ingredient.belongsTo(MarketplacePost, {
-    foreignKey: 'marketplace_post_id',
-    as: 'marketplace_post'
-  });
-
-
+// Ingredient thuộc về 1 Shop
+Ingredient.belongsTo(Shop, { foreignKey: 'shop_id', as: 'shop' });
+Shop.hasMany(Ingredient, { foreignKey: 'shop_id', as: 'ingredients' });
 
   User.hasMany(AiGeneratedImage, { foreignKey: "user_id" });
   AiGeneratedImage.belongsTo(User, { foreignKey: "user_id" });

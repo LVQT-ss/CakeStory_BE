@@ -9,19 +9,23 @@ export const createChallenge = async (req, res) => {
       description,
       start_date,
       end_date,
-      prize_description
+      prize_description,
+      max_participants,
+      min_participants,
+      hashtag,
+      rules,
+      requirements
     } = req.body;
 
     const now = new Date();
     const startDate = new Date(start_date);
     const endDate = new Date(end_date);
 
-    // Validate time
+    // Validate start & end dates
     const minStartDate = new Date(now);
     minStartDate.setDate(minStartDate.getDate() + 7);
-
     if (startDate < minStartDate) {
-      return res.status(400).json({ message: 'Start date must be at least 7 days after creation date.' });
+      return res.status(400).json({ message: 'Start date must be at least 7 days from today.' });
     }
 
     if (endDate <= startDate) {
@@ -35,11 +39,15 @@ export const createChallenge = async (req, res) => {
       end_date,
       prize_description,
       status: 'notStart',
-      created_at: now
+      created_at: now,
+      max_participants,
+      min_participants,
+      hashtag,
+      rules,
+      requirements
     });
 
     res.status(201).json({ message: 'Challenge created successfully', challenge });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -89,13 +97,16 @@ export const getChallengeById = async (req, res) => {
 export const updateChallenge = async (req, res) => {
   try {
     const { id } = req.params;
-    const updated = await Challenge.update(req.body, {
+    const challenge = await Challenge.findByPk(id);
+
+    if (!challenge || challenge.status === 'unAvailable') {
+      return res.status(404).json({ message: 'Challenge not found' });
+    }
+
+    // Prevent changing status directly to 'unAvailable' here if needed
+    await Challenge.update(req.body, {
       where: { id }
     });
-
-    if (updated[0] === 0) {
-      return res.status(404).json({ message: 'Challenge not found or not updated' });
-    }
 
     const updatedChallenge = await Challenge.findByPk(id);
     res.status(200).json({ message: 'Challenge updated', challenge: updatedChallenge });
@@ -104,14 +115,14 @@ export const updateChallenge = async (req, res) => {
   }
 };
 
-// Delete Challenge (Soft delete)
+// Soft Delete Challenge
 export const deleteChallenge = async (req, res) => {
   try {
     const { id } = req.params;
 
     const challenge = await Challenge.findByPk(id);
     if (!challenge || challenge.status === 'unAvailable') {
-      return res.status(404).json({ message: 'Challenge not found' });
+      return res.status(404).json({ message: 'Challenge not found or already deleted' });
     }
 
     await Challenge.update(
@@ -119,7 +130,7 @@ export const deleteChallenge = async (req, res) => {
       { where: { id } }
     );
 
-    res.status(200).json({ message: 'Challenge deleted (soft)' });
+    res.status(200).json({ message: 'Challenge deleted (soft delete)' });
   } catch (err) {
     res.status(500).json({ message: 'Error deleting challenge', error: err.message });
   }
