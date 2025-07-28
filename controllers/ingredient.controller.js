@@ -1,10 +1,10 @@
 import Ingredient from '../models/Ingredient.model.js';
 import Shop from '../models/shop.model.js';
 
-// Create Ingredient (cho shop)
+// Create Ingredient
 export const createIngredient = async (req, res) => {
   try {
-    const { name, price } = req.body;
+    const { name, price, image, description } = req.body;
     const user_id = req.userId;
 
     const shop = await Shop.findOne({ where: { user_id } });
@@ -15,7 +15,9 @@ export const createIngredient = async (req, res) => {
     const ingredient = await Ingredient.create({
       shop_id: shop.shop_id,
       name,
-      price
+      price,
+      image,
+      description
     });
 
     return res.status(201).json({
@@ -27,6 +29,7 @@ export const createIngredient = async (req, res) => {
   }
 };
 
+// Get all ingredients
 export const getAllIngredients = async (req, res) => {
   try {
     const { shop_id } = req.query;
@@ -38,7 +41,7 @@ export const getAllIngredients = async (req, res) => {
     const ingredients = await Ingredient.findAll({
       where: {
         shop_id,
-        is_deleted: false
+        is_active: true
       }
     });
 
@@ -48,7 +51,7 @@ export const getAllIngredients = async (req, res) => {
   }
 };
 
-// Get ingredient by ID (chỉ lấy nếu chưa bị xóa)
+// Get ingredient by ID
 export const getIngredientById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -62,7 +65,7 @@ export const getIngredientById = async (req, res) => {
       where: {
         id,
         shop_id,
-        is_deleted: false
+        is_active: true
       }
     });
 
@@ -80,15 +83,17 @@ export const getIngredientById = async (req, res) => {
 export const updateIngredient = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, price } = req.body;
+    const { name, price, image, description } = req.body;
 
     const ingredient = await Ingredient.findByPk(id);
-    if (!ingredient || ingredient.is_deleted) {
+    if (!ingredient || !ingredient.is_active) {
       return res.status(404).json({ message: 'Ingredient not found or has been deleted' });
     }
 
     ingredient.name = name ?? ingredient.name;
     ingredient.price = price ?? ingredient.price;
+    ingredient.image = image ?? ingredient.image;
+    ingredient.description = description ?? ingredient.description;
 
     await ingredient.save();
 
@@ -104,11 +109,11 @@ export const deleteIngredient = async (req, res) => {
     const { id } = req.params;
 
     const ingredient = await Ingredient.findByPk(id);
-    if (!ingredient || ingredient.is_deleted) {
+    if (!ingredient || !ingredient.is_active) {
       return res.status(404).json({ message: 'Ingredient not found or already deleted' });
     }
 
-    ingredient.is_deleted = true;
+    ingredient.is_active = false;
     await ingredient.save();
 
     return res.status(200).json({ message: 'Ingredient soft deleted successfully' });
