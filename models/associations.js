@@ -57,7 +57,7 @@ function setupAssociations() {
 
   // Post ↔ MarketplacePost (1-1)
   Post.hasOne(MarketplacePost, { foreignKey: 'post_id', as: 'marketplacePost' });
-  MarketplacePost.belongsTo(Post, { foreignKey: 'post_id' , as: 'post' });
+  MarketplacePost.belongsTo(Post, { foreignKey: 'post_id', as: 'post' });
 
   // Shop ↔ ShopMember (1-N)
   Shop.hasMany(ShopMember, { foreignKey: "shop_id", as: "members" });
@@ -90,6 +90,10 @@ function setupAssociations() {
   // User ↔ Comment (1-N)
   User.hasMany(Comment, { foreignKey: "user_id" });
   Comment.belongsTo(User, { foreignKey: "user_id" });
+
+  // Self-referential association for comment replies
+  Comment.hasMany(Comment, { foreignKey: 'parent_comment_id', as: 'replies' });
+  Comment.belongsTo(Comment, { foreignKey: 'parent_comment_id', as: 'parent' });
 
   // Like - flexible association with post or cake_design
   Post.hasMany(Like, { foreignKey: "post_id" });
@@ -174,9 +178,9 @@ function setupAssociations() {
   MarketplacePost.belongsTo(Shop, { foreignKey: 'shop_id', as: 'shop' });
   Shop.hasMany(MarketplacePost, { foreignKey: 'shop_id', as: 'marketplacePosts' });
 
-// Ingredient thuộc về 1 Shop
-Ingredient.belongsTo(Shop, { foreignKey: 'shop_id', as: 'shop' });
-Shop.hasMany(Ingredient, { foreignKey: 'shop_id', as: 'ingredients' });
+  // Ingredient thuộc về 1 Shop
+  Ingredient.belongsTo(Shop, { foreignKey: 'shop_id', as: 'shop' });
+  Shop.hasMany(Ingredient, { foreignKey: 'shop_id', as: 'ingredients' });
 
   User.hasMany(AiGeneratedImage, { foreignKey: "user_id" });
   AiGeneratedImage.belongsTo(User, { foreignKey: "user_id" });

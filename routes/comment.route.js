@@ -1,5 +1,11 @@
 import express from 'express';
-import { createComment, getCommentsByPostId, updateComment, deleteComment } from '../controllers/comment.controller.js';
+import {
+    createComment,
+    getCommentsByPostId,
+    updateComment,
+    deleteComment,
+    replyComment
+} from '../controllers/comment.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
@@ -230,5 +236,91 @@ router.put('/:comment_id', verifyToken, updateComment);
  *         description: Server error
  */
 router.delete('/:comment_id', verifyToken, deleteComment);
+
+/**
+ * @swagger
+ * /api/comments/{comment_id}/reply:
+ *   post:
+ *     tags:
+ *       - Comments
+ *     summary: Reply to a comment
+ *     description: Create a reply to a specific comment (nested comment)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: comment_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the parent comment to reply to
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - content
+ *             properties:
+ *               content:
+ *                 type: string
+ *                 example: "Thank you for your feedback!"
+ *     responses:
+ *       201:
+ *         description: Reply created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Reply created successfully"
+ *                 comment:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 2
+ *                     content:
+ *                       type: string
+ *                       example: "Thank you for your feedback!"
+ *                     post_id:
+ *                       type: integer
+ *                       example: 1
+ *                     user_id:
+ *                       type: integer
+ *                       example: 5
+ *                     parent_comment_id:
+ *                       type: integer
+ *                       example: 1
+ *                     created_at:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2024-03-20T10:05:00Z"
+ *                     User:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 5
+ *                         username:
+ *                           type: string
+ *                           example: "janedoe"
+ *                         full_name:
+ *                           type: string
+ *                           example: "Jane Doe"
+ *                         avatar:
+ *                           type: string
+ *                           example: "https://example.com/avatar2.jpg"
+ *       400:
+ *         description: Bad request - Missing content
+ *       404:
+ *         description: Parent comment not found
+ *       500:
+ *         description: Server error
+ */
+router.post('/:comment_id/reply', verifyToken, replyComment);
 
 export default router; 
