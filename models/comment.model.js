@@ -15,6 +15,14 @@ const Comment = sequelize.define('Comment', {
     type: DataTypes.INTEGER,
     allowNull: false
   },
+  parent_comment_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'comment',
+      key: 'id'
+    }
+  },
   content: {
     type: DataTypes.TEXT,
     allowNull: false
