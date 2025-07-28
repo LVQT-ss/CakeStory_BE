@@ -186,7 +186,7 @@ export const deleteComment = async (req, res) => {
 
 export const replyComment = async (req, res) => {
     try {
-        const { id } = req.params; // id is the parent comment id
+        const { comment_id } = req.params; // comment_id is the parent comment id
         const { content } = req.body;
         const user_id = req.userId;
 
@@ -198,7 +198,7 @@ export const replyComment = async (req, res) => {
         }
 
         // Find the parent comment
-        const parentComment = await Comment.findByPk(id);
+        const parentComment = await Comment.findByPk(comment_id);
         if (!parentComment) {
             return res.status(404).json({
                 message: 'Parent comment not found'
@@ -210,7 +210,7 @@ export const replyComment = async (req, res) => {
             content,
             post_id: parentComment.post_id,
             user_id,
-            parent_comment_id: id,
+            parent_comment_id: comment_id,
             created_at: new Date()
         });
 
