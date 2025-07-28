@@ -1,5 +1,14 @@
 import express from 'express';
-import { createMemoryPost, getMemoryPostById, updateMemoryPostById, updateMemoryPostVisibility, deleteMemoryPostById, getAllMemoryPosts, getAllMemoryPostsByUserId, getAllMemoryPostsPaginated } from '../controllers/memoryPost.controller.js';
+import {
+    createMemoryPost,
+    getMemoryPostById,
+    updateMemoryPostById,
+    updateMemoryPostVisibility,
+    deleteMemoryPostById,
+    getAllMemoryPosts,
+    getAllMemoryPostsByUserId,
+    getAllMemoryPostsPaginated
+} from '../controllers/memoryPost.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
@@ -1079,5 +1088,6 @@ router.get('/', getAllMemoryPosts);
  *                   example: "Database connection error"
  */
 router.get('/user/:userId', getAllMemoryPostsByUserId);
+
 
 export default router;
