@@ -1,5 +1,11 @@
 import express from 'express';
-import { createComment, getCommentsByPostId, updateComment, deleteComment } from '../controllers/comment.controller.js';
+import {
+    createComment,
+    getCommentsByPostId,
+    updateComment,
+    deleteComment,
+    replyComment
+} from '../controllers/comment.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
@@ -230,5 +236,7 @@ router.put('/:comment_id', verifyToken, updateComment);
  *         description: Server error
  */
 router.delete('/:comment_id', verifyToken, deleteComment);
+
+router.post('/like/:id', verifyToken, replyComment);
 
 export default router; 

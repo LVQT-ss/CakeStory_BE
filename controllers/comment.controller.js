@@ -182,4 +182,56 @@ export const deleteComment = async (req, res) => {
             error: error.message
         });
     }
-}; 
+};
+
+export const replyComment = async (req, res) => {
+    try {
+        const { id } = req.params; // id is the parent comment id
+        const { content } = req.body;
+        const user_id = req.userId;
+
+        // Validate required fields
+        if (!content) {
+            return res.status(400).json({
+                message: 'Reply content is required'
+            });
+        }
+
+        // Find the parent comment
+        const parentComment = await Comment.findByPk(id);
+        if (!parentComment) {
+            return res.status(404).json({
+                message: 'Parent comment not found'
+            });
+        }
+
+        // Create reply comment (must use same post_id as parent)
+        const reply = await Comment.create({
+            content,
+            post_id: parentComment.post_id,
+            user_id,
+            parent_comment_id: id,
+            created_at: new Date()
+        });
+
+        // Get reply with user info
+        const replyWithUser = await Comment.findOne({
+            where: { id: reply.id },
+            include: [{
+                model: User,
+                attributes: ['id', 'username', 'full_name', 'avatar']
+            }]
+        });
+
+        res.status(201).json({
+            message: 'Reply created successfully',
+            comment: replyWithUser
+        });
+    } catch (error) {
+        console.error('Error replying to comment:', error);
+        res.status(500).json({
+            message: 'Error replying to comment',
+            error: error.message
+        });
+    }
+};
