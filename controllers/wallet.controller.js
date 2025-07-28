@@ -141,61 +141,124 @@ export const walletDeposit = async (req, res) => {
 
 export const payOSWebhook = async (req, res) => {
     try {
-        // 1. Log and parse webhook data
-        const webhookData = req.body;
-        console.log('PayOS Webhook received:', webhookData);
-
-        // 2. Validate webhook data
-        if (!webhookData || !webhookData.data || !webhookData.data.orderCode || !webhookData.data.amount) {
-            return res.status(400).json({ success: false, message: 'Invalid webhook data' });
-        }
-
-        const { orderCode, amount, status } = webhookData.data;
-
-        // 3. Only process successful payments
-        if (status !== 'PAID') {
-            return res.status(200).json({ success: true, message: 'Payment not completed, no action taken' });
-        }
-
-        // 4. Find the deposit record
-        const depositRecord = await DepositRecords.findByPk(orderCode);
-        if (!depositRecord) {
-            return res.status(404).json({ success: false, message: 'Deposit record not found' });
-        }
-
-        // 5. Idempotency: If already completed, do nothing
-        if (depositRecord.status === 'completed') {
-            return res.status(200).json({ success: true, message: 'Deposit already processed' });
-        }
-
-        // 6. Check amount matches
-        if (parseFloat(depositRecord.amount) !== parseFloat(amount)) {
-            return res.status(400).json({ success: false, message: 'Amount mismatch' });
-        }
-
-        // 7. Find the user's wallet
-        const wallet = await Wallet.findOne({ where: { user_id: depositRecord.user_id } });
-        if (!wallet) {
-            return res.status(404).json({ success: false, message: 'User wallet not found' });
-        }
-
-        // 8. Use a DB transaction for atomicity
-        await sequelize.transaction(async (t) => {
-            // Update deposit record
-            await depositRecord.update({ status: 'completed' }, { transaction: t });
-
-            // Update wallet balance
-            await wallet.update(
-                { balance: parseFloat(wallet.balance) + parseFloat(amount), updated_at: new Date() },
-                { transaction: t }
-            );
+        console.log('PayOS Webhook received:', {
+            method: req.method,
+            headers: req.headers,
+            body: req.body
         });
 
-        // 9. Respond success
-        return res.status(200).json({ success: true, message: 'Deposit processed and wallet updated' });
+        // Handle GET request (direct access for testing)
+        if (req.method === 'GET') {
+            return res.status(200).json({
+                message: "PayOS Webhook endpoint is active",
+                status: "ok",
+                method: "POST required"
+            });
+        }
 
+        // Handle webhook logic here - using working logic from main app
+        const webhookData = req.body;
+
+        // Handle empty webhook (PayOS validation test)
+        if (!webhookData || Object.keys(webhookData).length === 0) {
+            console.log('Empty webhook - likely PayOS validation test');
+            return res.status(200).json({
+                status: 'success',
+                message: 'Webhook received successfully'
+            });
+        }
+
+        // Handle PayOS webhook format
+        let orderCode, amount, isSuccessful = false;
+
+        if (webhookData.data) {
+            // PayOS webhook format: { code: '00', success: true, data: { orderCode, amount, status } }
+            orderCode = webhookData.data.orderCode;
+            amount = webhookData.data.amount;
+            // Check if payment is successful using PayOS format
+            isSuccessful = webhookData.code === '00' && webhookData.success === true;
+        } else {
+            // Direct format: { orderCode, amount, status }
+            orderCode = webhookData.orderCode;
+            amount = webhookData.amount;
+            isSuccessful = webhookData.status === 'PAID';
+        }
+
+        console.log('Processing webhook:', {
+            orderCode,
+            amount,
+            isSuccessful,
+            webhookCode: webhookData.code,
+            webhookSuccess: webhookData.success
+        });
+
+        // If payment is successful, process it
+        if (orderCode && isSuccessful) {
+            console.log(`🎉 Payment successful for order ${orderCode}!`);
+
+            // Find deposit record
+            const depositRecord = await DepositRecords.findByPk(orderCode);
+            if (!depositRecord) {
+                console.log(`❌ Deposit record ${orderCode} not found`);
+                return res.status(404).json({ message: "Deposit record not found" });
+            }
+
+            if (depositRecord.status === 'completed') {
+                console.log(`✅ Deposit record ${orderCode} already completed`);
+                return res.status(200).json({
+                    status: 'success',
+                    message: "Deposit already processed"
+                });
+            }
+
+            // Check amount matches
+            if (parseFloat(depositRecord.amount) !== parseFloat(amount)) {
+                console.log(`❌ Amount mismatch: expected ${depositRecord.amount}, got ${amount}`);
+                return res.status(400).json({ message: "Amount mismatch" });
+            }
+
+            // Find the user's wallet
+            const wallet = await Wallet.findOne({ where: { user_id: depositRecord.user_id } });
+            if (!wallet) {
+                console.log(`❌ Wallet for user ${depositRecord.user_id} not found`);
+                return res.status(404).json({ message: "User wallet not found" });
+            }
+
+            // Use a DB transaction for atomicity
+            await sequelize.transaction(async (t) => {
+                // Update deposit record
+                console.log(`Updating deposit record ${depositRecord.id} to completed...`);
+                const [depositUpdateCount] = await DepositRecords.update(
+                    { status: 'completed' },
+                    { where: { id: depositRecord.id }, transaction: t }
+                );
+                console.log(`Deposit record update result: ${depositUpdateCount}`);
+
+                // Update wallet balance
+                const newBalance = parseFloat(wallet.balance) + parseFloat(amount);
+                console.log(`Updating wallet ${wallet.id} balance: ${wallet.balance} + ${amount} = ${newBalance}`);
+                const [walletUpdateCount] = await Wallet.update(
+                    { balance: newBalance, updated_at: new Date() },
+                    { where: { id: wallet.id }, transaction: t }
+                );
+                console.log(`Wallet update result: ${walletUpdateCount}`);
+            });
+
+            console.log(`✅ SUCCESS: Deposit ${orderCode} processed and wallet updated.`);
+            return res.status(200).json({ status: 'success', message: 'Deposit processed and wallet updated' });
+        } else {
+            console.log(`ℹ️ Webhook received but not processed - orderCode: ${orderCode}, isSuccessful: ${isSuccessful}`);
+            // Simple response for other cases
+            return res.status(200).json({
+                status: 'success',
+                message: 'Webhook received successfully'
+            });
+        }
     } catch (error) {
         console.error('Webhook error:', error);
-        return res.status(500).json({ success: false, message: 'Internal server error' });
+        return res.status(500).json({
+            status: 'error',
+            message: 'Failed to process webhook'
+        });
     }
 };
