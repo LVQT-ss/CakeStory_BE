@@ -231,9 +231,6 @@ router.post('/deposit', verifyToken, walletDeposit);
  *                       summary: User wallet missing
  *                       value: "Wallet not found for user 123"
  */
-
-// Route setup
-router.get('/payos-webhook', payOSWebhook);   // For PayOS webhook testing
 router.post('/payos-webhook', payOSWebhook);  // For actual webhook notifications
 
 
