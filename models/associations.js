@@ -95,11 +95,13 @@ function setupAssociations() {
   Comment.hasMany(Comment, { foreignKey: 'parent_comment_id', as: 'replies' });
   Comment.belongsTo(Comment, { foreignKey: 'parent_comment_id', as: 'parent' });
 
-  // Like - flexible association with post or cake_design
+  // Like - flexible association with post or cake_design or comment
   Post.hasMany(Like, { foreignKey: "post_id" });
   CakeDesign.hasMany(Like, { foreignKey: "design_id" });
+  Comment.hasMany(Like, { foreignKey: "comment_id" });
   Like.belongsTo(Post, { foreignKey: "post_id" });
   Like.belongsTo(CakeDesign, { foreignKey: "design_id" });
+  Like.belongsTo(Comment, { foreignKey: "comment_id" });
 
   // User ↔ Like (1-N)
   User.hasMany(Like, { foreignKey: "user_id" });
