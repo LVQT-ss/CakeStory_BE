@@ -17,7 +17,7 @@ import commentRoutes from './routes/comment.route.js';
 import shopMemberRoutes from './routes/shop_member.route.js';
 import ingredient from './routes/ingredient.route.js';
 import challengeRoutes from './routes/challenge.route.js';
-
+import challengeEntryRoutes from './routes/challengeEntry.routes.js';
 import aiGenerateRoutes from './routes/ai_generate.route.js';
 import walletRoutes from './routes/wallet.route.js';
 setupAssociations();
@@ -46,6 +46,7 @@ app.use('/api/ingredients', ingredient);
 app.use('/api/challenges', challengeRoutes);
 app.use('/api/ai', aiGenerateRoutes);
 app.use('/api/wallet', walletRoutes);
+app.use('/api/challenge-entries', challengeEntryRoutes);
 // Initialize and synchronize the database
 initDB().then(() => {
     app.listen(port, () => {
