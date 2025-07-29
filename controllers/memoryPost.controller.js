@@ -746,7 +746,7 @@ export const getAllMemoryPostsPaginated = async (req, res) => {
                     required: false
                 }
             ],
-            order: [['created_at', 'ASC']],
+            order: [['created_at', 'DESC']],
             limit: limit,
             offset: offset,
             distinct: true

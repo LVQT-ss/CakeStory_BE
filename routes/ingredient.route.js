@@ -12,18 +12,11 @@ const router = express.Router();
 
 /**
  * @swagger
- * tags:
- *   name: Ingredient
- *   description: APIs for managing ingredients belonging to shops
- */
-
-/**
- * @swagger
  * /api/ingredients:
  *   post:
  *     tags: [Ingredient]
  *     summary: Create a new ingredient
- *     description: Add a new ingredient to the current user's shop (auto detects user's shop)
+ *     description: Add a new ingredient to the current user's shop
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -42,6 +35,12 @@ const router = express.Router();
  *               price:
  *                 type: number
  *                 example: 3.5
+ *               image:
+ *                 type: string
+ *                 example: "https://example.com/image.jpg"
+ *               description:
+ *                 type: string
+ *                 example: "High-quality unsalted butter"
  *     responses:
  *       201:
  *         description: Ingredient created successfully
@@ -57,18 +56,17 @@ router.post('/', verifyToken, createIngredient);
  * /api/ingredients:
  *   get:
  *     tags: [Ingredient]
- *     summary: Get all ingredients of a specific shop
- *     description: Retrieve all non-deleted ingredients by shop_id
+ *     summary: Get all ingredients of a shop
  *     parameters:
  *       - in: query
  *         name: shop_id
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID of the shop to filter ingredients
+ *         description: ID of the shop
  *     responses:
  *       200:
- *         description: List of ingredients retrieved successfully
+ *         description: Ingredients fetched
  *         content:
  *           application/json:
  *             schema:
@@ -79,7 +77,7 @@ router.post('/', verifyToken, createIngredient);
  *                   items:
  *                     $ref: '#/components/schemas/Ingredient'
  *       400:
- *         description: Missing shop_id in query
+ *         description: Missing shop_id
  *       500:
  *         description: Server error
  */
@@ -90,24 +88,23 @@ router.get('/', verifyToken, getAllIngredients);
  * /api/ingredients/{id}:
  *   get:
  *     tags: [Ingredient]
- *     summary: Get a specific ingredient by ID
- *     description: Retrieve details of a specific ingredient by ID and shop_id
+ *     summary: Get ingredient by ID
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID of the ingredient
+ *         description: Ingredient ID
  *       - in: query
  *         name: shop_id
  *         required: true
  *         schema:
  *           type: integer
- *         description: Shop ID to ensure the ingredient belongs to that shop
+ *         description: Shop ID
  *     responses:
  *       200:
- *         description: Ingredient retrieved successfully
+ *         description: Ingredient fetched
  *         content:
  *           application/json:
  *             schema:
@@ -115,7 +112,7 @@ router.get('/', verifyToken, getAllIngredients);
  *       400:
  *         description: Missing shop_id
  *       404:
- *         description: Ingredient not found
+ *         description: Not found
  *       500:
  *         description: Server error
  */
@@ -126,8 +123,7 @@ router.get('/:id', verifyToken, getIngredientById);
  * /api/ingredients/{id}:
  *   put:
  *     tags: [Ingredient]
- *     summary: Update an existing ingredient
- *     description: Update the name or price of an existing ingredient
+ *     summary: Update an ingredient
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -136,7 +132,7 @@ router.get('/:id', verifyToken, getIngredientById);
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID of the ingredient to update
+ *         description: Ingredient ID
  *     requestBody:
  *       content:
  *         application/json:
@@ -145,15 +141,17 @@ router.get('/:id', verifyToken, getIngredientById);
  *             properties:
  *               name:
  *                 type: string
- *                 example: "Unsalted Butter"
  *               price:
  *                 type: number
- *                 example: 4.0
+ *               image:
+ *                 type: string
+ *               description:
+ *                 type: string
  *     responses:
  *       200:
- *         description: Ingredient updated successfully
+ *         description: Ingredient updated
  *       404:
- *         description: Ingredient not found or deleted
+ *         description: Not found or deleted
  *       500:
  *         description: Server error
  */
@@ -165,7 +163,6 @@ router.put('/:id', verifyToken, updateIngredient);
  *   delete:
  *     tags: [Ingredient]
  *     summary: Soft delete an ingredient
- *     description: Soft delete an ingredient by setting its `is_deleted` flag
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -174,12 +171,12 @@ router.put('/:id', verifyToken, updateIngredient);
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID of the ingredient to delete
+ *         description: Ingredient ID
  *     responses:
  *       200:
- *         description: Ingredient soft deleted successfully
+ *         description: Ingredient soft deleted
  *       404:
- *         description: Ingredient not found or already deleted
+ *         description: Not found or already deleted
  *       500:
  *         description: Server error
  */

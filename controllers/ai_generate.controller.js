@@ -17,10 +17,13 @@ export const generateImage = async (req, res) => {
             return res.status(400).json({ message: 'Prompt is required' });
         }
 
+        // Add prefix to the prompt
+        const styledPrompt = `Close-up, eye-level shot of a cake on a stand, with soft, even lighting and a simple, blurred background. The focus is on the cake's presentation, highlighting its details elegantly of ${prompt}`;
+
         // Generate image using OpenAI
         const response = await openai.images.generate({
-            model: "dall-e-2",
-            prompt: prompt,
+            model: "dall-e-3",
+            prompt: styledPrompt,
             n: 1,
             size: "1024x1024",
         });

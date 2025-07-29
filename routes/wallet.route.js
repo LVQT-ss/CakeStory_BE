@@ -1,6 +1,6 @@
 import express from 'express';
 import { verifyToken } from '../middleware/verifyUser.js';
-import { walletDeposit, payOSWebhook } from '../controllers/wallet.controller.js';
+import { walletDeposit, payOSWebhook, walletGetBalance } from '../controllers/wallet.controller.js';
 const router = express.Router();
 
 /**
@@ -231,10 +231,27 @@ router.post('/deposit', verifyToken, walletDeposit);
  *                       summary: User wallet missing
  *                       value: "Wallet not found for user 123"
  */
-
-// Route setup
-router.get('/payos-webhook', payOSWebhook);   // For PayOS webhook testing
 router.post('/payos-webhook', payOSWebhook);  // For actual webhook notifications
+
+/**
+ * @swagger
+ * /api/wallet/balance:
+ *   get:
+ *     summary: Get the current wallet info for the authenticated user
+ *     tags: [Wallet]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Wallet info retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Wallet not found
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/balance', verifyToken, walletGetBalance);
 
 
 export default router;
