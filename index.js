@@ -20,6 +20,7 @@ import challengeRoutes from './routes/challenge.route.js';
 import challengeEntryRoutes from './routes/challengeEntry.routes.js';
 import aiGenerateRoutes from './routes/ai_generate.route.js';
 import walletRoutes from './routes/wallet.route.js';
+import challengePostRoutes from './routes/challenge_post.route.js';
 setupAssociations();
 dotenv.config();
 
@@ -47,6 +48,7 @@ app.use('/api/challenges', challengeRoutes);
 app.use('/api/ai', aiGenerateRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/challenge-entries', challengeEntryRoutes);
+app.use('/api/challenge-posts', challengePostRoutes);
 // Initialize and synchronize the database
 initDB().then(() => {
     app.listen(port, () => {

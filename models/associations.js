@@ -29,15 +29,8 @@ import DepositRecords from "./deposit_records.model.js";
 
 function setupAssociations() {
   // User ↔ Shop (1-1)
-  User.hasOne(Shop, {
-    foreignKey: "user_id",
-    as: "shop",
-    onDelete: "CASCADE"
-  });
-  Shop.belongsTo(User, {
-    foreignKey: "user_id",
-    as: "user"
-  });
+  User.hasOne(Shop, { foreignKey: "user_id", as: "shop", onDelete: "CASCADE" });
+  Shop.belongsTo(User, { foreignKey: "user_id", as: "user" });
 
   // User ↔ Post (1-N)
   User.hasMany(Post, { foreignKey: "user_id", as: "posts" });
@@ -95,7 +88,7 @@ function setupAssociations() {
   Comment.hasMany(Comment, { foreignKey: 'parent_comment_id', as: 'replies' });
   Comment.belongsTo(Comment, { foreignKey: 'parent_comment_id', as: 'parent' });
 
-  // Like - flexible association with post or cake_design
+  // Like - flexible association
   Post.hasMany(Like, { foreignKey: "post_id" });
   CakeDesign.hasMany(Like, { foreignKey: "design_id" });
   Like.belongsTo(Post, { foreignKey: "post_id" });
@@ -115,6 +108,10 @@ function setupAssociations() {
   Challenge.hasMany(ChallengePost, { foreignKey: "challenge_id" });
   ChallengePost.belongsTo(Challenge, { foreignKey: "challenge_id" });
 
+  // ✅ FIXED: Post ↔ ChallengePost (1-1) with alias
+  Post.hasOne(ChallengePost, { foreignKey: "post_id", as: "challengePost" });
+  ChallengePost.belongsTo(Post, { foreignKey: "post_id", as: "post" });
+
   // Challenge ↔ ChallengeEntry (1-1)
   Challenge.hasOne(ChallengeEntry, { foreignKey: "challenge_id" });
   ChallengeEntry.belongsTo(Challenge, { foreignKey: "challenge_id" });
@@ -128,7 +125,6 @@ function setupAssociations() {
   Shop.hasMany(CakeOrder, { foreignKey: "shop_id" });
   CakeDesign.hasMany(CakeOrder, { foreignKey: "design_id" });
   MarketplacePost.hasMany(CakeOrder, { foreignKey: "marketplace_post_id" });
-
   CakeOrder.belongsTo(User, { foreignKey: "customer_id" });
   CakeOrder.belongsTo(Shop, { foreignKey: "shop_id" });
   CakeOrder.belongsTo(CakeDesign, { foreignKey: "design_id" });
@@ -170,18 +166,15 @@ function setupAssociations() {
   User.hasMany(MarketplacePost, { foreignKey: "user_id" });
   MarketplacePost.belongsTo(User, { foreignKey: "user_id" });
 
-  // Post ↔ ChallengePost (1-1)
-  Post.hasOne(ChallengePost, { foreignKey: "post_id" });
-  ChallengePost.belongsTo(Post, { foreignKey: "post_id" });
-
   // MarketplacePost ↔ Shop (N-1)
   MarketplacePost.belongsTo(Shop, { foreignKey: 'shop_id', as: 'shop' });
   Shop.hasMany(MarketplacePost, { foreignKey: 'shop_id', as: 'marketplacePosts' });
 
-  // Ingredient thuộc về 1 Shop
+  // Ingredient ↔ Shop (N-1)
   Ingredient.belongsTo(Shop, { foreignKey: 'shop_id', as: 'shop' });
   Shop.hasMany(Ingredient, { foreignKey: 'shop_id', as: 'ingredients' });
 
+  // User ↔ AiGeneratedImage (1-N)
   User.hasMany(AiGeneratedImage, { foreignKey: "user_id" });
   AiGeneratedImage.belongsTo(User, { foreignKey: "user_id" });
 
@@ -189,11 +182,9 @@ function setupAssociations() {
   User.hasOne(Wallet, { foreignKey: "user_id" });
   Wallet.belongsTo(User, { foreignKey: "user_id" });
 
-
   // User ↔ DepositRecords (1-1)
   User.hasOne(DepositRecords, { foreignKey: "user_id" });
   DepositRecords.belongsTo(User, { foreignKey: "user_id" });
-
 }
 
 export default setupAssociations;
