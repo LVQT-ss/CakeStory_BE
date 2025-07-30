@@ -112,3 +112,21 @@ export const updateShopMember = async (req, res) => {
     return res.status(500).json({ message: 'Error updating shop member', error: error.message });
   }
 };
+// 5. Lấy tất cả shop members (không điều kiện, không join shop)
+export const getAllShopMembers = async (req, res) => {
+  try {
+    const members = await ShopMember.findAll({
+      include: [
+        {
+          model: User,
+          attributes: ['id', 'username', 'email', 'avatar']
+        }
+      ]
+    });
+
+    return res.status(200).json({ message: 'All shop members retrieved', members });
+  } catch (error) {
+    console.error('Error retrieving all shop members:', error);
+    return res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
