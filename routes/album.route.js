@@ -1,5 +1,5 @@
 import express from 'express';
-import { createAlbum, createAlbumPost, getAlbumById, getAlbumPostById, getAllAlbums, updateAlbum, updateAlbumPost } from '../controllers/album.controller.js';
+import { createAlbum, createAlbumPost, getAlbumById, getAlbumPostById, getAllAlbums, updateAlbum, updateAlbumPost, getAlbumByUser } from '../controllers/album.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
@@ -321,6 +321,41 @@ router.post('/', verifyToken, createAlbum);
  *                   example: "Database connection error"
  */
 router.get('/:id', getAlbumById);
+
+/**
+ * @swagger
+ * /api/albums/user/{userId}:
+ *   get:
+ *     tags:
+ *       - Albums
+ *     summary: Get all albums by user ID
+ *     description: Retrieve a paginated list of albums for a specific user
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the user
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of items per page
+ *     responses:
+ *       200:
+ *         description: Albums retrieved successfully
+ *       404:
+ *         description: User or albums not found
+ */
+router.get('/user/:userId', getAlbumByUser);
 
 /**
  * @swagger
