@@ -74,7 +74,7 @@ export const verifyAdminOrBaker = (req, res, next) => {
 };
 
 export const verifyStaff = (req, res, next) => {
-  const allowedRoles = ['admin', 'account_staff', 'complaint_handler'];
+  const allowedRoles = ['admin', 'staff'];
   if (!allowedRoles.includes(req.role)) {
     return res.status(403).json({
       success: false,
