@@ -314,7 +314,103 @@ export const walletGetHistoryById = async (req, res) => {
 }
 
 export const walletWithdrawRequest = async (req, res) => {
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'User not authenticated' });
+        }
 
+        const { amount, bank_name, account_number } = req.body;
+
+        // Validate required fields
+        if (!amount) {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing required field: amount'
+            });
+        }
+
+        if (!bank_name) {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing required field: bank_name'
+            });
+        }
+
+        if (!account_number) {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing required field: account_number'
+            });
+        }
+
+        // Validate amount
+        if (amount <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Amount must be greater than 0'
+            });
+        }
+
+        // Find user's wallet
+        const wallet = await Wallet.findOne({ where: { user_id: userId } });
+        if (!wallet) {
+            return res.status(404).json({
+                success: false,
+                message: 'Wallet not found. Please create a wallet first.'
+            });
+        }
+
+        // Check if user has sufficient balance
+        const currentBalance = parseFloat(wallet.balance);
+        const withdrawAmount = parseFloat(amount);
+
+        if (withdrawAmount > currentBalance) {
+            return res.status(400).json({
+                success: false,
+                message: `Insufficient balance. Current balance: ${currentBalance} VND, Requested amount: ${withdrawAmount} VND`
+            });
+        }
+
+        // Create withdraw record with pending status
+        const withdrawRecord = await WithdrawRecords.create({
+            user_id: userId,
+            wallet_id: wallet.id,
+            amount: withdrawAmount,
+            bank_name: bank_name,
+            account_number: account_number,
+            status: 'pending',
+            created_at: new Date()
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: 'Withdraw request submitted successfully. Waiting for admin approval.',
+            data: {
+                withdrawRecord: {
+                    id: withdrawRecord.id,
+                    amount: withdrawRecord.amount,
+                    bank_name: withdrawRecord.bank_name,
+                    account_number: withdrawRecord.account_number,
+                    status: withdrawRecord.status,
+                    created_at: withdrawRecord.created_at
+                },
+                wallet: {
+                    current_balance: currentBalance,
+                    requested_amount: withdrawAmount,
+                    remaining_balance_after_withdraw: currentBalance - withdrawAmount
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('walletWithdrawRequest error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
+    }
 }
 
 
