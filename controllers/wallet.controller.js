@@ -284,6 +284,11 @@ export const walletGetBalance = async (req, res) => {
 export const walletGetHistory = async (req, res) => {
     try {
         const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'User not authenticated' });
+        }
+        const history = await DepositRecords.findAll({ where: { user_id: userId } });
+        return res.status(200).json({ success: true, history });
     } catch (error) {
         console.error('walletGetHistory error:', error);
         return res.status(500).json({ success: false, message: 'Internal server error' });
