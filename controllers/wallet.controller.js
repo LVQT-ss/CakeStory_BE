@@ -280,3 +280,34 @@ export const walletGetBalance = async (req, res) => {
         return res.status(500).json({ success: false, message: 'Internal server error' });
     }
 };
+
+export const walletGetHistory = async (req, res) => {
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'User not authenticated' });
+        }
+        const history = await DepositRecords.findAll({ where: { user_id: userId } });
+        return res.status(200).json({ success: true, history });
+    } catch (error) {
+        console.error('walletGetHistory error:', error);
+        return res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+}
+
+export const walletGetHistoryById = async (req, res) => {
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'User not authenticated' });
+        }
+        const history = await DepositRecords.findByPk(req.params.id);
+        if (!history) {
+            return res.status(404).json({ success: false, message: 'Transaction not found' });
+        }
+        return res.status(200).json({ success: true, history });
+    } catch (error) {
+        console.error('walletGetHistoryById error:', error);
+        return res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+}

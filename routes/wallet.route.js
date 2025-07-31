@@ -1,6 +1,6 @@
 import express from 'express';
 import { verifyToken } from '../middleware/verifyUser.js';
-import { walletDeposit, payOSWebhook, walletGetBalance } from '../controllers/wallet.controller.js';
+import { walletDeposit, payOSWebhook, walletGetBalance, walletGetHistory, walletGetHistoryById } from '../controllers/wallet.controller.js';
 const router = express.Router();
 
 /**
@@ -253,5 +253,125 @@ router.post('/payos-webhook', payOSWebhook);  // For actual webhook notification
  */
 router.get('/balance', verifyToken, walletGetBalance);
 
+/**
+ * @swagger
+ * /api/wallet/history:
+ *   get:
+ *     summary: Get the transaction history for the authenticated user
+ *     tags: [Wallet]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Transaction history retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/history', verifyToken, walletGetHistory);
+
+/**
+ * @swagger
+ * /api/wallet/history/{id}:
+ *   get:
+ *     summary: Get a specific transaction by ID
+ *     tags: [Wallet]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Transaction ID to retrieve
+ *         example: 123
+ *     responses:
+ *       200:
+ *         description: Transaction retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 history:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       description: Transaction ID
+ *                       example: 123
+ *                     user_id:
+ *                       type: integer
+ *                       description: User ID who made the transaction
+ *                       example: 456
+ *                     deposit_code:
+ *                       type: string
+ *                       description: Unique deposit reference code
+ *                       example: "DEP1703123456789456"
+ *                     amount:
+ *                       type: number
+ *                       description: Transaction amount in VND
+ *                       example: 100000
+ *                     status:
+ *                       type: string
+ *                       enum: [pending, completed, cancelled]
+ *                       description: Transaction status
+ *                       example: "completed"
+ *                     created_at:
+ *                       type: string
+ *                       format: date-time
+ *                       description: Transaction creation timestamp
+ *                       example: "2024-01-15T10:30:00.000Z"
+ *                     updated_at:
+ *                       type: string
+ *                       format: date-time
+ *                       description: Transaction last update timestamp
+ *                       example: "2024-01-15T10:35:00.000Z"
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "User not authenticated"
+ *       404:
+ *         description: Transaction not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Transaction not found"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
+router.get('/history/:id', verifyToken, walletGetHistoryById);
 
 export default router;
