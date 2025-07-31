@@ -9,27 +9,15 @@ const Transaction = sequelize.define('Transaction', {
   },
   from_wallet_id: {
     type: DataTypes.INTEGER,
-    allowNull: true,
-    references: {
-      model: 'wallet',
-      key: 'id'
-    }
+    allowNull: true
   },
   to_wallet_id: {
     type: DataTypes.INTEGER,
-    allowNull: true,
-    references: {
-      model: 'wallet',
-      key: 'id'
-    }
+    allowNull: true
   },
   order_id: {
     type: DataTypes.INTEGER,
-    allowNull: true,
-    references: {
-      model: 'cake_order',
-      key: 'id'
-    }
+    allowNull: true
   },
   amount: {
     type: DataTypes.DECIMAL(10, 2),
@@ -49,15 +37,13 @@ const Transaction = sequelize.define('Transaction', {
   },
   ai_generated_image_id: {
     type: DataTypes.INTEGER,
-    allowNull: true,
-    references: {
-      model: 'ai_generated_image',
-      key: 'id'
-    }
+    allowNull: true
   }
 }, {
   tableName: 'transaction',
-  timestamps: false,
+  timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: false,
   underscored: true
 });
 
