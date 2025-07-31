@@ -294,3 +294,17 @@ export const walletGetHistory = async (req, res) => {
         return res.status(500).json({ success: false, message: 'Internal server error' });
     }
 }
+
+export const walletGetHistoryById = async (req, res) => {
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'User not authenticated' });
+        }
+
+        return res.status(200).json({ success: true, history });
+    } catch (error) {
+        console.error('walletGetHistoryById error:', error);
+        return res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+}
