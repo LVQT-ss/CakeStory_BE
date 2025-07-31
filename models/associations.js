@@ -18,7 +18,7 @@ import ChallengeEntry from "./challenge_entry.model.js";
 import CakeOrder from "./cake_order.model.js";
 import Review from "./review.model.js";
 import Transaction from "./transaction.model.js";
-import Subscription from "./subscription.model.js";
+// import Subscription from "./subscription.model.js";
 import AlbumPost from './album_post.model.js';
 import GroupPost from './group_post.model.js';
 import ShopMember from "./shop_member.model.js";
@@ -134,14 +134,6 @@ function setupAssociations() {
   CakeOrder.hasOne(Review, { foreignKey: "order_id" });
   Review.belongsTo(CakeOrder, { foreignKey: "order_id" });
 
-  // User ↔ Transaction (1-N)
-  User.hasMany(Transaction, { foreignKey: "user_id" });
-  Transaction.belongsTo(User, { foreignKey: "user_id" });
-
-  // Transaction ↔ Subscription (1-1)
-  Transaction.hasOne(Subscription, { foreignKey: "Transaction_id" });
-  Subscription.belongsTo(Transaction, { foreignKey: "Transaction_id" });
-
   // Album ↔ AlbumPost (1-N)
   Album.hasMany(AlbumPost, { foreignKey: "album" });
   AlbumPost.belongsTo(Album, { foreignKey: "album" });
@@ -185,6 +177,22 @@ function setupAssociations() {
   // User ↔ DepositRecords (1-1)
   User.hasOne(DepositRecords, { foreignKey: "user_id" });
   DepositRecords.belongsTo(User, { foreignKey: "user_id" });
+
+  // Wallet ↔ Transaction (1-N) - From wallet
+  Wallet.hasMany(Transaction, { foreignKey: "from_wallet_id", as: "outgoingTransactions" });
+  Transaction.belongsTo(Wallet, { foreignKey: "from_wallet_id", as: "fromWallet" });
+
+  // Wallet ↔ Transaction (1-N) - To wallet
+  Wallet.hasMany(Transaction, { foreignKey: "to_wallet_id", as: "incomingTransactions" });
+  Transaction.belongsTo(Wallet, { foreignKey: "to_wallet_id", as: "toWallet" });
+
+  // CakeOrder ↔ Transaction (1-1)
+  CakeOrder.hasOne(Transaction, { foreignKey: "order_id", as: "transaction" });
+  Transaction.belongsTo(CakeOrder, { foreignKey: "order_id", as: "order" });
+
+  // AiGeneratedImage ↔ Transaction (1-1)
+  AiGeneratedImage.hasOne(Transaction, { foreignKey: "ai_generated_image_id", as: "transaction" });
+  Transaction.belongsTo(AiGeneratedImage, { foreignKey: "ai_generated_image_id", as: "aiGeneratedImage" });
 }
 
 export default setupAssociations;
