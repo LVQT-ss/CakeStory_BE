@@ -3,6 +3,7 @@ import {
   createChallengePost,
   getAllChallengePosts,
   getChallengePostById,
+  getChallengePostsByUserId,
   updateChallengePost,
   deleteChallengePost
 } from '../controllers/challengePost.controller.js';
@@ -23,7 +24,7 @@ const router = express.Router();
  *   post:
  *     tags: [ChallengePost]
  *     summary: Create a new challenge post
- *     description: Create a new post for a specific challenge
+ *     description: Create a new post for a specific challenge (one per user)
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -59,7 +60,7 @@ const router = express.Router();
  *       201:
  *         description: Challenge post created successfully
  *       400:
- *         description: Missing required fields
+ *         description: Missing required fields or user already has active challenge post
  *       404:
  *         description: Challenge not found
  *       500:
@@ -72,8 +73,8 @@ router.post('/', verifyToken, createChallengePost);
  * /api/challenge-posts:
  *   get:
  *     tags: [ChallengePost]
- *     summary: Get all challenge posts
- *     description: Retrieve all challenge posts and their associated media
+ *     summary: Get all active challenge posts
+ *     description: Retrieve all active challenge posts and their associated media
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -90,7 +91,7 @@ router.get('/', verifyToken, getAllChallengePosts);
  *   get:
  *     tags: [ChallengePost]
  *     summary: Get a challenge post by ID
- *     description: Retrieve a specific challenge post by its post ID
+ *     description: Retrieve a specific active challenge post by its post ID
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -112,11 +113,37 @@ router.get('/:post_id', verifyToken, getChallengePostById);
 
 /**
  * @swagger
+ * /api/challenge-posts/user/{userId}:
+ *   get:
+ *     tags: [ChallengePost]
+ *     summary: Get challenge posts by user ID
+ *     description: Retrieve all active challenge posts for a specific user
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: User challenge posts retrieved successfully
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Server error
+ */
+router.get('/user/:userId', verifyToken, getChallengePostsByUserId);
+
+/**
+ * @swagger
  * /api/challenge-posts/{post_id}:
  *   put:
  *     tags: [ChallengePost]
  *     summary: Update a challenge post
- *     description: Update the title, description, visibility, or design flag of a challenge post
+ *     description: Update the title, description, visibility, design flag, or media of a challenge post
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -140,9 +167,20 @@ router.get('/:post_id', verifyToken, getChallengePostById);
  *                 type: boolean
  *               is_design:
  *                 type: boolean
+ *               media:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     image_url:
+ *                       type: string
+ *                     video_url:
+ *                       type: string
  *     responses:
  *       200:
  *         description: Challenge post updated successfully
+ *       403:
+ *         description: Unauthorized to update this post
  *       404:
  *         description: Challenge post not found
  *       500:
@@ -155,8 +193,8 @@ router.put('/:post_id', verifyToken, updateChallengePost);
  * /api/challenge-posts/{post_id}:
  *   delete:
  *     tags: [ChallengePost]
- *     summary: Delete a challenge post
- *     description: Delete a challenge post by its post ID
+ *     summary: Soft delete a challenge post
+ *     description: Soft delete a challenge post by setting is_active to false
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -169,6 +207,8 @@ router.put('/:post_id', verifyToken, updateChallengePost);
  *     responses:
  *       200:
  *         description: Challenge post deleted successfully
+ *       403:
+ *         description: Unauthorized to delete this post
  *       404:
  *         description: Challenge post not found
  *       500:
