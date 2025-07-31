@@ -1,6 +1,6 @@
 import express from 'express';
 import { verifyToken } from '../middleware/verifyUser.js';
-import { walletDeposit, payOSWebhook, walletGetBalance } from '../controllers/wallet.controller.js';
+import { walletDeposit, payOSWebhook, walletGetBalance, walletGetHistory } from '../controllers/wallet.controller.js';
 const router = express.Router();
 
 /**
@@ -253,5 +253,22 @@ router.post('/payos-webhook', payOSWebhook);  // For actual webhook notification
  */
 router.get('/balance', verifyToken, walletGetBalance);
 
+/**
+ * @swagger
+ * /api/wallet/history:
+ *   get:
+ *     summary: Get the transaction history for the authenticated user
+ *     tags: [Wallet]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Transaction history retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/history', verifyToken, walletGetHistory);
 
 export default router;

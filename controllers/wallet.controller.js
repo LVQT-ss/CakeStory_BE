@@ -280,3 +280,12 @@ export const walletGetBalance = async (req, res) => {
         return res.status(500).json({ success: false, message: 'Internal server error' });
     }
 };
+
+export const walletGetHistory = async (req, res) => {
+    try {
+        const userId = req.userId;
+    } catch (error) {
+        console.error('walletGetHistory error:', error);
+        return res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+}
