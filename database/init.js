@@ -26,6 +26,7 @@ import Transaction from '../models/transaction.model.js';
 import AiGeneratedImage from '../models/ai_generated_image.model.js';
 import Wallet from '../models/wallet.model.js';
 import DepositRecords from '../models/deposit_records.model.js';
+import WithdrawRecords from '../models/withdraw_records.model.js';
 import ShopMember from '../models/shop_member.model.js';
 import Ingredient from '../models/Ingredient.model.js';
 const initDB = async () => {
