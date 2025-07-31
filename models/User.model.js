@@ -1,5 +1,6 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../database/db.js';
+import Wallet from './wallet.model.js';
 
 const User = sequelize.define('User', {
     id: {
@@ -64,6 +65,23 @@ const User = sequelize.define('User', {
     tableName: 'user',
     timestamps: true,
     underscored: true,
+    // Trong models/User.model.js - ĐÃ CÓ SẴN
+    hooks: {
+        afterCreate: async (user, options) => {
+            try {
+                await Wallet.create({
+                    user_id: user.id,
+                    balance: 0,
+                    created_at: new Date(),
+                    updated_at: new Date()
+                }, { transaction: options.transaction });
+                console.log(`✅ Wallet created for user ${user.id} with balance 0`);
+            } catch (error) {
+                console.error(`❌ Failed to create wallet for user ${user.id}:`, error);
+                throw error;
+            }
+        }
+    }
 });
 
 export default User;
