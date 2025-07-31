@@ -1,5 +1,6 @@
 import Wallet from '../models/wallet.model.js';
 import DepositRecords from '../models/deposit_records.model.js';
+import WithdrawRecords from '../models/withdraw_records.model.js';
 import PayOS from '@payos/node';
 import sequelize from '../database/db.js';
 import QRCode from 'qrcode';
@@ -311,3 +312,9 @@ export const walletGetHistoryById = async (req, res) => {
         return res.status(500).json({ success: false, message: 'Internal server error' });
     }
 }
+
+export const walletWithdrawRequest = async (req, res) => {
+
+}
+
+
