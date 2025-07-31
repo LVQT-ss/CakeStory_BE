@@ -301,7 +301,10 @@ export const walletGetHistoryById = async (req, res) => {
         if (!userId) {
             return res.status(401).json({ success: false, message: 'User not authenticated' });
         }
-
+        const history = await DepositRecords.findByPk(req.params.id);
+        if (!history) {
+            return res.status(404).json({ success: false, message: 'Transaction not found' });
+        }
         return res.status(200).json({ success: true, history });
     } catch (error) {
         console.error('walletGetHistoryById error:', error);
