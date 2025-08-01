@@ -387,7 +387,7 @@ router.get('/depositHistoryAdmin/:id', verifyToken, verifyAdmin, walletGetDeposi
 
 /**
  * @swagger
- * /api/wallet/withdrawAll-history:
+ * /api/wallet/withdraw:
  *   post:
  *     summary: Create a new wallet withdraw request
  *     tags: [Wallet]
@@ -527,7 +527,8 @@ router.get('/depositHistoryAdmin/:id', verifyToken, verifyAdmin, walletGetDeposi
  *       500:
  *         description: Internal server error
  */
-router.get('/withdrawAll-history', verifyToken, walletGetAllWithdrawHistory);
+router.post('/withdraw', verifyToken, walletWithdrawRequest);
+
 /**
  * @swagger
  * /api/wallet/withdraw-historyAdmin/{id}:
@@ -610,9 +611,9 @@ router.get('/withdrawAll-history', verifyToken, walletGetAllWithdrawHistory);
  *         description: Internal server error
  */
 router.get('/withdraw-historyAdmin/:id', verifyToken, verifyAdmin, walletGetWithdrawHistoryById);
-/**w
+/**
  * @swagger
- * /api/wallet/withdraw-history:
+ * /api/wallet/withdrawAll-history:
  *   get:
  *     summary: Get withdraw request history for the authenticated user
  *     tags: [Wallet]
@@ -702,7 +703,7 @@ router.get('/withdraw-historyAdmin/:id', verifyToken, verifyAdmin, walletGetWith
  *       500:
  *         description: Internal server error
  */
-router.post('/withdraw', verifyToken, walletWithdrawRequest);
+router.get('/withdrawAll-historyAdmin', verifyAdmin, walletGetAllWithdrawHistory);
 
 /**
  * @swagger

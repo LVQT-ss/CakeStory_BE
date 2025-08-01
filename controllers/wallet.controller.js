@@ -434,25 +434,13 @@ export const walletWithdrawRequest = async (req, res) => {
 
 export const walletGetAllWithdrawHistory = async (req, res) => {
     try {
-        const userId = req.userId;
-        if (!userId) {
-            return res.status(401).json({ success: false, message: 'User not authenticated' });
-        }
-
         const withdrawHistory = await WithdrawRecords.findAll({
-            where: { user_id: userId },
             order: [['created_at', 'DESC']]
         });
 
         return res.status(200).json({
             success: true,
-            data: {
-                withdrawHistory: withdrawHistory,
-                totalRequests: withdrawHistory.length,
-                pendingRequests: withdrawHistory.filter(record => record.status === 'pending').length,
-                completedRequests: withdrawHistory.filter(record => record.status === 'completed').length,
-                cancelledRequests: withdrawHistory.filter(record => record.status === 'cancelled').length
-            }
+            withdrawHistory: withdrawHistory
         });
     } catch (error) {
         console.error('walletGetWithdrawHistory error:', error);
