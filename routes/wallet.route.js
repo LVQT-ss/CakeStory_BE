@@ -5,7 +5,7 @@ import {
     payOSWebhook,
     walletGetBalance,
     walletGetDepositHistoryUser,
-    walletGetHistoryById,
+    walletGetDepositHistoryByIdAdmin,
     walletWithdrawRequest,
     walletGetAllWithdrawHistory,
     walletGetWithdrawHistoryById,
@@ -284,9 +284,9 @@ router.get('/AllDepositHistoryUser', verifyToken, walletGetDepositHistoryUser);
 
 /**
  * @swagger
- * /api/wallet/history/{id}:
+ * /api/wallet/depositHistoryAdmin/{id}:
  *   get:
- *     summary: Get a specific transaction by ID
+ *     summary: Get a specific transaction by ID (Admin Only)
  *     tags: [Wallet]
  *     security:
  *       - bearerAuth: []
@@ -383,7 +383,7 @@ router.get('/AllDepositHistoryUser', verifyToken, walletGetDepositHistoryUser);
  *                   type: string
  *                   example: "Internal server error"
  */
-router.get('/history/:id', verifyToken, walletGetHistoryById);
+router.get('/depositHistoryAdmin/:id', verifyToken, verifyAdmin, walletGetDepositHistoryByIdAdmin);
 
 /**
  * @swagger
@@ -532,7 +532,7 @@ router.get('/withdrawAll-history', verifyToken, walletGetAllWithdrawHistory);
  * @swagger
  * /api/wallet/withdraw-historyAdmin/{id}:
  *   get:
- *     summary: Get a specific withdraw request by ID for Admin
+ *     summary: Get a specific withdraw request by ID (Admin Only)
  *     tags: [Wallet]
  *     security:
  *       - bearerAuth: []
@@ -609,7 +609,7 @@ router.get('/withdrawAll-history', verifyToken, walletGetAllWithdrawHistory);
  *       500:
  *         description: Internal server error
  */
-router.get('/withdraw-historyAdmin/:id', verifyAdmin, walletGetWithdrawHistoryById);
+router.get('/withdraw-historyAdmin/:id', verifyToken, verifyAdmin, walletGetWithdrawHistoryById);
 /**w
  * @swagger
  * /api/wallet/withdraw-history:

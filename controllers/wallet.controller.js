@@ -296,7 +296,7 @@ export const walletGetDepositHistoryUser = async (req, res) => {
     }
 }
 
-export const walletGetHistoryById = async (req, res) => {
+export const walletGetDepositHistoryByIdAdmin = async (req, res) => {
     try {
         const userId = req.userId;
         if (!userId) {
