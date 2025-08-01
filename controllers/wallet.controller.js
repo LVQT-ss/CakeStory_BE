@@ -483,3 +483,24 @@ export const walletGetWithdrawHistoryById = async (req, res) => {
         });
     }
 }
+
+export const walletGetWithdrawHistoryUser = async (req, res) => {
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'User not authenticated' });
+        }
+        const withdrawHistory = await WithdrawRecords.findAll({
+            where: { user_id: userId },
+            order: [['created_at', 'DESC']]
+        });
+        return res.status(200).json({ success: true, withdrawHistory });
+    } catch (error) {
+        console.error('walletGetWithdrawHistoryUser error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
+    }
+}

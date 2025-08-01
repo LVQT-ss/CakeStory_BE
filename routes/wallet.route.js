@@ -8,7 +8,8 @@ import {
     walletGetHistoryById,
     walletWithdrawRequest,
     walletGetAllWithdrawHistory,
-    walletGetWithdrawHistoryById
+    walletGetWithdrawHistoryById,
+    walletGetWithdrawHistoryUser
 } from '../controllers/wallet.controller.js';
 const router = express.Router();
 
@@ -701,5 +702,77 @@ router.get('/withdraw-historyAdmin/:id', verifyAdmin, walletGetWithdrawHistoryBy
  *         description: Internal server error
  */
 router.post('/withdraw', verifyToken, walletWithdrawRequest);
+
+/**
+ * @swagger
+ * /api/wallet/withdrawAll-historyUser:
+ *   get:
+ *     summary: Get withdraw history for the authenticated user
+ *     tags: [Wallet]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Withdraw history retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 withdrawHistory:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         description: Withdraw record ID
+ *                         example: 123
+ *                       user_id:
+ *                         type: integer
+ *                         description: User ID who made the withdrawal
+ *                         example: 456
+ *                       wallet_id:
+ *                         type: integer
+ *                         description: Associated wallet ID
+ *                         example: 789
+ *                       amount:
+ *                         type: number
+ *                         description: Withdrawal amount in VND
+ *                         example: 100000
+ *                       bank_name:
+ *                         type: string
+ *                         description: Bank name
+ *                         example: "Vietcombank"
+ *                       account_number:
+ *                         type: string
+ *                         description: Account number
+ *                         example: "1234567890"
+ *                       status:
+ *                         type: string
+ *                         enum: [pending, completed, failed, cancelled]
+ *                         description: Withdraw status
+ *                         example: "pending"
+ *                       created_at:
+ *                         type: string
+ *                         format: date-time
+ *                         description: Request creation timestamp
+ *                         example: "2024-01-15T10:30:00.000Z"
+ *                       updated_at:
+ *                         type: string
+ *                         format: date-time
+ *                         description: Last update timestamp
+ *                         example: "2024-01-15T10:30:00.000Z"
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       500:
+ *         description: Internal server error
+ */
+
+router.get('/withdrawAll-historyUser', verifyToken, walletGetWithdrawHistoryUser);
+
 
 export default router;
