@@ -4,6 +4,7 @@ import {
   getAllChallengePosts,
   getChallengePostById,
   getChallengePostsByUserId,
+  getChallengePostsByChallengeId,
   updateChallengePost,
   deleteChallengePost
 } from '../controllers/challengePost.controller.js';
@@ -136,6 +137,32 @@ router.get('/:post_id', verifyToken, getChallengePostById);
  *         description: Server error
  */
 router.get('/user/:userId', verifyToken, getChallengePostsByUserId);
+
+/**
+ * @swagger
+ * /api/challenge-posts/challenge/{challenge_id}:
+ *   get:
+ *     tags: [ChallengePost]
+ *     summary: Get challenge posts by challenge ID
+ *     description: Retrieve all active challenge posts for a specific challenge
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: challenge_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Challenge ID
+ *     responses:
+ *       200:
+ *         description: Challenge posts retrieved successfully by challenge_id
+ *       404:
+ *         description: Challenge not found
+ *       500:
+ *         description: Server error
+ */
+router.get('/challenge/:challenge_id', verifyToken, getChallengePostsByChallengeId);
 
 /**
  * @swagger
