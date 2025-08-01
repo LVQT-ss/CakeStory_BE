@@ -14,7 +14,8 @@ export const createChallenge = async (req, res) => {
       min_participants,
       hashtag,
       rules,
-      requirements
+      requirements,
+      avatar
     } = req.body;
 
     const now = new Date();
@@ -44,7 +45,8 @@ export const createChallenge = async (req, res) => {
       min_participants,
       hashtag,
       rules,
-      requirements
+      requirements,
+      avatar
     });
 
     res.status(201).json({ message: 'Challenge created successfully', challenge });
