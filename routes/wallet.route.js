@@ -1,6 +1,17 @@
 import express from 'express';
-import { verifyToken } from '../middleware/verifyUser.js';
-import { walletDeposit, payOSWebhook, walletGetBalance, walletGetHistory, walletGetHistoryById } from '../controllers/wallet.controller.js';
+import { verifyToken, verifyAdmin } from '../middleware/verifyUser.js';
+import {
+    walletDeposit,
+    payOSWebhook,
+    walletGetBalance,
+    walletGetDepositHistoryUser,
+    walletGetDepositHistoryByIdAdmin,
+    walletWithdrawRequest,
+    walletGetAllWithdrawHistory,
+    walletGetWithdrawHistoryById,
+    walletGetWithdrawHistoryUser,
+    walletGetWithdrawHistoryUserId
+} from '../controllers/wallet.controller.js';
 const router = express.Router();
 
 /**
@@ -255,9 +266,9 @@ router.get('/balance', verifyToken, walletGetBalance);
 
 /**
  * @swagger
- * /api/wallet/history:
+ * /api/wallet/AllDepositHistoryUser:
  *   get:
- *     summary: Get the transaction history for the authenticated user
+ *     summary: Get the transaction history for the authenticated Admin
  *     tags: [Wallet]
  *     security:
  *       - bearerAuth: []
@@ -269,13 +280,13 @@ router.get('/balance', verifyToken, walletGetBalance);
  *       500:
  *         description: Internal server error
  */
-router.get('/history', verifyToken, walletGetHistory);
+router.get('/AllDepositHistoryUser', verifyToken, walletGetDepositHistoryUser);
 
 /**
  * @swagger
- * /api/wallet/history/{id}:
+ * /api/wallet/depositHistoryAdmin/{id}:
  *   get:
- *     summary: Get a specific transaction by ID
+ *     summary: Get a specific transaction by ID (Admin Only)
  *     tags: [Wallet]
  *     security:
  *       - bearerAuth: []
@@ -372,6 +383,472 @@ router.get('/history', verifyToken, walletGetHistory);
  *                   type: string
  *                   example: "Internal server error"
  */
-router.get('/history/:id', verifyToken, walletGetHistoryById);
+router.get('/depositHistoryAdmin/:id', verifyToken, verifyAdmin, walletGetDepositHistoryByIdAdmin);
+
+/**
+ * @swagger
+ * /api/wallet/withdraw:
+ *   post:
+ *     summary: Create a new wallet withdraw request
+ *     tags: [Wallet]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - amount
+ *               - bank_name
+ *               - account_number
+ *             properties:
+ *               amount:
+ *                 type: number
+ *                 description: Amount to withdraw (in VND)
+ *                 example: 50000
+ *               bank_name:
+ *                 type: string
+ *                 description: Bank name for the withdrawal
+ *                 example: "Vietcombank"
+ *               account_number:
+ *                 type: string
+ *                 description: Bank account number for the withdrawal
+ *                 example: "1234567890"
+ *     responses:
+ *       200:
+ *         description: Withdraw request created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Withdraw request submitted successfully. Amount has been deducted from wallet. Waiting for admin approval."
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     withdrawRecord:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           description: Withdraw record ID
+ *                           example: 123
+ *                         amount:
+ *                           type: number
+ *                           description: Withdraw amount
+ *                           example: 50000
+ *                         bank_name:
+ *                           type: string
+ *                           description: Bank name
+ *                           example: "Vietcombank"
+ *                         account_number:
+ *                           type: string
+ *                           description: Account number
+ *                           example: "1234567890"
+ *                         status:
+ *                           type: string
+ *                           enum: [pending, completed, failed, cancelled]
+ *                           description: Withdraw status
+ *                           example: "pending"
+ *                         created_at:
+ *                           type: string
+ *                           format: date-time
+ *                           description: Request creation timestamp
+ *                           example: "2024-01-15T10:30:00.000Z"
+ *                     wallet:
+ *                       type: object
+ *                       properties:
+ *                         previous_balance:
+ *                           type: number
+ *                           description: Wallet balance before withdraw request
+ *                           example: 100000
+ *                         requested_amount:
+ *                           type: number
+ *                           description: Requested withdraw amount
+ *                           example: 50000
+ *                         new_balance:
+ *                           type: number
+ *                           description: New wallet balance after amount deduction
+ *                           example: 50000
+ *                         balance_deducted:
+ *                           type: boolean
+ *                           description: Confirmation that balance was deducted
+ *                           example: true
+ *       400:
+ *         description: Invalid request data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   examples:
+ *                     missing_amount:
+ *                       summary: Missing amount
+ *                       value: "Missing required field: amount"
+ *                     missing_bank_name:
+ *                       summary: Missing bank name
+ *                       value: "Missing required field: bank_name"
+ *                     missing_account_number:
+ *                       summary: Missing account number
+ *                       value: "Missing required field: account_number"
+ *                     invalid_amount:
+ *                       summary: Invalid amount
+ *                       value: "Amount must be greater than 0"
+ *                     insufficient_balance:
+ *                       summary: Insufficient balance
+ *                       value: "Insufficient balance. Current balance: 10000 VND, Requested amount: 50000 VND"
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       404:
+ *         description: Wallet not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Wallet not found. Please create a wallet first."
+ *       500:
+ *         description: Internal server error
+ */
+router.post('/withdraw', verifyToken, walletWithdrawRequest);
+
+/**
+ * @swagger
+ * /api/wallet/withdraw-historyAdmin/{id}:
+ *   get:
+ *     summary: Get a specific withdraw request by ID (Admin Only)
+ *     tags: [Wallet]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Withdraw record ID to retrieve
+ *         example: 123
+ *     responses:
+ *       200:
+ *         description: Withdraw record retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 withdrawHistory:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       description: Withdraw record ID
+ *                       example: 123
+ *                     user_id:
+ *                       type: integer
+ *                       description: User ID who made the withdrawal
+ *                       example: 456
+ *                     wallet_id:
+ *                       type: integer
+ *                       description: Associated wallet ID
+ *                       example: 789
+ *                     amount:
+ *                       type: number
+ *                       description: Withdrawal amount in VND
+ *                       example: 100000
+ *                     bank_name:
+ *                       type: string
+ *                       description: Bank name for withdrawal
+ *                       example: "Vietcombank"
+ *                     account_number:
+ *                       type: string
+ *                       description: Bank account number
+ *                       example: "1234567890"
+ *                     status:
+ *                       type: string
+ *                       description: Current status of withdrawal
+ *                       example: "pending"
+ *                     created_at:
+ *                       type: string
+ *                       format: date-time
+ *                       description: Timestamp of withdrawal request
+ *                       example: "2023-12-20T15:30:00.000Z"
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       404:
+ *         description: Withdraw record not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Withdraw history not found"
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/withdraw-historyAdmin/:id', verifyToken, verifyAdmin, walletGetWithdrawHistoryById);
+/**
+ * @swagger
+ * /api/wallet/withdrawAll-history:
+ *   get:
+ *     summary: Get withdraw request history for the authenticated user
+ *     tags: [Wallet]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Withdraw history retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     withdrawHistory:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             description: Withdraw record ID
+ *                             example: 123
+ *                           user_id:
+ *                             type: integer
+ *                             description: User ID
+ *                             example: 456
+ *                           wallet_id:
+ *                             type: integer
+ *                             description: Wallet ID
+ *                             example: 789
+ *                           amount:
+ *                             type: number
+ *                             description: Withdraw amount
+ *                             example: 50000
+ *                           bank_name:
+ *                             type: string
+ *                             description: Bank name
+ *                             example: "Vietcombank"
+ *                           account_number:
+ *                             type: string
+ *                             description: Account number
+ *                             example: "1234567890"
+ *                           status:
+ *                             type: string
+ *                             enum: [pending, completed, failed, cancelled]
+ *                             description: Withdraw status
+ *                             example: "pending"
+ *                           processed_at:
+ *                             type: string
+ *                             format: date-time
+ *                             description: Processing timestamp (if completed)
+ *                             example: "2024-01-15T11:30:00.000Z"
+ *                           created_at:
+ *                             type: string
+ *                             format: date-time
+ *                             description: Request creation timestamp
+ *                             example: "2024-01-15T10:30:00.000Z"
+ *                           updated_at:
+ *                             type: string
+ *                             format: date-time
+ *                             description: Last update timestamp
+ *                             example: "2024-01-15T10:30:00.000Z"
+ *                     totalRequests:
+ *                       type: integer
+ *                       description: Total number of withdraw requests
+ *                       example: 5
+ *                     pendingRequests:
+ *                       type: integer
+ *                       description: Number of pending requests
+ *                       example: 2
+ *                     completedRequests:
+ *                       type: integer
+ *                       description: Number of completed requests
+ *                       example: 2
+ *                     cancelledRequests:
+ *                       type: integer
+ *                       description: Number of cancelled requests
+ *                       example: 1
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/withdrawAll-historyAdmin', verifyAdmin, walletGetAllWithdrawHistory);
+
+/**
+ * @swagger
+ * /api/wallet/withdrawAll-historyUser:
+ *   get:
+ *     summary: Get withdraw history for the authenticated user
+ *     tags: [Wallet]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Withdraw history retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 withdrawHistory:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         description: Withdraw record ID
+ *                         example: 123
+ *                       user_id:
+ *                         type: integer
+ *                         description: User ID who made the withdrawal
+ *                         example: 456
+ *                       wallet_id:
+ *                         type: integer
+ *                         description: Associated wallet ID
+ *                         example: 789
+ *                       amount:
+ *                         type: number
+ *                         description: Withdrawal amount in VND
+ *                         example: 100000
+ *                       bank_name:
+ *                         type: string
+ *                         description: Bank name
+ *                         example: "Vietcombank"
+ *                       account_number:
+ *                         type: string
+ *                         description: Account number
+ *                         example: "1234567890"
+ *                       status:
+ *                         type: string
+ *                         enum: [pending, completed, failed, cancelled]
+ *                         description: Withdraw status
+ *                         example: "pending"
+ *                       created_at:
+ *                         type: string
+ *                         format: date-time
+ *                         description: Request creation timestamp
+ *                         example: "2024-01-15T10:30:00.000Z"
+ *                       updated_at:
+ *                         type: string
+ *                         format: date-time
+ *                         description: Last update timestamp
+ *                         example: "2024-01-15T10:30:00.000Z"
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/withdrawAll-historyUser', verifyToken, walletGetWithdrawHistoryUser);
+/**
+ * @swagger
+ * /api/wallet/withdraw-historyUserId/{id}:
+ *   get:
+ *     summary: Get a specific withdrawal history record for the authenticated user
+ *     tags: [Wallet]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID of the withdrawal record
+ *     responses:
+ *       200:
+ *         description: Withdrawal history record retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 withdrawHistory:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       description: Withdraw record ID
+ *                       example: 123
+ *                     user_id:
+ *                       type: integer
+ *                       description: User ID who made the withdrawal
+ *                       example: 456
+ *                     wallet_id:
+ *                       type: integer
+ *                       description: Associated wallet ID
+ *                       example: 789
+ *                     amount:
+ *                       type: number
+ *                       description: Withdrawal amount in VND
+ *                       example: 100000
+ *                     bank_name:
+ *                       type: string
+ *                       description: Bank name
+ *                       example: "Vietcombank"
+ *                     account_number:
+ *                       type: string
+ *                       description: Account number
+ *                       example: "1234567890"
+ *                     status:
+ *                       type: string
+ *                       enum: [pending, completed, failed, cancelled]
+ *                       description: Withdraw status
+ *                       example: "pending"
+ *                     created_at:
+ *                       type: string
+ *                       format: date-time
+ *                       description: Request creation timestamp
+ *                       example: "2024-01-15T10:30:00.000Z"
+ *                     updated_at:
+ *                       type: string
+ *                       format: date-time
+ *                       description: Last update timestamp
+ *                       example: "2024-01-15T10:30:00.000Z"
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       404:
+ *         description: Withdraw history record not found
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/withdraw-historyUserId/:id', verifyToken, walletGetWithdrawHistoryUserId);
 
 export default router;

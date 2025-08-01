@@ -10,6 +10,7 @@ const Post = sequelize.define('Post', {
     allowNull: false
   },
   created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
+  user_id: { type: DataTypes.INTEGER, allowNull: false },
   is_public: { type: DataTypes.BOOLEAN, defaultValue: true }
 }, {
   tableName: 'post',

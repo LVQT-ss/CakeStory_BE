@@ -1,6 +1,9 @@
 import { storage } from '../utils/firebase.js';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import AiGeneratedImage from '../models/ai_generated_image.model.js';
+import Wallet from '../models/wallet.model.js';
+import Transaction from '../models/transaction.model.js';
+import sequelize from '../database/db.js';
 import OpenAI from 'openai';
 import axios from 'axios';
 
@@ -12,61 +15,188 @@ export const generateImage = async (req, res) => {
     try {
         const { prompt } = req.body;
         const userId = req.userId; // From auth middleware
+        const AI_GENERATION_COST = 1000; // Cost per image generation
 
         if (!prompt) {
             return res.status(400).json({ message: 'Prompt is required' });
         }
 
-        // Add prefix to the prompt
-        const styledPrompt = `Close-up, eye-level shot of a cake on a stand, with soft, even lighting and a simple, blurred background. The focus is on the cake's presentation, highlighting its details elegantly of ${prompt}`;
+        // Use transaction to ensure data consistency
+        const result = await sequelize.transaction(async (t) => {
+            // 1. Check if user has wallet
+            const wallet = await Wallet.findOne({
+                where: { user_id: userId },
+                transaction: t
+            });
 
-        // Generate image using OpenAI
-        const response = await openai.images.generate({
-            model: "dall-e-3",
-            prompt: styledPrompt,
-            n: 1,
-            size: "1024x1024",
-        });
-
-        // Get the image URL from OpenAI response
-        const imageUrl = response.data[0].url;
-
-        // Download the image from OpenAI
-        const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-        const buffer = Buffer.from(imageResponse.data);
-
-        // Generate unique filename with user's folder
-        const filename = `ai_generated/${userId}/${Date.now()}.png`;
-
-        // Upload to Firebase Storage with metadata
-        const storageRef = ref(storage, filename);
-        const metadata = {
-            contentType: 'image/png',
-            customMetadata: {
-                userId: userId.toString(),
-                prompt: prompt
+            if (!wallet) {
+                // Tạo transaction với status failed nếu không tìm thấy wallet
+                const transaction = await Transaction.create({
+                    from_wallet_id: null,
+                    amount: AI_GENERATION_COST,
+                    transaction_type: 'ai_generation',
+                    status: 'failed',
+                    description: `AI Image Generation: ${prompt.substring(0, 50)}${prompt.length > 50 ? '...' : ''} - Wallet not found`,
+                }, { transaction: t });
+                console.log(`❌ Transaction ${transaction.id} marked as failed - Wallet not found`);
+                throw new Error('Wallet not found. Please contact support.');
             }
-        };
 
-        await uploadBytes(storageRef, buffer, metadata);
+            // 2. Create transaction record (pending status) TRƯỚC khi kiểm tra balance
+            const transaction = await Transaction.create({
+                from_wallet_id: wallet.id,
+                amount: AI_GENERATION_COST,
+                transaction_type: 'ai_generation',
+                status: 'pending',
+                description: `AI Image Generation: ${prompt.substring(0, 50)}${prompt.length > 50 ? '...' : ''}`,
+            }, { transaction: t });
 
-        // Get the Firebase Storage URL
-        const firebaseUrl = await getDownloadURL(storageRef);
+            // 3. Check if user has sufficient balance
+            if (wallet.balance < AI_GENERATION_COST) {
+                // Update transaction status to failed
+                await Transaction.update({
+                    status: 'failed'
+                }, {
+                    where: { id: transaction.id },
+                    transaction: t
+                });
+                console.log(`❌ Transaction ${transaction.id} marked as failed - Insufficient balance`);
+                throw new Error(`Insufficient balance. Required: ${AI_GENERATION_COST} VND, Available: ${wallet.balance} VND`);
+            }
 
-        // Save to database
-        const savedImage = await AiGeneratedImage.create({
-            user_id: userId,
-            prompt: prompt,
-            image_url: firebaseUrl,
+            // 4. TRỪ TIỀN NGAY LẬP TỨC sau khi kiểm tra đủ tiền
+            const newBalance = wallet.balance - AI_GENERATION_COST;
+            console.log(`💰 TRỪ TIỀN NGAY: ${wallet.balance} - ${AI_GENERATION_COST} = ${newBalance}`);
+
+            await Wallet.update({
+                balance: newBalance,
+                updated_at: new Date()
+            }, {
+                where: { id: wallet.id },
+                transaction: t
+            });
+
+            // Verify trừ tiền thành công
+            const updatedWallet = await Wallet.findByPk(wallet.id, { transaction: t });
+            console.log(`✅ Đã trừ tiền thành công: ${updatedWallet.balance}`);
+
+            // 5. UPDATE TRANSACTION STATUS = COMPLETED sau khi trừ tiền thành công
+            await Transaction.update({
+                status: 'completed'
+            }, {
+                where: { id: transaction.id },
+                transaction: t
+            });
+            console.log(`✅ Transaction ${transaction.id} đã được update thành completed`);
+
+            // 6. Generate image using OpenAI
+            const styledPrompt = `Close-up, eye-level shot of a cake on a stand, with soft, even lighting and a simple, blurred background. The focus is on the cake's presentation, highlighting its details elegantly of ${prompt}`;
+
+            const response = await openai.images.generate({
+                model: "dall-e-3",
+                prompt: styledPrompt,
+                n: 1,
+                size: "1024x1024",
+            });
+
+            // 6. Get the image URL from OpenAI response
+            const imageUrl = response.data[0].url;
+
+            // 7. Download the image from OpenAI
+            const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+            const buffer = Buffer.from(imageResponse.data);
+
+            // 8. Generate unique filename with user's folder
+            const filename = `ai_generated/${userId}/${Date.now()}.png`;
+
+            // 9. Upload to Firebase Storage with metadata
+            const storageRef = ref(storage, filename);
+            const metadata = {
+                contentType: 'image/png',
+                customMetadata: {
+                    userId: userId.toString(),
+                    prompt: prompt
+                }
+            };
+
+            await uploadBytes(storageRef, buffer, metadata);
+
+            // 10. Get the Firebase Storage URL
+            const firebaseUrl = await getDownloadURL(storageRef);
+
+            // 11. Save AI generated image to database
+            const savedImage = await AiGeneratedImage.create({
+                user_id: userId,
+                prompt: prompt,
+                image_url: firebaseUrl,
+            }, { transaction: t });
+
+            // 12. Update transaction with AI generated image ID (status đã là completed rồi)
+            await Transaction.update({
+                ai_generated_image_id: savedImage.id
+            }, {
+                where: { id: transaction.id },
+                transaction: t
+            });
+            console.log(`✅ Đã link AI image ${savedImage.id} với transaction ${transaction.id}`);
+
+            // Final check balance sau khi hoàn thành
+            const finalWallet = await Wallet.findByPk(wallet.id, { transaction: t });
+            console.log(`🎯 Balance cuối cùng: ${finalWallet.balance}`);
+
+            return {
+                transaction,
+                savedImage,
+                newBalance: finalWallet.balance,
+                previousBalance: wallet.balance
+            };
         });
 
         res.status(200).json({
             message: 'Image generated successfully',
-            data: savedImage
+            data: {
+                image: result.savedImage,
+                transaction: {
+                    id: result.transaction.id,
+                    amount: result.transaction.amount,
+                    status: result.transaction.status,
+                    description: result.transaction.description
+                },
+                wallet: {
+                    previousBalance: result.previousBalance,
+                    newBalance: result.newBalance,
+                    deductedAmount: result.transaction.amount
+                }
+            }
         });
 
     } catch (error) {
         console.error('Error generating image:', error);
+
+        // Handle specific error cases
+        if (error.message.includes('Insufficient balance')) {
+            return res.status(402).json({
+                message: 'Insufficient balance',
+                error: error.message,
+                requiredAmount: 1000,
+                suggestion: 'Please top up your wallet to continue using AI generation'
+            });
+        }
+
+        if (error.message.includes('Wallet not found')) {
+            return res.status(404).json({
+                message: 'Wallet not found',
+                error: error.message,
+                suggestion: 'Please contact support to create your wallet'
+            });
+        }
+
+        // Nếu có lỗi khác, cần update transaction status thành failed
+        if (error.message.includes('Transaction')) {
+            // Transaction đã được tạo và có thể đã được update thành failed
+            console.log('Transaction đã được xử lý với status failed');
+        }
+
         res.status(500).json({
             message: 'Error generating image',
             error: error.message
