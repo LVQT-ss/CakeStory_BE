@@ -463,3 +463,23 @@ export const walletGetAllWithdrawHistory = async (req, res) => {
         });
     }
 }
+export const walletGetWithdrawHistoryById = async (req, res) => {
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'User not authenticated' });
+        }
+        const withdrawHistory = await WithdrawRecords.findByPk(req.params.id);
+        if (!withdrawHistory) {
+            return res.status(404).json({ success: false, message: 'Withdraw history not found' });
+        }
+        return res.status(200).json({ success: true, withdrawHistory });
+    } catch (error) {
+        console.error('walletGetWithdrawHistoryById error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
+    }
+}

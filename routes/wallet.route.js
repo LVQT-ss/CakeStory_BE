@@ -7,7 +7,8 @@ import {
     walletGetHistory,
     walletGetHistoryById,
     walletWithdrawRequest,
-    walletGetAllWithdrawHistory
+    walletGetAllWithdrawHistory,
+    walletGetWithdrawHistoryById
 } from '../controllers/wallet.controller.js';
 const router = express.Router();
 
@@ -263,9 +264,9 @@ router.get('/balance', verifyToken, walletGetBalance);
 
 /**
  * @swagger
- * /api/wallet/history:
+ * /api/wallet/Allhistory:
  *   get:
- *     summary: Get the transaction history for the authenticated user
+ *     summary: Get the transaction history for the authenticated Admin
  *     tags: [Wallet]
  *     security:
  *       - bearerAuth: []
@@ -384,7 +385,7 @@ router.get('/history/:id', verifyToken, walletGetHistoryById);
 
 /**
  * @swagger
- * /api/wallet/withdraw:
+ * /api/wallet/withdrawAll-history:
  *   post:
  *     summary: Create a new wallet withdraw request
  *     tags: [Wallet]
@@ -526,6 +527,88 @@ router.get('/history/:id', verifyToken, walletGetHistoryById);
  */
 router.get('/withdrawAll-history', verifyToken, walletGetAllWithdrawHistory);
 /**
+ * @swagger
+ * /api/wallet/withdraw-historyAdmin/{id}:
+ *   get:
+ *     summary: Get a specific withdraw request by ID for Admin
+ *     tags: [Wallet]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Withdraw record ID to retrieve
+ *         example: 123
+ *     responses:
+ *       200:
+ *         description: Withdraw record retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 withdrawHistory:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       description: Withdraw record ID
+ *                       example: 123
+ *                     user_id:
+ *                       type: integer
+ *                       description: User ID who made the withdrawal
+ *                       example: 456
+ *                     wallet_id:
+ *                       type: integer
+ *                       description: Associated wallet ID
+ *                       example: 789
+ *                     amount:
+ *                       type: number
+ *                       description: Withdrawal amount in VND
+ *                       example: 100000
+ *                     bank_name:
+ *                       type: string
+ *                       description: Bank name for withdrawal
+ *                       example: "Vietcombank"
+ *                     account_number:
+ *                       type: string
+ *                       description: Bank account number
+ *                       example: "1234567890"
+ *                     status:
+ *                       type: string
+ *                       description: Current status of withdrawal
+ *                       example: "pending"
+ *                     created_at:
+ *                       type: string
+ *                       format: date-time
+ *                       description: Timestamp of withdrawal request
+ *                       example: "2023-12-20T15:30:00.000Z"
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       404:
+ *         description: Withdraw record not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Withdraw history not found"
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/withdraw-historyAdmin/:id', verifyAdmin, walletGetWithdrawHistoryById);
+/**w
  * @swagger
  * /api/wallet/withdraw-history:
  *   get:
