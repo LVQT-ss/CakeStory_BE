@@ -26,6 +26,7 @@ import Ingredient from './Ingredient.model.js';
 import AiGeneratedImage from "./ai_generated_image.model.js";
 import Wallet from "./wallet.model.js";
 import DepositRecords from "./deposit_records.model.js";
+import WithdrawRecords from "./withdraw_records.model.js";
 
 function setupAssociations() {
   // User ↔ Shop (1-1)
@@ -174,9 +175,16 @@ function setupAssociations() {
   User.hasOne(Wallet, { foreignKey: "user_id" });
   Wallet.belongsTo(User, { foreignKey: "user_id" });
 
-  // User ↔ DepositRecords (1-1)
-  User.hasOne(DepositRecords, { foreignKey: "user_id" });
+  // User ↔ DepositRecords (1-N)
+  User.hasMany(DepositRecords, { foreignKey: "user_id" });
   DepositRecords.belongsTo(User, { foreignKey: "user_id" });
+
+  // User ↔ WithdrawRecords (1-N)
+  User.hasMany(WithdrawRecords, { foreignKey: "user_id" });
+  WithdrawRecords.belongsTo(User, { foreignKey: "user_id" });
+
+  Wallet.hasMany(WithdrawRecords, { foreignKey: "wallet_id" });
+  WithdrawRecords.belongsTo(Wallet, { foreignKey: "wallet_id" });
 
   // Wallet ↔ Transaction (1-N) - From wallet
   Wallet.hasMany(Transaction, { foreignKey: "from_wallet_id", as: "outgoingTransactions" });
