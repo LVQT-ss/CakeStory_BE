@@ -10,7 +10,8 @@ import {
     walletGetAllWithdrawHistory,
     walletGetWithdrawHistoryById,
     walletGetWithdrawHistoryUser,
-    walletGetWithdrawHistoryUserId
+    walletGetWithdrawHistoryUserId,
+    walletCancelWithdraw
 } from '../controllers/wallet.controller.js';
 const router = express.Router();
 
@@ -850,5 +851,71 @@ router.get('/withdrawAll-historyUser', verifyToken, walletGetWithdrawHistoryUser
  *         description: Internal server error
  */
 router.get('/withdraw-historyUserId/:id', verifyToken, walletGetWithdrawHistoryUserId);
+
+/**
+ * @swagger
+ * /api/wallet/cancel-withdraw/{id}:
+ *   put:
+ *     summary: Cancel a pending withdrawal request
+ *     tags: [Wallet]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID of the withdrawal request to cancel
+ *     responses:
+ *       200:
+ *         description: Withdrawal successfully cancelled
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Withdraw cancelled and amount returned to wallet"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     withdrawId:
+ *                       type: integer
+ *                       description: ID of the cancelled withdrawal
+ *                       example: 123
+ *                     returnedAmount:
+ *                       type: number
+ *                       description: Amount returned to wallet
+ *                       example: 100000
+ *                     newBalance:
+ *                       type: number
+ *                       description: Updated wallet balance
+ *                       example: 500000
+ *       400:
+ *         description: Withdrawal cannot be cancelled (not in pending status)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Withdraw record is not pending"
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       404:
+ *         description: Withdrawal record or wallet not found
+ *       500:
+ *         description: Internal server error
+ */
+router.put('/cancel-withdraw/:id', verifyToken, walletCancelWithdraw);
 
 export default router;

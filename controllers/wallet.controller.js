@@ -518,3 +518,61 @@ export const walletGetWithdrawHistoryUserId = async (req, res) => {
         });
     }
 }
+
+export const walletCancelWithdraw = async (req, res) => {
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'User not authenticated' });
+        }
+
+        const withdrawRecord = await WithdrawRecords.findOne({
+            where: {
+                id: req.params.id,
+                user_id: userId
+            }
+        });
+
+        if (!withdrawRecord) {
+            return res.status(404).json({ success: false, message: 'Withdraw record not found' });
+        }
+
+        if (withdrawRecord.status !== 'pending') {
+            return res.status(400).json({ success: false, message: 'Withdraw record is not pending' });
+        }
+
+        // Get user's wallet
+        const wallet = await Wallet.findOne({
+            where: { user_id: userId }
+        });
+
+        if (!wallet) {
+            return res.status(404).json({ success: false, message: 'Wallet not found' });
+        }
+
+        // Update wallet balance by adding back the withdrawn amount
+        const newBalance = Number(wallet.balance) + Number(withdrawRecord.amount);
+        await wallet.update({ balance: newBalance });
+
+        // Update withdraw record status to canceled
+        await withdrawRecord.update({ status: 'cancelled' });
+
+        return res.status(200).json({
+            success: true,
+            message: 'Withdraw cancelled and amount returned to wallet',
+            data: {
+                withdrawId: withdrawRecord.id,
+                returnedAmount: withdrawRecord.amount,
+                newBalance: newBalance
+            }
+        });
+
+    } catch (error) {
+        console.error('walletCancelWithdraw error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
+    }
+}
