@@ -15,6 +15,7 @@ const Challenge = sequelize.define('Challenge', {
   max_participants: { type: DataTypes.INTEGER, allowNull: true },
   min_participants: { type: DataTypes.INTEGER, allowNull: true },
   hashtag: { type: DataTypes.STRING(255), allowNull: true },
+  avatar: {type: DataTypes.STRING, allowNull: true},
   rules: { type: DataTypes.TEXT, allowNull: true },
   requirements: { type: DataTypes.TEXT, allowNull: true },
   created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }

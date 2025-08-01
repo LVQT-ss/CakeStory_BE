@@ -750,3 +750,81 @@ export const getChallengePostComments = async (req, res) => {
     res.status(500).json({ message: 'Error retrieving comments', error: err.message });
   }
 };
+
+export const getChallengePostsByChallengeId = async (req, res) => {
+  try {
+    const { challenge_id } = req.params;
+
+    // Kiểm tra challenge có tồn tại không
+    const challenge = await Challenge.findByPk(challenge_id);
+    if (!challenge) {
+      return res.status(404).json({ message: 'Challenge not found' });
+    }
+
+    const posts = await ChallengePost.findAll({
+      where: {
+        challenge_id,
+        is_active: true
+      },
+      include: [
+        {
+          model: Post,
+          as: 'post',
+          where: {
+            is_public: true
+          },
+          include: [
+            {
+              model: PostData,
+              as: 'media',
+              attributes: ['id', 'image_url', 'video_url']
+            },
+            {
+              model: User,
+              as: 'user',
+              attributes: ['id', 'username', 'full_name', 'avatar', 'role']
+            }
+          ]
+        }
+      ],
+      order: [['created_at', 'DESC']]
+    });
+
+    // Đếm số lượt like và comment cho mỗi bài
+    const postsWithCounts = await Promise.all(posts.map(async (challengePost) => {
+      const [likeCount, commentCount] = await Promise.all([
+        Like.count({
+          where: {
+            post_id: challengePost.post_id,
+            design_id: null
+          }
+        }),
+        Comment.count({
+          where: {
+            post_id: challengePost.post_id
+          }
+        })
+      ]);
+
+      return {
+        ...challengePost.toJSON(),
+        post: {
+          ...challengePost.post.toJSON(),
+          total_likes: likeCount,
+          total_comments: commentCount
+        }
+      };
+    }));
+
+    res.status(200).json({
+      message: 'Challenge posts retrieved successfully by challenge_id',
+      posts: postsWithCounts
+    });
+  } catch (err) {
+    console.error('Error fetching challenge posts by challenge_id:', err);
+    res.status(500).json({
+      message: 'Error fetching challenge posts by challenge_id',
+      error: err.message
+    });
+  }
+};
