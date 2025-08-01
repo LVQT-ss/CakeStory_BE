@@ -226,3 +226,26 @@ export const getUserGeneratedImages = async (req, res) => {
         });
     }
 };
+
+
+export const totalAmountAiGenerate = async (req, res) => {
+    try {
+        const totalAmount = await Transaction.sum('amount', {
+            where: {
+                status: 'completed',
+                transaction_type: 'ai_generation'
+            }
+        });
+        return res.status(200).json({
+            success: true,
+            totalAmount: totalAmount || 0 // Return 0 if no records found
+        });
+    } catch (error) {
+        console.error('totalAmountAiGenerate error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
+    }
+}

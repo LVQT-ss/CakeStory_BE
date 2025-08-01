@@ -1,9 +1,10 @@
 import express from 'express';
 import {
     generateImage,
-    getUserGeneratedImages
+    getUserGeneratedImages,
+    totalAmountAiGenerate
 } from '../controllers/ai_generate.controller.js';
-import { verifyToken } from '../middleware/verifyUser.js';
+import { verifyToken, verifyAdmin } from '../middleware/verifyUser.js';
 
 const router = express.Router();
 
@@ -56,5 +57,38 @@ router.post('/generate', verifyToken, generateImage);
  *         description: Server error
  */
 router.get('/images', verifyToken, getUserGeneratedImages);
+
+/**
+ * @swagger
+ * /api/ai/totalAmountAiGenerate:
+ *   get:
+ *     summary: Get total amount spent on AI generation (Admin only)
+ *     tags: [AI Generation]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved total amount
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 totalAmount:
+ *                   type: number
+ *                   description: Total amount spent on AI generation in VND
+ *                   example: 1000000
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       403:
+ *         description: Forbidden - User is not an admin
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/totalAmountAiGenerate', verifyToken, verifyAdmin, totalAmountAiGenerate);
+
 
 export default router;
