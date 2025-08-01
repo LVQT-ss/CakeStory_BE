@@ -1,5 +1,5 @@
 import express from 'express';
-import { verifyToken } from '../middleware/verifyUser.js';
+import { verifyToken, verifyAdmin } from '../middleware/verifyUser.js';
 import {
     walletDeposit,
     payOSWebhook,
@@ -7,7 +7,7 @@ import {
     walletGetHistory,
     walletGetHistoryById,
     walletWithdrawRequest,
-    walletGetWithdrawHistory
+    walletGetAllWithdrawHistory
 } from '../controllers/wallet.controller.js';
 const router = express.Router();
 
@@ -277,7 +277,7 @@ router.get('/balance', verifyToken, walletGetBalance);
  *       500:
  *         description: Internal server error
  */
-router.get('/history', verifyToken, walletGetHistory);
+router.get('/Allhistory', verifyToken, walletGetHistory);
 
 /**
  * @swagger
@@ -426,7 +426,7 @@ router.get('/history/:id', verifyToken, walletGetHistoryById);
  *                   example: true
  *                 message:
  *                   type: string
- *                   example: "Withdraw request submitted successfully. Waiting for admin approval."
+ *                   example: "Withdraw request submitted successfully. Amount has been deducted from wallet. Waiting for admin approval."
  *                 data:
  *                   type: object
  *                   properties:
@@ -462,18 +462,22 @@ router.get('/history/:id', verifyToken, walletGetHistoryById);
  *                     wallet:
  *                       type: object
  *                       properties:
- *                         current_balance:
+ *                         previous_balance:
  *                           type: number
- *                           description: Current wallet balance
+ *                           description: Wallet balance before withdraw request
  *                           example: 100000
  *                         requested_amount:
  *                           type: number
  *                           description: Requested withdraw amount
  *                           example: 50000
- *                         remaining_balance_after_withdraw:
+ *                         new_balance:
  *                           type: number
- *                           description: Balance after withdraw (if approved)
+ *                           description: New wallet balance after amount deduction
  *                           example: 50000
+ *                         balance_deducted:
+ *                           type: boolean
+ *                           description: Confirmation that balance was deducted
+ *                           example: true
  *       400:
  *         description: Invalid request data
  *         content:
@@ -520,7 +524,7 @@ router.get('/history/:id', verifyToken, walletGetHistoryById);
  *       500:
  *         description: Internal server error
  */
-router.get('/withdraw-history', verifyToken, walletGetWithdrawHistory);
+router.get('/withdrawAll-history', verifyToken, walletGetAllWithdrawHistory);
 /**
  * @swagger
  * /api/wallet/withdraw-history:

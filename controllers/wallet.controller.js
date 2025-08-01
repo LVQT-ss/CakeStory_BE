@@ -372,33 +372,52 @@ export const walletWithdrawRequest = async (req, res) => {
             });
         }
 
-        // Create withdraw record with pending status
-        const withdrawRecord = await WithdrawRecords.create({
-            user_id: userId,
-            wallet_id: wallet.id,
-            amount: withdrawAmount,
-            bank_name: bank_name,
-            account_number: account_number,
-            status: 'pending',
-            created_at: new Date()
+        // Use database transaction to ensure data consistency
+        const result = await sequelize.transaction(async (t) => {
+            // Create withdraw record with pending status
+            const withdrawRecord = await WithdrawRecords.create({
+                user_id: userId,
+                wallet_id: wallet.id,
+                amount: withdrawAmount,
+                bank_name: bank_name,
+                account_number: account_number,
+                status: 'pending',
+                created_at: new Date()
+            }, { transaction: t });
+
+            // Update wallet balance by deducting the withdraw amount
+            const newBalance = currentBalance - withdrawAmount;
+            await Wallet.update(
+                {
+                    balance: newBalance,
+                    updated_at: new Date()
+                },
+                {
+                    where: { id: wallet.id },
+                    transaction: t
+                }
+            );
+
+            return { withdrawRecord, newBalance };
         });
 
         return res.status(200).json({
             success: true,
-            message: 'Withdraw request submitted successfully. Waiting for admin approval.',
+            message: 'Withdraw request submitted successfully. Amount has been deducted from wallet. Waiting for admin approval.',
             data: {
                 withdrawRecord: {
-                    id: withdrawRecord.id,
-                    amount: withdrawRecord.amount,
-                    bank_name: withdrawRecord.bank_name,
-                    account_number: withdrawRecord.account_number,
-                    status: withdrawRecord.status,
-                    created_at: withdrawRecord.created_at
+                    id: result.withdrawRecord.id,
+                    amount: result.withdrawRecord.amount,
+                    bank_name: result.withdrawRecord.bank_name,
+                    account_number: result.withdrawRecord.account_number,
+                    status: result.withdrawRecord.status,
+                    created_at: result.withdrawRecord.created_at
                 },
                 wallet: {
-                    current_balance: currentBalance,
+                    previous_balance: currentBalance,
                     requested_amount: withdrawAmount,
-                    remaining_balance_after_withdraw: currentBalance - withdrawAmount
+                    new_balance: result.newBalance,
+                    balance_deducted: true
                 }
             }
         });
@@ -413,7 +432,7 @@ export const walletWithdrawRequest = async (req, res) => {
     }
 }
 
-export const walletGetWithdrawHistory = async (req, res) => {
+export const walletGetAllWithdrawHistory = async (req, res) => {
     try {
         const userId = req.userId;
         if (!userId) {
