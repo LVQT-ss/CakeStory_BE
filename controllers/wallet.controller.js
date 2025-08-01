@@ -282,7 +282,7 @@ export const walletGetBalance = async (req, res) => {
     }
 };
 
-export const walletGetHistory = async (req, res) => {
+export const walletGetDepositHistoryUser = async (req, res) => {
     try {
         const userId = req.userId;
         if (!userId) {

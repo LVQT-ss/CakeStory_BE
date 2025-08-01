@@ -4,7 +4,7 @@ import {
     walletDeposit,
     payOSWebhook,
     walletGetBalance,
-    walletGetHistory,
+    walletGetDepositHistoryUser,
     walletGetHistoryById,
     walletWithdrawRequest,
     walletGetAllWithdrawHistory,
@@ -266,7 +266,7 @@ router.get('/balance', verifyToken, walletGetBalance);
 
 /**
  * @swagger
- * /api/wallet/Allhistory:
+ * /api/wallet/AllDepositHistoryUser:
  *   get:
  *     summary: Get the transaction history for the authenticated Admin
  *     tags: [Wallet]
@@ -280,7 +280,7 @@ router.get('/balance', verifyToken, walletGetBalance);
  *       500:
  *         description: Internal server error
  */
-router.get('/Allhistory', verifyToken, walletGetHistory);
+router.get('/AllDepositHistoryUser', verifyToken, walletGetDepositHistoryUser);
 
 /**
  * @swagger
