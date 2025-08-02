@@ -13,7 +13,8 @@ import {
     walletGetWithdrawHistoryUserId,
     walletCancelWithdraw,
     walletGetTotalWithdrawUser,
-    AdminWallet
+    AdminWallet,
+    allWalletAdmin
 } from '../controllers/wallet.controller.js';
 const router = express.Router();
 
@@ -981,5 +982,47 @@ router.get('/totalWithdrawUser', verifyToken, walletGetTotalWithdrawUser);
  *         description: Internal server error
  */
 router.get('/AdminWallet', verifyToken, verifyAdmin, AdminWallet);
+
+/**
+ * @swagger
+ * /api/wallet/allWalletAdmin:
+ *   get:
+ *     summary: Get all user wallets (Admin only)
+ *     tags: [Wallet]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved all wallets
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 userWallet:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       user_id:
+ *                         type: integer
+ *                         example: 1
+ *                       balance:
+ *                         type: number
+ *                         example: 1000000
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       403:
+ *         description: Forbidden - User is not an admin
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/allWalletAdmin', verifyToken, verifyAdmin, allWalletAdmin);
 
 export default router;

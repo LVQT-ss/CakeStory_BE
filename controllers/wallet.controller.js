@@ -620,3 +620,22 @@ export const AdminWallet = async (req, res) => {
         return res.status(500).json({ success: false, message: 'Internal server error' });
     }
 }
+export const allWalletAdmin = async (req, res) => {
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'User not authenticated' });
+        }
+        const userWallet = await Wallet.findAll({
+            order: [['id', 'ASC']],
+            include: [{
+                model: User,
+                attributes: ['id', 'username', 'full_name', 'avatar', 'role']
+            }]
+        });
+        return res.status(200).json({ success: true, userWallet });
+    } catch (error) {
+        console.error('getUserWallet error:', error);
+        return res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+}
