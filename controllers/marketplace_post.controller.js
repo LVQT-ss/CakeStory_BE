@@ -30,7 +30,8 @@ export const createMarketplacePost = async (req, res) => {
             description: description || null,
             post_type: 'marketplace',
             is_public,
-            created_at: new Date()
+            created_at: new Date(),
+            user_id
         }, { transaction });
 
         await MarketplacePost.create({
