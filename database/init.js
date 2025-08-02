@@ -23,10 +23,12 @@ import ChallengeEntry from '../models/challenge_entry.model.js';
 import CakeOrder from '../models/cake_order.model.js';
 import Review from '../models/review.model.js';
 import Transaction from '../models/transaction.model.js';
-import Subscription from '../models/subscription.model.js';
 import AiGeneratedImage from '../models/ai_generated_image.model.js';
 import Wallet from '../models/wallet.model.js';
 import DepositRecords from '../models/deposit_records.model.js';
+import WithdrawRecords from '../models/withdraw_records.model.js';
+import ShopMember from '../models/shop_member.model.js';
+import Ingredient from '../models/Ingredient.model.js';
 const initDB = async () => {
     try {
         await sequelize.authenticate();

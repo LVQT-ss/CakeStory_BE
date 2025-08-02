@@ -1,5 +1,6 @@
 import Wallet from '../models/wallet.model.js';
 import DepositRecords from '../models/deposit_records.model.js';
+import WithdrawRecords from '../models/withdraw_records.model.js';
 import PayOS from '@payos/node';
 import sequelize from '../database/db.js';
 import QRCode from 'qrcode';
@@ -280,3 +281,298 @@ export const walletGetBalance = async (req, res) => {
         return res.status(500).json({ success: false, message: 'Internal server error' });
     }
 };
+
+export const walletGetDepositHistoryUser = async (req, res) => {
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'User not authenticated' });
+        }
+        const history = await DepositRecords.findAll({ where: { user_id: userId } });
+        return res.status(200).json({ success: true, history });
+    } catch (error) {
+        console.error('walletGetHistory error:', error);
+        return res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+}
+
+export const walletGetDepositHistoryByIdAdmin = async (req, res) => {
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'User not authenticated' });
+        }
+        const history = await DepositRecords.findByPk(req.params.id);
+        if (!history) {
+            return res.status(404).json({ success: false, message: 'Transaction not found' });
+        }
+        return res.status(200).json({ success: true, history });
+    } catch (error) {
+        console.error('walletGetHistoryById error:', error);
+        return res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+}
+
+export const walletWithdrawRequest = async (req, res) => {
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'User not authenticated' });
+        }
+
+        const { amount, bank_name, account_number } = req.body;
+
+        // Validate required fields
+        if (!amount) {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing required field: amount'
+            });
+        }
+
+        if (!bank_name) {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing required field: bank_name'
+            });
+        }
+
+        if (!account_number) {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing required field: account_number'
+            });
+        }
+
+        // Validate amount
+        if (amount <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Amount must be greater than 0'
+            });
+        }
+
+        // Find user's wallet
+        const wallet = await Wallet.findOne({ where: { user_id: userId } });
+        if (!wallet) {
+            return res.status(404).json({
+                success: false,
+                message: 'Wallet not found. Please create a wallet first.'
+            });
+        }
+
+        // Check if user has sufficient balance
+        const currentBalance = parseFloat(wallet.balance);
+        const withdrawAmount = parseFloat(amount);
+
+        if (withdrawAmount > currentBalance) {
+            return res.status(400).json({
+                success: false,
+                message: `Insufficient balance. Current balance: ${currentBalance} VND, Requested amount: ${withdrawAmount} VND`
+            });
+        }
+
+        // Use database transaction to ensure data consistency
+        const result = await sequelize.transaction(async (t) => {
+            // Create withdraw record with pending status
+            const withdrawRecord = await WithdrawRecords.create({
+                user_id: userId,
+                wallet_id: wallet.id,
+                amount: withdrawAmount,
+                bank_name: bank_name,
+                account_number: account_number,
+                status: 'pending',
+                created_at: new Date()
+            }, { transaction: t });
+
+            // Update wallet balance by deducting the withdraw amount
+            const newBalance = currentBalance - withdrawAmount;
+            await Wallet.update(
+                {
+                    balance: newBalance,
+                    updated_at: new Date()
+                },
+                {
+                    where: { id: wallet.id },
+                    transaction: t
+                }
+            );
+
+            return { withdrawRecord, newBalance };
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: 'Withdraw request submitted successfully. Amount has been deducted from wallet. Waiting for admin approval.',
+            data: {
+                withdrawRecord: {
+                    id: result.withdrawRecord.id,
+                    amount: result.withdrawRecord.amount,
+                    bank_name: result.withdrawRecord.bank_name,
+                    account_number: result.withdrawRecord.account_number,
+                    status: result.withdrawRecord.status,
+                    created_at: result.withdrawRecord.created_at
+                },
+                wallet: {
+                    previous_balance: currentBalance,
+                    requested_amount: withdrawAmount,
+                    new_balance: result.newBalance,
+                    balance_deducted: true
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('walletWithdrawRequest error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
+    }
+}
+
+export const walletGetAllWithdrawHistory = async (req, res) => {
+    try {
+        const withdrawHistory = await WithdrawRecords.findAll({
+            order: [['created_at', 'DESC']]
+        });
+
+        return res.status(200).json({
+            success: true,
+            withdrawHistory: withdrawHistory
+        });
+    } catch (error) {
+        console.error('walletGetWithdrawHistory error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
+    }
+}
+export const walletGetWithdrawHistoryById = async (req, res) => {
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'User not authenticated' });
+        }
+        const withdrawHistory = await WithdrawRecords.findByPk(req.params.id);
+        if (!withdrawHistory) {
+            return res.status(404).json({ success: false, message: 'Withdraw history not found' });
+        }
+        return res.status(200).json({ success: true, withdrawHistory });
+    } catch (error) {
+        console.error('walletGetWithdrawHistoryById error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
+    }
+}
+
+export const walletGetWithdrawHistoryUser = async (req, res) => {
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'User not authenticated' });
+        }
+        const withdrawHistory = await WithdrawRecords.findAll({
+            where: { user_id: userId },
+            order: [['created_at', 'DESC']]
+        });
+        return res.status(200).json({ success: true, withdrawHistory });
+    } catch (error) {
+        console.error('walletGetWithdrawHistoryUser error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
+    }
+}
+
+export const walletGetWithdrawHistoryUserId = async (req, res) => {
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'User not authenticated' });
+        }
+        const withdrawHistory = await WithdrawRecords.findOne({
+            where: {
+                id: req.params.id,
+                user_id: userId
+            }
+        });
+        if (!withdrawHistory) {
+            return res.status(404).json({ success: false, message: 'Withdraw history not found' });
+        }
+        return res.status(200).json({ success: true, withdrawHistory });
+    } catch (error) {
+        console.error('walletGetWithdrawHistoryUserId error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
+    }
+}
+
+export const walletCancelWithdraw = async (req, res) => {
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'User not authenticated' });
+        }
+
+        const withdrawRecord = await WithdrawRecords.findOne({
+            where: {
+                id: req.params.id,
+                user_id: userId
+            }
+        });
+
+        if (!withdrawRecord) {
+            return res.status(404).json({ success: false, message: 'Withdraw record not found' });
+        }
+
+        if (withdrawRecord.status !== 'pending') {
+            return res.status(400).json({ success: false, message: 'Withdraw record is not pending' });
+        }
+
+        // Get user's wallet
+        const wallet = await Wallet.findOne({
+            where: { user_id: userId }
+        });
+
+        if (!wallet) {
+            return res.status(404).json({ success: false, message: 'Wallet not found' });
+        }
+
+        // Update wallet balance by adding back the withdrawn amount
+        const newBalance = Number(wallet.balance) + Number(withdrawRecord.amount);
+        await wallet.update({ balance: newBalance });
+
+        // Update withdraw record status to canceled
+        await withdrawRecord.update({ status: 'cancelled' });
+
+        return res.status(200).json({
+            success: true,
+            message: 'Withdraw cancelled and amount returned to wallet',
+            data: {
+                withdrawId: withdrawRecord.id,
+                returnedAmount: withdrawRecord.amount,
+                newBalance: newBalance
+            }
+        });
+
+    } catch (error) {
+        console.error('walletCancelWithdraw error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
+    }
+}

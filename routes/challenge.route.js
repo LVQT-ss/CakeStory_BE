@@ -59,6 +59,8 @@ const router = express.Router();
  *                 type: string
  *               requirements:
  *                 type: string
+ *               avatar:
+ *                 type: string
  *     responses:
  *       201:
  *         description: Challenge created successfully
@@ -172,6 +174,8 @@ router.get('/:id', verifyToken, getChallengeById);
  *                 type: string
  *               requirements:
  *                 type: string
+ *               avatar:
+ *                 type: string
  *               status:
  *                 type: string
  *                 enum: [notStart, onGoing, ended, unAvailable]
@@ -248,6 +252,8 @@ router.delete('/:id', verifyToken, deleteChallenge);
  *         rules:
  *           type: string
  *         requirements:
+ *           type: string
+ *         avatar:
  *           type: string
  *         status:
  *           type: string

@@ -16,6 +16,7 @@ export const verifyToken = (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
     req.userId = decoded.id;
     req.username = decoded.username;
     req.email = decoded.email;
@@ -44,6 +45,13 @@ export const verifyToken = (req, res, next) => {
 };
 
 export const verifyAdmin = (req, res, next) => {
+  if (!req.role) {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied. Admin role required.'
+    });
+  }
+
   if (req.role !== 'admin') {
     return res.status(403).json({
       success: false,
@@ -74,7 +82,7 @@ export const verifyAdminOrBaker = (req, res, next) => {
 };
 
 export const verifyStaff = (req, res, next) => {
-  const allowedRoles = ['admin', 'account_staff', 'complaint_handler'];
+  const allowedRoles = ['admin', 'staff'];
   if (!allowedRoles.includes(req.role)) {
     return res.status(403).json({
       success: false,
