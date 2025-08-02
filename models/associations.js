@@ -26,7 +26,7 @@ import Ingredient from './Ingredient.model.js';
 import AiGeneratedImage from "./ai_generated_image.model.js";
 import Wallet from "./wallet.model.js";
 import DepositRecords from "./deposit_records.model.js";
-
+import OrderDetail from "./order_detail.model.js";
 function setupAssociations() {
   // User ↔ Shop (1-1)
   User.hasOne(Shop, { foreignKey: "user_id", as: "shop", onDelete: "CASCADE" });
@@ -185,6 +185,14 @@ function setupAssociations() {
   // User ↔ DepositRecords (1-1)
   User.hasOne(DepositRecords, { foreignKey: "user_id" });
   DepositRecords.belongsTo(User, { foreignKey: "user_id" });
+
+  // CakeOrder ↔ OrderDetail (1-N)
+CakeOrder.hasMany(OrderDetail, { foreignKey: "order_id", as: "orderDetails" });
+OrderDetail.belongsTo(CakeOrder, { foreignKey: "order_id", as: "order" });
+
+// Ingredient ↔ OrderDetail (1-N)
+Ingredient.hasMany(OrderDetail, { foreignKey: "ingredient_id", as: "orderDetails" });
+OrderDetail.belongsTo(Ingredient, { foreignKey: "ingredient_id", as: "ingredient" });
 }
 
 export default setupAssociations;

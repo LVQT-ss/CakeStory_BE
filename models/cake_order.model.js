@@ -5,8 +5,15 @@ const CakeOrder = sequelize.define('CakeOrder', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   customer_id: { type: DataTypes.INTEGER, allowNull: false },
   shop_id: { type: DataTypes.INTEGER, allowNull: false },
-  design_id: { type: DataTypes.INTEGER },
-  marketplace_post_id: { type: DataTypes.INTEGER },
+  marketplace_post_id: { type: DataTypes.INTEGER, allowNull: true },
+  base_price: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
+  ingredient_total: { type: DataTypes.DECIMAL(10, 2), allowNull: true, defaultValue: 0.00 },
+  total_price: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
+  status: {
+    type: DataTypes.ENUM('pending', 'ordered', 'completed'),
+    allowNull: false
+  },
+  special_instructions: { type: DataTypes.TEXT },
   created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }
 }, {
   tableName: 'cake_order',
