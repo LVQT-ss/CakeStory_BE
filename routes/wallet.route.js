@@ -14,7 +14,8 @@ import {
     walletCancelWithdraw,
     walletGetTotalWithdrawUser,
     AdminWallet,
-    allWalletAdmin
+    allWalletAdmin,
+    getUserWalletbyId
 } from '../controllers/wallet.controller.js';
 const router = express.Router();
 
@@ -1024,5 +1025,52 @@ router.get('/AdminWallet', verifyToken, verifyAdmin, AdminWallet);
  *         description: Internal server error
  */
 router.get('/allWalletAdmin', verifyToken, verifyAdmin, allWalletAdmin);
+
+/**
+ * @swagger
+ * /api/wallet/getUserWalletbyId/{id}:
+ *   get:
+ *     summary: Get wallet information for a specific user
+ *     tags: [Wallet]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: User ID to get wallet information for
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved wallet information
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 wallet:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     user_id:
+ *                       type: integer
+ *                       example: 1
+ *                     balance:
+ *                       type: number
+ *                       example: 1000000
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       404:
+ *         description: Wallet not found
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/getUserWalletbyId/:id', verifyToken, verifyAdmin, getUserWalletbyId);
 
 export default router;

@@ -639,3 +639,23 @@ export const allWalletAdmin = async (req, res) => {
         return res.status(500).json({ success: false, message: 'Internal server error' });
     }
 }
+
+export const getUserWalletbyId = async (req, res) => {
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'User not authenticated' });
+        }
+        const userWallet = await Wallet.findOne({
+            where: { user_id: req.params.id },
+            include: [{
+                model: User,
+                attributes: ['id', 'username', 'full_name', 'avatar', 'role']
+            }]
+        });
+        return res.status(200).json({ success: true, userWallet });
+    } catch (error) {
+        console.error('getUserWalletbyId error:', error);
+        return res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+}
