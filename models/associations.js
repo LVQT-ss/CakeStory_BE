@@ -18,7 +18,7 @@ import ChallengeEntry from "./challenge_entry.model.js";
 import CakeOrder from "./cake_order.model.js";
 import Review from "./review.model.js";
 import Transaction from "./transaction.model.js";
-import Subscription from "./subscription.model.js";
+// import Subscription from "./subscription.model.js";
 import AlbumPost from './album_post.model.js';
 import GroupPost from './group_post.model.js';
 import ShopMember from "./shop_member.model.js";
@@ -26,7 +26,8 @@ import Ingredient from './Ingredient.model.js';
 import AiGeneratedImage from "./ai_generated_image.model.js";
 import Wallet from "./wallet.model.js";
 import DepositRecords from "./deposit_records.model.js";
-
+import WithdrawRecords from "./withdraw_records.model.js";
+import OrderDetail from './order_detail.model.js';
 function setupAssociations() {
   // User ↔ Shop (1-1)
   User.hasOne(Shop, { foreignKey: "user_id", as: "shop", onDelete: "CASCADE" });
@@ -134,14 +135,6 @@ function setupAssociations() {
   CakeOrder.hasOne(Review, { foreignKey: "order_id" });
   Review.belongsTo(CakeOrder, { foreignKey: "order_id" });
 
-  // User ↔ Transaction (1-N)
-  User.hasMany(Transaction, { foreignKey: "user_id" });
-  Transaction.belongsTo(User, { foreignKey: "user_id" });
-
-  // Transaction ↔ Subscription (1-1)
-  Transaction.hasOne(Subscription, { foreignKey: "Transaction_id" });
-  Subscription.belongsTo(Transaction, { foreignKey: "Transaction_id" });
-
   // Album ↔ AlbumPost (1-N)
   Album.hasMany(AlbumPost, { foreignKey: "album" });
   AlbumPost.belongsTo(Album, { foreignKey: "album" });
@@ -182,9 +175,40 @@ function setupAssociations() {
   User.hasOne(Wallet, { foreignKey: "user_id" });
   Wallet.belongsTo(User, { foreignKey: "user_id" });
 
-  // User ↔ DepositRecords (1-1)
-  User.hasOne(DepositRecords, { foreignKey: "user_id" });
+  // User ↔ DepositRecords (1-N)
+  User.hasMany(DepositRecords, { foreignKey: "user_id" });
   DepositRecords.belongsTo(User, { foreignKey: "user_id" });
+
+  // User ↔ WithdrawRecords (1-N)
+  User.hasMany(WithdrawRecords, { foreignKey: "user_id" });
+  WithdrawRecords.belongsTo(User, { foreignKey: "user_id" });
+
+  Wallet.hasMany(WithdrawRecords, { foreignKey: "wallet_id" });
+  WithdrawRecords.belongsTo(Wallet, { foreignKey: "wallet_id" });
+
+  // Wallet ↔ Transaction (1-N) - From wallet
+  Wallet.hasMany(Transaction, { foreignKey: "from_wallet_id", as: "outgoingTransactions" });
+  Transaction.belongsTo(Wallet, { foreignKey: "from_wallet_id", as: "fromWallet" });
+
+  // Wallet ↔ Transaction (1-N) - To wallet
+  Wallet.hasMany(Transaction, { foreignKey: "to_wallet_id", as: "incomingTransactions" });
+  Transaction.belongsTo(Wallet, { foreignKey: "to_wallet_id", as: "toWallet" });
+
+  // CakeOrder ↔ Transaction (1-1)
+  CakeOrder.hasOne(Transaction, { foreignKey: "order_id", as: "transaction" });
+  Transaction.belongsTo(CakeOrder, { foreignKey: "order_id", as: "order" });
+
+  // AiGeneratedImage ↔ Transaction (1-1)
+  AiGeneratedImage.hasOne(Transaction, { foreignKey: "ai_generated_image_id", as: "transaction" });
+  Transaction.belongsTo(AiGeneratedImage, { foreignKey: "ai_generated_image_id", as: "aiGeneratedImage" });
+
+    // CakeOrder ↔ OrderDetail (1-N)
+    CakeOrder.hasMany(OrderDetail, { foreignKey: "order_id", as: "orderDetails" });
+    OrderDetail.belongsTo(CakeOrder, { foreignKey: "order_id", as: "order" });
+  
+    // Ingredient ↔ OrderDetail (1-N)
+    Ingredient.hasMany(OrderDetail, { foreignKey: "ingredient_id", as: "orderDetails" });
+    OrderDetail.belongsTo(Ingredient, { foreignKey: "ingredient_id", as: "ingredient" });
 }
 
 export default setupAssociations;
