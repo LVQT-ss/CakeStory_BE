@@ -3,6 +3,7 @@ import {
   createChallengeEntry,
   getAllChallengeEntries,
   getChallengeEntryById,
+  getChallengeEntriesByChallengeId,
   updateChallengeEntry,
   deleteChallengeEntry,
 } from '../controllers/challengeEntry.controller.js';
@@ -30,6 +31,19 @@ const router = express.Router();
  *           type: integer
  *         user_id:
  *           type: integer
+ *         user:
+ *           type: object
+ *           properties:
+ *             id:
+ *               type: integer
+ *             username:
+ *               type: string
+ *             email:
+ *               type: string
+ *             full_name:
+ *               type: string
+ *             avatar:
+ *               type: string
  */
 
 /**
@@ -85,7 +99,7 @@ router.post('/', verifyToken, createChallengeEntry);
  *   get:
  *     tags: [Challenge Entries]
  *     summary: Get all challenge entries
- *     description: Retrieve all challenge entries in the system
+ *     description: Retrieve all challenge entries with user info
  *     responses:
  *       200:
  *         description: Entries retrieved successfully
@@ -109,7 +123,7 @@ router.get('/', getAllChallengeEntries);
  *   get:
  *     tags: [Challenge Entries]
  *     summary: Get a challenge entry by ID
- *     description: Retrieve a single challenge entry using its ID
+ *     description: Retrieve a single challenge entry using its ID with user info
  *     parameters:
  *       - in: path
  *         name: id
@@ -133,6 +147,37 @@ router.get('/', getAllChallengeEntries);
  *         description: Server error
  */
 router.get('/:id', getChallengeEntryById);
+
+/**
+ * @swagger
+ * /api/challenge-entries/challenge/{challenge_id}:
+ *   get:
+ *     tags: [Challenge Entries]
+ *     summary: Get all challenge entries by challenge ID
+ *     description: Retrieve all entries for a specific challenge with user info
+ *     parameters:
+ *       - in: path
+ *         name: challenge_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Challenge ID
+ *     responses:
+ *       200:
+ *         description: Entries retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 entries:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/ChallengeEntry'
+ *       500:
+ *         description: Server error
+ */
+router.get('/challenge/:challenge_id', getChallengeEntriesByChallengeId);
 
 /**
  * @swagger
