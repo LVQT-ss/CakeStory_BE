@@ -11,7 +11,11 @@ import {
     walletGetWithdrawHistoryById,
     walletGetWithdrawHistoryUser,
     walletGetWithdrawHistoryUserId,
-    walletCancelWithdraw
+    walletCancelWithdraw,
+    walletGetTotalWithdrawUser,
+    AdminWallet,
+    allWalletAdmin,
+    getUserWalletbyId
 } from '../controllers/wallet.controller.js';
 const router = express.Router();
 
@@ -917,5 +921,156 @@ router.get('/withdraw-historyUserId/:id', verifyToken, walletGetWithdrawHistoryU
  *         description: Internal server error
  */
 router.put('/cancel-withdraw/:id', verifyToken, walletCancelWithdraw);
+
+/**
+ * @swagger
+ * /api/wallet/totalWithdrawUser:
+ *   get:
+ *     summary: Get total pending withdrawal amount for current user
+ *     tags: [Wallet]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved total withdrawal amount
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 totalWithdraw:
+ *                   type: number
+ *                   description: Total pending withdrawal amount in VND
+ *                   example: 1000000
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/totalWithdrawUser', verifyToken, walletGetTotalWithdrawUser);
+
+/**
+ * @swagger
+ * /api/wallet/AdminWallet:
+ *   get:
+ *     summary: Get total balance of admin wallet (Admin only)
+ *     tags: [Wallet]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved admin wallet balance
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 adminWallet:
+ *                   type: number
+ *                   description: Total balance in admin wallet (VND)
+ *                   example: 10000000
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       403:
+ *         description: Forbidden - User is not an admin
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/AdminWallet', verifyToken, verifyAdmin, AdminWallet);
+
+/**
+ * @swagger
+ * /api/wallet/allWalletAdmin:
+ *   get:
+ *     summary: Get all user wallets (Admin only)
+ *     tags: [Wallet]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved all wallets
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 userWallet:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       user_id:
+ *                         type: integer
+ *                         example: 1
+ *                       balance:
+ *                         type: number
+ *                         example: 1000000
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       403:
+ *         description: Forbidden - User is not an admin
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/allWalletAdmin', verifyToken, verifyAdmin, allWalletAdmin);
+
+/**
+ * @swagger
+ * /api/wallet/getUserWalletbyId/{id}:
+ *   get:
+ *     summary: Get wallet information for a specific user
+ *     tags: [Wallet]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: User ID to get wallet information for
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved wallet information
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 wallet:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     user_id:
+ *                       type: integer
+ *                       example: 1
+ *                     balance:
+ *                       type: number
+ *                       example: 1000000
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       404:
+ *         description: Wallet not found
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/getUserWalletbyId/:id', verifyToken, verifyAdmin, getUserWalletbyId);
 
 export default router;

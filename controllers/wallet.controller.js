@@ -576,3 +576,86 @@ export const walletCancelWithdraw = async (req, res) => {
         });
     }
 }
+
+export const walletGetTotalWithdrawUser = async (req, res) => {
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'User not authenticated' });
+        }
+        const totalWithdraw = await WithdrawRecords.sum('amount', {
+            where: {
+                user_id: userId,
+                status: "pending"
+            }
+        });
+        return res.status(200).json({ success: true, totalWithdraw });
+    } catch (error) {
+        console.error('walletGetTotalWithdrawUser error:', error);
+        return res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+}
+
+export const AdminWallet = async (req, res) => {
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'User not authenticated' });
+        }
+
+        const adminWallet = await Wallet.findOne({
+            where: { user_id: 1 }
+        });
+
+        if (!adminWallet) {
+            return res.status(404).json({ success: false, message: 'Admin wallet not found' });
+        }
+
+        return res.status(200).json({
+            success: true,
+            adminWallet: adminWallet.balance
+        });
+    } catch (error) {
+        console.error('AdminWallet error:', error);
+        return res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+}
+export const allWalletAdmin = async (req, res) => {
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'User not authenticated' });
+        }
+        const userWallet = await Wallet.findAll({
+            order: [['id', 'ASC']],
+            include: [{
+                model: User,
+                attributes: ['id', 'username', 'full_name', 'avatar', 'role']
+            }]
+        });
+        return res.status(200).json({ success: true, userWallet });
+    } catch (error) {
+        console.error('getUserWallet error:', error);
+        return res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+}
+
+export const getUserWalletbyId = async (req, res) => {
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'User not authenticated' });
+        }
+        const userWallet = await Wallet.findOne({
+            where: { user_id: req.params.id },
+            include: [{
+                model: User,
+                attributes: ['id', 'username', 'full_name', 'avatar', 'role']
+            }]
+        });
+        return res.status(200).json({ success: true, userWallet });
+    } catch (error) {
+        console.error('getUserWalletbyId error:', error);
+        return res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+}
