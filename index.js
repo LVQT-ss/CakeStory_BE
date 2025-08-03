@@ -21,6 +21,8 @@ import challengeEntryRoutes from './routes/challengeEntry.routes.js';
 import aiGenerateRoutes from './routes/ai_generate.route.js';
 import walletRoutes from './routes/wallet.route.js';
 import challengePostRoutes from './routes/challenge_post.route.js';
+import cakeOrderRoutes from './routes/cakeOrder.route.js';
+
 dotenv.config();
 
 const app = express();
@@ -48,6 +50,7 @@ app.use('/api/ai', aiGenerateRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/challenge-entries', challengeEntryRoutes);
 app.use('/api/challenge-posts', challengePostRoutes);
+app.use('/api/cake-orders', cakeOrderRoutes);
 // Initialize and synchronize the database
 initDB().then(() => {
     // Setup associations after database is initialized
