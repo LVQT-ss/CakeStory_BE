@@ -5,7 +5,8 @@ import {
   getMyShopMembers,
   deleteShopMember,
   updateShopMember,
-  getAllShopMembers 
+  getAllShopMembers,
+  getShopMembersByShopId
 } from '../controllers/shop_member.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 const router = express.Router();
@@ -77,6 +78,28 @@ router.post('/', verifyToken, createShopMember);
  */
 router.get('/all', verifyToken, getAllShopMembers);
 
+/**
+ * @swagger
+ * /api/shop-members/shop/{shop_id}:
+ *   get:
+ *     tags: [ShopMember]
+ *     summary: Get all members by shop ID
+ *     description: Retrieve all shop members (with user info) for a specific shop ID
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: shop_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Shop members retrieved
+ *       500:
+ *         description: Server error
+ */
+router.get('/shop/:shop_id', verifyToken, getShopMembersByShopId);
 
 /**
  * @swagger
