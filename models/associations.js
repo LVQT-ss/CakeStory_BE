@@ -124,11 +124,11 @@ function setupAssociations() {
   // CakeOrder associations
   User.hasMany(CakeOrder, { foreignKey: "customer_id", as: "orders" });
   Shop.hasMany(CakeOrder, { foreignKey: "shop_id" });
-  CakeDesign.hasMany(CakeOrder, { foreignKey: "design_id" });
+
   MarketplacePost.hasMany(CakeOrder, { foreignKey: "marketplace_post_id" });
   CakeOrder.belongsTo(User, { foreignKey: "customer_id" });
   CakeOrder.belongsTo(Shop, { foreignKey: "shop_id" });
-  CakeOrder.belongsTo(CakeDesign, { foreignKey: "design_id" });
+
   CakeOrder.belongsTo(MarketplacePost, { foreignKey: "marketplace_post_id" });
 
   // CakeOrder ↔ Review (1-1)
