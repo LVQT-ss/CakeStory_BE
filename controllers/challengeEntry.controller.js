@@ -1,5 +1,6 @@
 import ChallengeEntry from '../models/challenge_entry.model.js';
 import Challenge from '../models/challenge.model.js';
+import User from '../models/User.model.js';
 
 // CREATE Challenge Entry
 export const createChallengeEntry = async (req, res) => {
@@ -28,21 +29,31 @@ export const createChallengeEntry = async (req, res) => {
   }
 };
 
-// GET ALL entries
+// GET ALL entries with user
 export const getAllChallengeEntries = async (req, res) => {
   try {
-    const entries = await ChallengeEntry.findAll();
+    const entries = await ChallengeEntry.findAll({
+      include: {
+        model: User,
+        attributes: ['id', 'username', 'email', 'full_name', 'avatar']
+      }
+    });
     res.status(200).json({ entries });
   } catch (err) {
     res.status(500).json({ message: 'Error fetching entries', error: err.message });
   }
 };
 
-// GET by ID
+// GET by ID with user
 export const getChallengeEntryById = async (req, res) => {
   try {
     const { id } = req.params;
-    const entry = await ChallengeEntry.findByPk(id);
+    const entry = await ChallengeEntry.findByPk(id, {
+      include: {
+        model: User,
+        attributes: ['id', 'username', 'email', 'full_name', 'avatar']
+      }
+    });
     if (!entry) {
       return res.status(404).json({ message: 'Entry not found' });
     }
@@ -52,7 +63,24 @@ export const getChallengeEntryById = async (req, res) => {
   }
 };
 
-// UPDATE (only allow update challenge_id or user_id)
+// GET by Challenge ID with user
+export const getChallengeEntriesByChallengeId = async (req, res) => {
+  try {
+    const { challenge_id } = req.params;
+    const entries = await ChallengeEntry.findAll({
+      where: { challenge_id },
+      include: {
+        model: User,
+        attributes: ['id', 'username', 'email', 'full_name', 'avatar']
+      }
+    });
+    res.status(200).json({ entries });
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching entries', error: err.message });
+  }
+};
+
+// UPDATE
 export const updateChallengeEntry = async (req, res) => {
   try {
     const { id } = req.params;
@@ -67,7 +95,12 @@ export const updateChallengeEntry = async (req, res) => {
       return res.status(404).json({ message: 'Entry not found or no changes' });
     }
 
-    const entry = await ChallengeEntry.findByPk(id);
+    const entry = await ChallengeEntry.findByPk(id, {
+      include: {
+        model: User,
+        attributes: ['id', 'username', 'email', 'full_name', 'avatar']
+      }
+    });
     res.status(200).json({ message: 'Entry updated', entry });
   } catch (err) {
     res.status(500).json({ message: 'Error updating entry', error: err.message });
