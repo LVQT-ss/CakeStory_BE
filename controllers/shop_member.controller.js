@@ -130,3 +130,24 @@ export const getAllShopMembers = async (req, res) => {
     return res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+// 6. Lấy tất cả member của một shop cụ thể theo shop_id
+export const getShopMembersByShopId = async (req, res) => {
+  try {
+    const { shop_id } = req.params;
+
+    const members = await ShopMember.findAll({
+      where: { shop_id },
+      include: [
+        {
+          model: User,
+          attributes: ['id', 'username', 'email', 'avatar']
+        }
+      ]
+    });
+
+    return res.status(200).json({ message: 'Shop members retrieved', members });
+  } catch (error) {
+    console.error('Error retrieving shop members by shop_id:', error);
+    return res.status(500).json({ message: 'Error retrieving members', error: error.message });
+  }
+};
