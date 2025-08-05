@@ -8,7 +8,8 @@ import {
     updateAlbum,
     updateAlbumPost,
     getAlbumByUser,
-    deleteAlbumPost
+    deleteAlbumPost,
+    deleteAlbum
 } from '../controllers/album.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
@@ -1023,5 +1024,61 @@ router.put('/posts/:id', verifyToken, updateAlbumPost);
  *                   example: "Database connection error"
  */
 router.delete('/posts/:id', verifyToken, deleteAlbumPost);
+
+/**
+ * @swagger
+ * /api/albums/{id}:
+ *   delete:
+ *     tags:
+ *       - Albums
+ *     summary: Delete an album
+ *     description: Delete an album by ID. Only the owner can delete their album.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Album ID
+ *     responses:
+ *       200:
+ *         description: Album deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Album deleted successfully"
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       404:
+ *         description: Album not found or access denied
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Album not found or access denied"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Error deleting album"
+ *                 error:
+ *                   type: string
+ *                   example: "Database connection error"
+ */
+router.delete('/:id', verifyToken, deleteAlbum);
 
 export default router;

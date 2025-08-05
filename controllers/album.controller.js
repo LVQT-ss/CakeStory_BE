@@ -581,4 +581,32 @@ export const deleteAlbumPost = async (req, res) => {
     }
 }
 
+export const deleteAlbum = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user_id = req.userId;
+
+        const album = await Album.findOne({
+            where: { id, user_id }
+        });
+
+        if (!album) {
+            return res.status(404).json({
+                message: 'Album not found or access denied'
+            });
+        }
+
+        await album.destroy();
+        res.status(200).json({
+            message: 'Album deleted successfully'
+        });
+    } catch (error) {
+        console.error('Error deleting album:', error);
+        res.status(500).json({
+            message: 'Error deleting album',
+            error: error.message
+        });
+    }
+}
+
 export { createAlbum, createAlbumPost, getAlbumById, getAlbumPostById, getAllAlbums, updateAlbum, updateAlbumPost, getAlbumByUser };
