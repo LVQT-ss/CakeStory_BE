@@ -1,5 +1,15 @@
 import express from 'express';
-import { createAlbum, createAlbumPost, getAlbumById, getAlbumPostById, getAllAlbums, updateAlbum, updateAlbumPost, getAlbumByUser } from '../controllers/album.controller.js';
+import {
+    createAlbum,
+    createAlbumPost,
+    getAlbumById,
+    getAlbumPostById,
+    getAllAlbums,
+    updateAlbum,
+    updateAlbumPost,
+    getAlbumByUser,
+    deleteAlbumPost
+} from '../controllers/album.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
@@ -959,5 +969,59 @@ router.put('/:id', verifyToken, updateAlbum);
  *                   example: "Database connection error"
  */
 router.put('/posts/:id', verifyToken, updateAlbumPost);
+
+/**
+ * @swagger
+ * /api/albums/posts/{id}:
+ *   delete:
+ *     tags:
+ *       - Albums
+ *     summary: Delete an album post
+ *     description: Delete an album post by ID. Only the owner can delete their album post.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Album post ID
+ *     responses:
+ *       200:
+ *         description: Album post deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Album post deleted successfully"
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       404:
+ *         description: Album post not found or access denied
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Album post not found or access denied"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Error deleting album post"
+ *                 error:
+ *                   type: string
+ *                   example: "Database connection error"
+ */
+router.delete('/posts/:id', verifyToken, deleteAlbumPost);
 
 export default router;

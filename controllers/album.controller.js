@@ -528,5 +528,57 @@ const getAlbumByUser = async (req, res) => {
     }
 }
 
+export const deleteAlbumPost = async (req, res) => {
+    const transaction = await sequelize.transaction();
+    try {
+        const { id } = req.params;
+        const user_id = req.userId;
+
+        // Find album post and verify ownership
+        const albumPost = await AlbumPost.findOne({
+            where: { id },
+            include: [{
+                model: Post,
+                where: { user_id }
+            }],
+            transaction
+        });
+
+        if (!albumPost) {
+            await transaction.rollback();
+            return res.status(404).json({
+                message: 'Album post not found or access denied'
+            });
+        }
+
+        // Delete associated media
+        await PostData.destroy({
+            where: { post_id: albumPost.post_id },
+            transaction
+        });
+
+        // Delete the post
+        await Post.destroy({
+            where: { id: albumPost.post_id },
+            transaction
+        });
+
+        // Delete the album post
+        await albumPost.destroy({ transaction });
+
+        await transaction.commit();
+
+        res.status(200).json({
+            message: 'Album post deleted successfully'
+        });
+    } catch (error) {
+        await transaction.rollback();
+        console.error('Error deleting album post:', error);
+        res.status(500).json({
+            message: 'Error deleting album post',
+            error: error.message
+        });
+    }
+}
 
 export { createAlbum, createAlbumPost, getAlbumById, getAlbumPostById, getAllAlbums, updateAlbum, updateAlbumPost, getAlbumByUser };
