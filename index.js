@@ -22,7 +22,7 @@ import aiGenerateRoutes from './routes/ai_generate.route.js';
 import walletRoutes from './routes/wallet.route.js';
 import challengePostRoutes from './routes/challenge_post.route.js';
 import cakeOrderRoutes from './routes/cakeOrder.route.js';
-
+import { autoConfirmPendingOrders, autoCompleteShippedOrders } from './controllers/scheduler.js';
 dotenv.config();
 
 const app = express();
@@ -54,7 +54,11 @@ app.use('/api/cake-orders', cakeOrderRoutes);
 // Initialize and synchronize the database
 initDB().then(() => {
     // Setup associations after database is initialized
+
     setupAssociations();
+    autoConfirmPendingOrders.start();
+    autoCompleteShippedOrders.start();
+    console.log('Auto-complete scheduler started');
 
     app.listen(port, () => {
         console.log(`Server running at http://localhost:${port}`);
@@ -68,5 +72,7 @@ initDB().then(() => {
 // Handle graceful shutdown
 process.on('SIGINT', () => {
     console.log('Closing PostgreSQL connection');
+    autoCompleteShippedOrders.stop();
+    console.log('Auto-complete scheduler stopped');
     process.exit();
 });
