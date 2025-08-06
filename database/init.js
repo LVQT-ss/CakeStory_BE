@@ -10,7 +10,6 @@ import PostData from '../models/post_data.model.js';
 import Album from '../models/album.model.js';
 import AlbumPost from '../models/album_post.model.js';
 import CakeDesign from '../models/cake_design.model.js';
-import CakeDesignDetail from '../models/cake_design_detail.model.js';
 import Group from '../models/group.model.js';
 import GroupMember from '../models/group_member.model.js';
 import GroupPost from '../models/group_post.model.js';
