@@ -81,9 +81,7 @@ export const walletDeposit = async (req, res) => {
             description: `Nap ${amount} VND`, // Similar to the coin package format
             expiredAt: Math.floor(Date.now() / 1000) + (30 * 60), // 30 minutes expiry
             returnUrl: process.env.PAYOS_RETURN_URL,
-            cancelUrl: process.env.PAYOS_CANCEL_URL,
-            payment_provider: 'payos',
-            external_transaction_id: `PAYOS-${Date.now()}-${userId}`
+            cancelUrl: process.env.PAYOS_CANCEL_URL
         };
 
         // Generate payment URL using PayOS
