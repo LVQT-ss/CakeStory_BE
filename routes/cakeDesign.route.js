@@ -1,7 +1,6 @@
 import express from 'express';
 import {
-    createCakeDesign,
-
+    createCakeDesign
 } from '../controllers/cakeDesign.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 const router = express.Router();
@@ -23,13 +22,8 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             required:
- *               - user_id
  *               - design_image
  *             properties:
- *               user_id:
- *                 type: integer
- *                 description: ID of the user creating the design
- *                 example: 1
  *               description:
  *                 type: string
  *                 description: Description of the cake design
@@ -101,7 +95,7 @@ const router = express.Router();
  *                   example: false
  *                 message:
  *                   type: string
- *                   example: "user_id and design_image are required"
+ *                   example: "design_image is required"
  *       404:
  *         description: Not Found - User not found
  *         content:
@@ -146,6 +140,5 @@ const router = express.Router();
  *                   example: "Database connection error"
  */
 router.post('/create', verifyToken, createCakeDesign);
-
 
 export default router;

@@ -4,13 +4,14 @@ import User from '../models/User.model.js';
 // Create a new cake design
 export const createCakeDesign = async (req, res) => {
     try {
-        const { user_id, description, design_image, is_public = true, is_ai_generated = false } = req.body;
+        const { description, design_image, is_public, is_ai_generated } = req.body;
+        const user_id = req.userId; // From JWT token
 
         // Validate required fields
-        if (!user_id || !design_image) {
+        if (!design_image) {
             return res.status(400).json({
                 success: false,
-                message: 'user_id and design_image are required'
+                message: 'design_image is required'
             });
         }
 
@@ -23,12 +24,13 @@ export const createCakeDesign = async (req, res) => {
             });
         }
 
+        // Create cake design
         const cakeDesign = await CakeDesign.create({
             user_id,
             description,
             design_image,
-            is_public,
-            is_ai_generated
+            is_public: is_public !== undefined ? is_public : true,
+            is_ai_generated: is_ai_generated !== undefined ? is_ai_generated : false
         });
 
         res.status(201).json({
@@ -45,4 +47,6 @@ export const createCakeDesign = async (req, res) => {
         });
     }
 };
+
+
 

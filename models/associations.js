@@ -152,8 +152,8 @@ function setupAssociations() {
   GroupPost.belongsTo(Post, { foreignKey: "post_id" });
 
   // Shop ↔ CakeDesign (1-N)
-  Shop.hasMany(CakeDesign, { foreignKey: "shop_id" });
-  CakeDesign.belongsTo(Shop, { foreignKey: "shop_id" });
+  // Shop.hasMany(CakeDesign, { foreignKey: "shop_id" });
+  // CakeDesign.belongsTo(Shop, { foreignKey: "shop_id" });
 
   // User ↔ MarketplacePost (1-N)
   User.hasMany(MarketplacePost, { foreignKey: "user_id" });
