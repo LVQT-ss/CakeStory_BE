@@ -72,7 +72,10 @@ export const getAllCakeOrders = async (req, res) => {
       where: {
         status: { [Op.ne]: 'cancelled' }
       },
-      include: OrderDetail
+      include: {
+        model: OrderDetail,
+        as: 'orderDetails'
+      }
     });
     res.status(200).json(orders);
   } catch (error) {
@@ -88,7 +91,10 @@ export const getCakeOrderById = async (req, res) => {
         id: req.params.id,
         status: { [Op.ne]: 'cancelled' }
       },
-      include: OrderDetail
+      include: {
+        model: OrderDetail,
+        as: 'orderDetails'
+      }
     });
 
     if (!order) return res.status(404).json({ message: 'Order not found' });
@@ -107,7 +113,10 @@ export const getCakeOrdersByShopId = async (req, res) => {
         shop_id,
         status: { [Op.ne]: 'cancelled' }
       },
-      include: OrderDetail
+      include: {
+        model: OrderDetail,
+        as: 'orderDetails'
+      }
     });
     res.status(200).json(orders);
   } catch (error) {
@@ -148,15 +157,46 @@ export const markOrderAsCompleted = async (req, res) => {
 // Soft DELETE: update status to "cancelled"
 export const cancelCakeOrder = async (req, res) => {
   try {
-    const [updated] = await CakeOrder.update(
+    const order = await CakeOrder.findByPk(req.params.id);
+
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+
+    if (order.status !== 'pending') {
+      return res.status(400).json({ message: 'Only pending orders can be cancelled' });
+    }
+
+    await CakeOrder.update(
       { status: 'cancelled' },
       { where: { id: req.params.id } }
     );
 
-    if (!updated) return res.status(404).json({ message: 'Order not found' });
     res.status(200).json({ message: 'Order cancelled successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Failed to cancel order', error: error.message });
   }
-  
+};
+
+// UPDATE status to "shipped" and set shipped_at timestamp
+export const markOrderAsShipped = async (req, res) => {
+  try {
+    const order = await CakeOrder.findByPk(req.params.id);
+
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+
+    if (order.status !== 'ordered') {
+      return res.status(400).json({ message: 'Only ordered orders can be shipped' });
+    }
+
+    await CakeOrder.update(
+      {
+        status: 'shipped',
+        shipped_at: new Date()
+      },
+      { where: { id: req.params.id } }
+    );
+
+    res.status(200).json({ message: 'Order marked as shipped' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to update order', error: error.message });
+  }
 };
