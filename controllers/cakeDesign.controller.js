@@ -2,17 +2,46 @@ import CakeDesign from '../models/cake_design.model.js';
 import User from '../models/User.model.js';
 import { Op } from 'sequelize';
 
+// Helper function to validate Base64 image
+const isValidBase64Image = (str) => {
+    // Check if it's a URL
+    if (str.startsWith('http://') || str.startsWith('https://')) {
+        return true;
+    }
+
+    // Check if it's a valid Base64 image
+    const base64Regex = /^data:image\/(png|jpeg|jpg|gif|webp);base64,/;
+    if (base64Regex.test(str)) {
+        return true;
+    }
+
+    // Check if it's a pure Base64 string (without data URL prefix)
+    const pureBase64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+    return pureBase64Regex.test(str) && str.length > 0;
+};
+
 // Create a new cake design
 export const createCakeDesign = async (req, res) => {
     try {
         const { description, design_image, is_public, ai_generated } = req.body;
         const user_id = req.userId; // From JWT token
 
-        // Validate required fields
-        if (!design_image) {
+        // Check if we have design_image from multer (file upload) or from request body
+        let finalDesignImage = design_image;
+
+        // If design_image is provided in body, validate it
+        if (finalDesignImage && !isValidBase64Image(finalDesignImage)) {
             return res.status(400).json({
                 success: false,
-                message: 'design_image is required'
+                message: 'design_image must be a valid URL or Base64 encoded image'
+            });
+        }
+
+        // Validate that we have a design_image (either from file upload or request body)
+        if (!finalDesignImage) {
+            return res.status(400).json({
+                success: false,
+                message: 'design_image is required (either upload a file or provide Base64/URL)'
             });
         }
 
@@ -29,7 +58,7 @@ export const createCakeDesign = async (req, res) => {
         const cakeDesign = await CakeDesign.create({
             user_id,
             description,
-            design_image,
+            design_image: finalDesignImage,
             is_public: is_public !== undefined ? is_public : true,
             ai_generated: ai_generated || null
         });
