@@ -10,15 +10,16 @@ const CakeOrder = sequelize.define('CakeOrder', {
   ingredient_total: { type: DataTypes.DECIMAL(10, 2), allowNull: true, defaultValue: 0.00 },
   total_price: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
   status: {
-    type: DataTypes.ENUM('pending', 'ordered', 'completed','cancelled'),
+    type: DataTypes.ENUM('pending', 'ordered', 'completed','cancelled', 'shipped'),
     allowNull: false,
     defaultValue: 'pending'
   },
   special_instructions: { type: DataTypes.TEXT },
+  shipped_at: { type: DataTypes.DATE, allowNull: true },
   created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }
 }, {
   tableName: 'cake_order',
-  timestamps: false,
+  timestamps: true,
   underscored: true
 });
 
