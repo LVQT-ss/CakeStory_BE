@@ -4,6 +4,7 @@ import {
     getCakeDesigns
 } from '../controllers/cakeDesign.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
+import upload, { convertToBase64 } from '../middleware/upload.js';
 const router = express.Router();
 
 /**
@@ -13,12 +14,33 @@ const router = express.Router();
  *     tags:
  *       - Cake Design
  *     summary: Create a new cake design
- *     description: Create a new cake design with user association
+ *     description: Create a new cake design with image as file upload, Base64 string or URL
  *     security:
  *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               design_image:
+ *                 type: string
+ *                 format: binary
+ *                 description: Image file to upload (jpg, jpeg, png, gif, webp - max 5MB)
+ *               description:
+ *                 type: string
+ *                 description: Description of the cake design
+ *                 example: "A beautiful chocolate cake with vanilla frosting and sprinkles"
+ *               is_public:
+ *                 type: boolean
+ *                 description: Whether the design is public or private
+ *                 default: true
+ *                 example: true
+ *               ai_generated:
+ *                 type: string
+ *                 description: AI generation method or prompt used (null if not AI generated)
+ *                 example: "DALL-E 3: A chocolate cake with vanilla frosting"
  *         application/json:
  *           schema:
  *             type: object
@@ -29,11 +51,10 @@ const router = express.Router();
  *                 type: string
  *                 description: Description of the cake design
  *                 example: "A beautiful chocolate cake with vanilla frosting and sprinkles"
- *                 nullable: true
  *               design_image:
  *                 type: string
- *                 description: URL or base64 string of the design image
- *                 example: "https://example.com/cake-design.jpg"
+ *                 description: URL or base64 string of the design image (supports data:image/...;base64, format or pure base64)
+ *                 example: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
  *               is_public:
  *                 type: boolean
  *                 description: Whether the design is public or private
@@ -43,7 +64,6 @@ const router = express.Router();
  *                 type: string
  *                 description: AI generation method or prompt used (null if not AI generated)
  *                 example: "DALL-E 3: A chocolate cake with vanilla frosting"
- *                 nullable: true
  *     responses:
  *       201:
  *         description: Cake design created successfully
@@ -73,7 +93,7 @@ const router = express.Router();
  *                       example: "A beautiful chocolate cake with vanilla frosting and sprinkles"
  *                     design_image:
  *                       type: string
- *                       example: "https://example.com/cake-design.jpg"
+ *                       example: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
  *                     created_at:
  *                       type: string
  *                       format: date-time
@@ -86,7 +106,7 @@ const router = express.Router();
  *                       nullable: true
  *                       example: "DALL-E 3: A chocolate cake with vanilla frosting"
  *       400:
- *         description: Bad Request - Missing required fields
+ *         description: Bad Request - Missing required fields or invalid file
  *         content:
  *           application/json:
  *             schema:
@@ -97,7 +117,7 @@ const router = express.Router();
  *                   example: false
  *                 message:
  *                   type: string
- *                   example: "design_image is required"
+ *                   example: "design_image is required (either upload a file or provide Base64/URL)"
  *       404:
  *         description: Not Found - User not found
  *         content:
@@ -141,7 +161,16 @@ const router = express.Router();
  *                   type: string
  *                   example: "Database connection error"
  */
-router.post('/create', verifyToken, createCakeDesign);
+router.post('/create', verifyToken, upload.single('design_image'), (req, res, next) => {
+    // Check if file was uploaded
+    if (req.file) {
+        // If file uploaded, convert to Base64
+        convertToBase64(req, res, next);
+    } else {
+        // If no file uploaded, proceed directly to controller
+        next();
+    }
+}, createCakeDesign);
 
 /**
  * @swagger
