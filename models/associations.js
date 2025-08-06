@@ -6,7 +6,7 @@ import MarketplacePost from "./marketplace_post.model.js";
 import PostData from "./post_data.model.js";
 import Album from "./album.model.js";
 import CakeDesign from "./cake_design.model.js";
-import CakeDesignDetail from "./cake_design_detail.model.js";
+// import CakeDesignDetail from "./cake_design_detail.model.js";
 import Group from "./group.model.js";
 import GroupMember from "./group_member.model.js";
 import Comment from "./comment.model.js";
@@ -66,8 +66,8 @@ function setupAssociations() {
   CakeDesign.belongsTo(User, { foreignKey: "user_id" });
 
   // CakeDesign ↔ CakeDesignDetail (1-N)
-  CakeDesign.hasMany(CakeDesignDetail, { foreignKey: "cake_design_id" });
-  CakeDesignDetail.belongsTo(CakeDesign, { foreignKey: "cake_design_id" });
+  // CakeDesign.hasMany(CakeDesignDetail, { foreignKey: "cake_design_id" });
+  // CakeDesignDetail.belongsTo(CakeDesign, { foreignKey: "cake_design_id" });
 
   // Group ↔ GroupMember (1-N)
   Group.hasMany(GroupMember, { foreignKey: "group_id" });
@@ -202,13 +202,13 @@ function setupAssociations() {
   AiGeneratedImage.hasOne(Transaction, { foreignKey: "ai_generated_image_id", as: "transaction" });
   Transaction.belongsTo(AiGeneratedImage, { foreignKey: "ai_generated_image_id", as: "aiGeneratedImage" });
 
-    // CakeOrder ↔ OrderDetail (1-N)
-    CakeOrder.hasMany(OrderDetail, { foreignKey: "order_id", as: "orderDetails" });
-    OrderDetail.belongsTo(CakeOrder, { foreignKey: "order_id", as: "order" });
-  
-    // Ingredient ↔ OrderDetail (1-N)
-    Ingredient.hasMany(OrderDetail, { foreignKey: "ingredient_id", as: "orderDetails" });
-    OrderDetail.belongsTo(Ingredient, { foreignKey: "ingredient_id", as: "ingredient" });
+  // CakeOrder ↔ OrderDetail (1-N)
+  CakeOrder.hasMany(OrderDetail, { foreignKey: "order_id", as: "orderDetails" });
+  OrderDetail.belongsTo(CakeOrder, { foreignKey: "order_id", as: "order" });
+
+  // Ingredient ↔ OrderDetail (1-N)
+  Ingredient.hasMany(OrderDetail, { foreignKey: "ingredient_id", as: "orderDetails" });
+  OrderDetail.belongsTo(Ingredient, { foreignKey: "ingredient_id", as: "ingredient" });
 }
 
 export default setupAssociations;
