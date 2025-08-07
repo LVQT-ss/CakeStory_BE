@@ -11,14 +11,17 @@ export const createMarketplacePost = async (req, res) => {
     const transaction = await sequelize.transaction();
     try {
         const {
-            title, description, price, size, available = true,
-            expiry_date, is_public = true, media, cakeSizes
+            title, description,
+            available = true, expiry_date,
+            is_public = true, media, cakeSizes
         } = req.body;
 
         const user_id = req.userId;
 
         if (!title) throw new Error('Title is required');
-        if (!price || price <= 0) throw new Error('Valid price is required');
+        if (!Array.isArray(cakeSizes) || cakeSizes.length === 0) {
+            throw new Error('At least one cake size is required');
+        }
 
         const userShop = await BakerProfile.findOne({
             where: { user_id, is_active: true }
@@ -39,8 +42,6 @@ export const createMarketplacePost = async (req, res) => {
             post_id: post.id,
             shop_id: userShop.shop_id,
             user_id,
-            price: parseInt(price),
-            size: size || null,
             available,
             expiry_date: expiry_date ? new Date(expiry_date) : null,
             created_at: new Date()
@@ -60,19 +61,17 @@ export const createMarketplacePost = async (req, res) => {
             await Promise.all(mediaPromises);
         }
 
-        if (Array.isArray(cakeSizes) && cakeSizes.length > 0) {
-            const cakeSizePromises = cakeSizes.map(sizeItem => {
-                if (sizeItem.size && sizeItem.price) {
-                    return CakeSize.create({
-                        marketplace_post_id: marketplacePost.post_id,
-                        size: sizeItem.size,
-                        price: parseFloat(sizeItem.price)
-                    }, { transaction });
-                }
-                return null;
-            }).filter(Boolean);
-            await Promise.all(cakeSizePromises);
-        }
+        const cakeSizePromises = cakeSizes.map(sizeItem => {
+            if (sizeItem.size && sizeItem.price) {
+                return CakeSize.create({
+                    marketplace_post_id: marketplacePost.post_id,
+                    size: sizeItem.size,
+                    price: parseFloat(sizeItem.price)
+                }, { transaction });
+            }
+            throw new Error('Each cake size must have size and price');
+        });
+        await Promise.all(cakeSizePromises);
 
         await transaction.commit();
 
@@ -81,7 +80,7 @@ export const createMarketplacePost = async (req, res) => {
                 {
                     model: MarketplacePost,
                     as: 'marketplacePost',
-                    attributes: ['shop_id', 'user_id', 'price', 'size', 'available', 'expiry_date', 'created_at'],
+                    attributes: ['shop_id', 'user_id', 'available', 'expiry_date', 'created_at'],
                     include: [
                         {
                             model: BakerProfile,
@@ -188,7 +187,7 @@ export const updateMarketplacePost = async (req, res) => {
         const { id } = req.params;
         const {
             title, description, is_public,
-            price, size, available, expiry_date
+            available, expiry_date
         } = req.body;
 
         const marketplacePost = await MarketplacePost.findByPk(id, {
@@ -202,8 +201,6 @@ export const updateMarketplacePost = async (req, res) => {
         }
 
         await marketplacePost.update({
-            price,
-            size,
             available,
             expiry_date: expiry_date ? new Date(expiry_date) : null
         }, { transaction });
