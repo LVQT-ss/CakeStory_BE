@@ -12,7 +12,7 @@ const CakeDesign = sequelize.define('CakeDesign', {
   },
   created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
   is_public: { type: DataTypes.BOOLEAN, defaultValue: true },
-  ai_generated: { type: DataTypes.STRING }
+  ai_generated: { type: DataTypes.TEXT }
 }, {
   tableName: 'cake_design',
   timestamps: false,

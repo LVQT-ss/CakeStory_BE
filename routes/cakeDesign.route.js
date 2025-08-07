@@ -1,7 +1,8 @@
 import express from 'express';
 import {
     createCakeDesign,
-    getCakeDesigns
+    getCakeDesigns,
+    generateAICakeDesign
 } from '../controllers/cakeDesign.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 import upload, { convertToBase64 } from '../middleware/upload.js';
@@ -316,5 +317,155 @@ router.post('/create', verifyToken, upload.single('design_image'), (req, res, ne
  *                   example: "Database connection error"
  */
 router.get('/', verifyToken, getCakeDesigns);
+
+/**
+ * @swagger
+ * /api/cake-designs/generate-ai:
+ *   put:
+ *     tags:
+ *       - Cake Design
+ *     summary: Generate AI cake design and update existing cake design
+ *     description: Take an existing cake design ID, generate an AI image using DALL-E 3, upload to Firebase, and update the existing cake design with the AI-generated image URL
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - cake_design_id
+ *             properties:
+ *               cake_design_id:
+ *                 type: integer
+ *                 description: ID of the existing cake design to update with AI-generated image
+ *                 example: 1
+ *     responses:
+ *       200:
+ *         description: AI cake design generated and updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "AI cake design generated successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 21
+ *                     user_id:
+ *                       type: integer
+ *                       example: 1
+ *                     description:
+ *                       type: string
+ *                       example: "A beautiful chocolate cake with vanilla frosting and sprinkles"
+ *                     design_image:
+ *                       type: string
+ *                       description: Original user's image (unchanged)
+ *                       example: "https://example.com/original-user-image.jpg"
+ *                     created_at:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2025-08-07T00:35:30.419Z"
+ *                     is_public:
+ *                       type: boolean
+ *                       example: true
+ *                     ai_generated:
+ *                       type: string
+ *                       description: Firebase URL of the AI-generated image
+ *                       example: "https://firebasestorage.googleapis.com/v0/b/reactchat-be688.firebasestorage.app/o/ai_cake_designs%2F1%2F1754526927155_ai_generated.png?alt=media&token=8943fcbe-e34b-4e4a-846e-7e14aca61818"
+ *                     User:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 1
+ *                         username:
+ *                           type: string
+ *                           example: "johndoe"
+ *                         full_name:
+ *                           type: string
+ *                           example: "John Doe"
+ *                         avatar:
+ *                           type: string
+ *                           example: "https://example.com/avatar.jpg"
+ *       400:
+ *         description: Bad Request - Missing required fields
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "cake_design_id is required"
+ *       403:
+ *         description: Forbidden - Access denied to cake design
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Access denied. You can only generate AI designs from your own designs or public designs."
+ *       404:
+ *         description: Not Found - User or cake design not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Cake design not found"
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Access denied. No token provided."
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ *                 error:
+ *                   type: string
+ *                   example: "AI service temporarily unavailable"
+ */
+router.put('/generate-ai', verifyToken, generateAICakeDesign);
 
 export default router;
