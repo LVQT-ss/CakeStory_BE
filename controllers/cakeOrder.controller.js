@@ -2,9 +2,11 @@ import sequelize from '../database/db.js';
 import CakeOrder from '../models/cake_order.model.js';
 import OrderDetail from '../models/order_detail.model.js';
 import Ingredient from '../models/Ingredient.model.js';
+import Wallet from '../models/wallet.model.js';
+import Transaction from '../models/transaction.model.js';
 import { Op } from 'sequelize';
 
-// CREATE CakeOrder with multiple OrderDetails
+// CREATE CakeOrder with multiple OrderDetails and Payment Processing
 export const createCakeOrder = async (req, res) => {
   const {
     customer_id,
@@ -16,7 +18,7 @@ export const createCakeOrder = async (req, res) => {
     order_details = []
   } = req.body;
 
-  const transaction = await sequelize.transaction();
+  const dbTransaction = await sequelize.transaction();
 
   try {
     let ingredient_total = 0;
@@ -32,6 +34,28 @@ export const createCakeOrder = async (req, res) => {
 
     const total_price = parseFloat(base_price) + ingredient_total;
 
+    // 1. Kiểm tra ví của user có đủ tiền không
+    const customerWallet = await Wallet.findOne({
+      where: { user_id: customer_id },
+      transaction: dbTransaction
+    });
+
+    if (!customerWallet) {
+      await dbTransaction.rollback();
+      return res.status(404).json({
+        message: 'Customer wallet not found. Please create a wallet first.'
+      });
+    }
+
+    const currentBalance = parseFloat(customerWallet.balance);
+    if (currentBalance < total_price) {
+      await dbTransaction.rollback();
+      return res.status(400).json({
+        message: `Insufficient balance. Current balance: ${currentBalance} VND, Required: ${total_price} VND`
+      });
+    }
+
+    // 2. Tạo đơn hàng trước
     const newOrder = await CakeOrder.create({
       customer_id,
       shop_id,
@@ -42,9 +66,9 @@ export const createCakeOrder = async (req, res) => {
       total_price,
       status: 'pending',
       special_instructions,
-    }, { transaction });
+    }, { transaction: dbTransaction });
 
-    // Tạo OrderDetail nếu có
+    // 3. Tạo OrderDetail nếu có
     if (Array.isArray(order_details) && order_details.length > 0) {
       for (const item of order_details) {
         const ingredient = await Ingredient.findByPk(item.ingredient_id);
@@ -53,17 +77,51 @@ export const createCakeOrder = async (req, res) => {
           ingredient_id: item.ingredient_id,
           quantity: item.quantity,
           total_price: (parseFloat(ingredient.price) * item.quantity).toFixed(2)
-        }, { transaction });
+        }, { transaction: dbTransaction });
       }
     }
 
-    await transaction.commit();
-    res.status(201).json({ message: 'Cake order created successfully', order: newOrder });
+    // 4. Trừ tiền từ ví customer
+    const newBalance = currentBalance - total_price;
+    await Wallet.update(
+      {
+        balance: newBalance,
+        updated_at: new Date()
+      },
+      {
+        where: { user_id: customer_id },
+        transaction: dbTransaction
+      }
+    );
+
+    // 5. Tạo transaction record để tracking
+    const paymentTransaction = await Transaction.create({
+      from_wallet_id: customerWallet.id,
+      to_wallet_id: null, // Có thể để null hoặc wallet của shop nếu có
+      order_id: newOrder.id,
+      amount: total_price,
+      transaction_type: 'order_payment',
+      status: 'completed',
+      description: `Payment for cake order #${newOrder.id}`
+    }, { transaction: dbTransaction });
+
+    await dbTransaction.commit();
+
+    res.status(201).json({
+      message: 'Cake order created and payment processed successfully',
+      order: newOrder,
+      payment: {
+        transaction_id: paymentTransaction.id,
+        amount_paid: total_price,
+        previous_balance: currentBalance,
+        new_balance: newBalance
+      }
+    });
 
   } catch (error) {
-    await transaction.rollback();
+    await dbTransaction.rollback();
     console.error(error);
-    res.status(500).json({ message: 'Failed to create order', error: error.message });
+    res.status(500).json({ message: 'Failed to create order and process payment', error: error.message });
   }
 };
 
@@ -140,7 +198,7 @@ export const updateCakeOrder = async (req, res) => {
 
   try {
     const order = await CakeOrder.findByPk(id);
-    
+
     if (!order) {
       await transaction.rollback();
       return res.status(404).json({ message: 'Order not found' });
@@ -185,9 +243,9 @@ export const updateCakeOrder = async (req, res) => {
       ingredient_total,
       total_price,
       special_instructions: special_instructions !== undefined ? special_instructions : order.special_instructions
-    }, { 
+    }, {
       where: { id },
-      transaction 
+      transaction
     });
 
     await transaction.commit();
@@ -261,7 +319,7 @@ export const cancelCakeOrder = async (req, res) => {
   }
 };
 
-// UPDATE status to "shipped" and set shipped_at timestamp
+// UPDATE status to "shipped" and set shipped_at timestamp NOTE : đang cho chủ shop để set shipped 
 export const markOrderAsShipped = async (req, res) => {
   try {
     const order = await CakeOrder.findByPk(req.params.id);
