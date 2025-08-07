@@ -11,6 +11,7 @@ export const createCakeOrder = async (req, res) => {
     shop_id,
     marketplace_post_id,
     base_price,
+    size,
     special_instructions,
     order_details = []
   } = req.body;
@@ -36,6 +37,7 @@ export const createCakeOrder = async (req, res) => {
       shop_id,
       marketplace_post_id,
       base_price,
+      size,
       ingredient_total,
       total_price,
       status: 'pending',
@@ -121,6 +123,89 @@ export const getCakeOrdersByShopId = async (req, res) => {
     res.status(200).json(orders);
   } catch (error) {
     res.status(500).json({ message: 'Failed to retrieve orders', error: error.message });
+  }
+};
+
+// UPDATE CakeOrder (including size)
+export const updateCakeOrder = async (req, res) => {
+  const { id } = req.params;
+  const {
+    base_price,
+    size,
+    special_instructions,
+    order_details = []
+  } = req.body;
+
+  const transaction = await sequelize.transaction();
+
+  try {
+    const order = await CakeOrder.findByPk(id);
+    
+    if (!order) {
+      await transaction.rollback();
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    if (order.status !== 'pending') {
+      await transaction.rollback();
+      return res.status(400).json({ message: 'Only pending orders can be updated' });
+    }
+
+    let ingredient_total = 0;
+
+    // Xóa OrderDetail cũ
+    await OrderDetail.destroy({ where: { order_id: id }, transaction });
+
+    if (Array.isArray(order_details) && order_details.length > 0) {
+      // Tính tổng giá nguyên liệu mới
+      for (const item of order_details) {
+        const ingredient = await Ingredient.findByPk(item.ingredient_id);
+        if (!ingredient) throw new Error(`Ingredient ID ${item.ingredient_id} not found`);
+        ingredient_total += parseFloat(ingredient.price) * item.quantity;
+      }
+
+      // Tạo OrderDetail mới
+      for (const item of order_details) {
+        const ingredient = await Ingredient.findByPk(item.ingredient_id);
+        await OrderDetail.create({
+          order_id: id,
+          ingredient_id: item.ingredient_id,
+          quantity: item.quantity,
+          total_price: (parseFloat(ingredient.price) * item.quantity).toFixed(2)
+        }, { transaction });
+      }
+    }
+
+    const total_price = parseFloat(base_price || order.base_price) + ingredient_total;
+
+    // Cập nhật CakeOrder
+    await CakeOrder.update({
+      base_price: base_price || order.base_price,
+      size: size || order.size,
+      ingredient_total,
+      total_price,
+      special_instructions: special_instructions !== undefined ? special_instructions : order.special_instructions
+    }, { 
+      where: { id },
+      transaction 
+    });
+
+    await transaction.commit();
+
+    const updatedOrder = await CakeOrder.findOne({
+      where: { id },
+      include: {
+        model: OrderDetail,
+        as: 'orderDetails'
+      }
+    });
+
+    res.status(200).json({ message: 'Order updated successfully', order: updatedOrder });
+
+  } catch (error) {
+    await transaction.rollback();
+    console.error(error);
+    res.status(500).json({ message: 'Failed to update order', error: error.message });
   }
 };
 
