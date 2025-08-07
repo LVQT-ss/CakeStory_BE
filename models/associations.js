@@ -28,6 +28,7 @@ import Wallet from "./wallet.model.js";
 import DepositRecords from "./deposit_records.model.js";
 import WithdrawRecords from "./withdraw_records.model.js";
 import OrderDetail from './order_detail.model.js';
+import CakeSize from "./cake_size.model.js";
 function setupAssociations() {
   // User ↔ Shop (1-1)
   User.hasOne(Shop, { foreignKey: "user_id", as: "shop", onDelete: "CASCADE" });
@@ -209,6 +210,11 @@ function setupAssociations() {
   // Ingredient ↔ OrderDetail (1-N)
   Ingredient.hasMany(OrderDetail, { foreignKey: "ingredient_id", as: "orderDetails" });
   OrderDetail.belongsTo(Ingredient, { foreignKey: "ingredient_id", as: "ingredient" });
+
+  // MarketplacePost ↔ CakeSize (1-N)
+  MarketplacePost.hasMany(CakeSize, { foreignKey: 'marketplace_post_id', as: 'cakeSizes' });
+  CakeSize.belongsTo(MarketplacePost, { foreignKey: 'marketplace_post_id', as: 'marketplacePost' });
+
 }
 
 export default setupAssociations;
