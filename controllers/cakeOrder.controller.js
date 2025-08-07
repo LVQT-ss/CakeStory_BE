@@ -297,25 +297,107 @@ export const markOrderAsCompleted = async (req, res) => {
   }
 };
 
-// Soft DELETE: update status to "cancelled"
+// Soft DELETE: update status to "cancelled" and process refund
 export const cancelCakeOrder = async (req, res) => {
-  try {
-    const order = await CakeOrder.findByPk(req.params.id);
+  const dbTransaction = await sequelize.transaction();
 
-    if (!order) return res.status(404).json({ message: 'Order not found' });
+  try {
+    const order = await CakeOrder.findByPk(req.params.id, { transaction: dbTransaction });
+
+    if (!order) {
+      await dbTransaction.rollback();
+      return res.status(404).json({ message: 'Order not found' });
+    }
 
     if (order.status !== 'pending') {
+      await dbTransaction.rollback();
       return res.status(400).json({ message: 'Only pending orders can be cancelled' });
     }
 
-    await CakeOrder.update(
-      { status: 'cancelled' },
-      { where: { id: req.params.id } }
+    // 1. Tìm transaction thanh toán gốc của đơn hàng này
+    const originalPayment = await Transaction.findOne({
+      where: {
+        order_id: order.id,
+        transaction_type: 'order_payment',
+        status: 'completed'
+      },
+      transaction: dbTransaction
+    });
+
+    if (!originalPayment) {
+      await dbTransaction.rollback();
+      return res.status(404).json({
+        message: 'Original payment transaction not found for this order'
+      });
+    }
+
+    // 2. Tìm ví của customer để hoàn tiền
+    const customerWallet = await Wallet.findOne({
+      where: { user_id: order.customer_id },
+      transaction: dbTransaction
+    });
+
+    if (!customerWallet) {
+      await dbTransaction.rollback();
+      return res.status(404).json({
+        message: 'Customer wallet not found'
+      });
+    }
+
+    // 3. Hoàn tiền vào ví customer
+    const refundAmount = parseFloat(order.total_price);
+    const currentBalance = parseFloat(customerWallet.balance);
+    const newBalance = currentBalance + refundAmount;
+
+    await Wallet.update(
+      {
+        balance: newBalance,
+        updated_at: new Date()
+      },
+      {
+        where: { user_id: order.customer_id },
+        transaction: dbTransaction
+      }
     );
 
-    res.status(200).json({ message: 'Order cancelled successfully' });
+    // 4. Update transaction gốc thành refund
+    await Transaction.update(
+      {
+        transaction_type: 'order_payment',
+        status: 'completed',
+        description: `Refunded payment for cancelled cake order #${order.id}`
+      },
+      {
+        where: { id: originalPayment.id },
+        transaction: dbTransaction
+      }
+    );
+
+    // 5. Cập nhật status đơn hàng thành cancelled
+    await CakeOrder.update(
+      { status: 'cancelled' },
+      {
+        where: { id: req.params.id },
+        transaction: dbTransaction
+      }
+    );
+
+    await dbTransaction.commit();
+
+    res.status(200).json({
+      message: 'Order cancelled successfully and refund processed',
+      refund: {
+        transaction_id: originalPayment.id,
+        refund_amount: refundAmount,
+        previous_balance: currentBalance,
+        new_balance: newBalance
+      }
+    });
+
   } catch (error) {
-    res.status(500).json({ message: 'Failed to cancel order', error: error.message });
+    await dbTransaction.rollback();
+    console.error(error);
+    res.status(500).json({ message: 'Failed to cancel order and process refund', error: error.message });
   }
 };
 
