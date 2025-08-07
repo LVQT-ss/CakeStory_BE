@@ -6,6 +6,7 @@ const MarketplacePost = sequelize.define('MarketplacePost', {
   shop_id: { type: DataTypes.INTEGER, allowNull: false },
   user_id: { type: DataTypes.INTEGER, allowNull: false },
   price: { type: DataTypes.INTEGER },
+  size: { type: DataTypes.STRING },
   available: { type: DataTypes.BOOLEAN, defaultValue: true },
   expiry_date: { type: DataTypes.DATE },
   created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }

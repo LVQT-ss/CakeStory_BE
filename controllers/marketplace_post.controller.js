@@ -4,14 +4,15 @@ import Post from '../models/post.model.js';
 import BakerProfile from '../models/shop.model.js';
 import User from '../models/User.model.js';
 import PostData from '../models/post_data.model.js';
+import CakeSize from '../models/cake_size.model.js';
 
 // Tạo marketplace post
 export const createMarketplacePost = async (req, res) => {
     const transaction = await sequelize.transaction();
     try {
         const {
-            title, description, price, available = true,
-            expiry_date, is_public = true, media
+            title, description, price, size, available = true,
+            expiry_date, is_public = true, media, cakeSizes
         } = req.body;
 
         const user_id = req.userId;
@@ -34,11 +35,12 @@ export const createMarketplacePost = async (req, res) => {
             user_id
         }, { transaction });
 
-        await MarketplacePost.create({
+        const marketplacePost = await MarketplacePost.create({
             post_id: post.id,
             shop_id: userShop.shop_id,
             user_id,
             price: parseInt(price),
+            size: size || null,
             available,
             expiry_date: expiry_date ? new Date(expiry_date) : null,
             created_at: new Date()
@@ -58,6 +60,20 @@ export const createMarketplacePost = async (req, res) => {
             await Promise.all(mediaPromises);
         }
 
+        if (Array.isArray(cakeSizes) && cakeSizes.length > 0) {
+            const cakeSizePromises = cakeSizes.map(sizeItem => {
+                if (sizeItem.size && sizeItem.price) {
+                    return CakeSize.create({
+                        marketplace_post_id: marketplacePost.post_id,
+                        size: sizeItem.size,
+                        price: parseFloat(sizeItem.price)
+                    }, { transaction });
+                }
+                return null;
+            }).filter(Boolean);
+            await Promise.all(cakeSizePromises);
+        }
+
         await transaction.commit();
 
         const createdPost = await Post.findByPk(post.id, {
@@ -65,7 +81,7 @@ export const createMarketplacePost = async (req, res) => {
                 {
                     model: MarketplacePost,
                     as: 'marketplacePost',
-                    attributes: ['shop_id', 'user_id', 'price', 'available', 'expiry_date', 'created_at'],
+                    attributes: ['shop_id', 'user_id', 'price', 'size', 'available', 'expiry_date', 'created_at'],
                     include: [
                         {
                             model: BakerProfile,
@@ -76,6 +92,10 @@ export const createMarketplacePost = async (req, res) => {
                                 as: 'user',
                                 attributes: ['id', 'username', 'email']
                             }]
+                        },
+                        {
+                            model: CakeSize,
+                            as: 'cakeSizes'
                         }
                     ]
                 },
@@ -115,6 +135,10 @@ export const getAllMarketplacePosts = async (req, res) => {
                     as: 'shop',
                     attributes: ['shop_id', 'business_name'],
                     include: [{ model: User, as: 'user', attributes: ['id', 'username', 'email'] }]
+                },
+                {
+                    model: CakeSize,
+                    as: 'cakeSizes'
                 }
             ]
         });
@@ -140,6 +164,10 @@ export const getMarketplacePostById = async (req, res) => {
                     model: BakerProfile,
                     as: 'shop',
                     include: [{ model: User, as: 'user', attributes: ['id', 'username', 'email'] }]
+                },
+                {
+                    model: CakeSize,
+                    as: 'cakeSizes'
                 }
             ]
         });
@@ -160,10 +188,9 @@ export const updateMarketplacePost = async (req, res) => {
         const { id } = req.params;
         const {
             title, description, is_public,
-            price, available, expiry_date
+            price, size, available, expiry_date
         } = req.body;
 
-        // Tìm marketplace post kèm post liên quan
         const marketplacePost = await MarketplacePost.findByPk(id, {
             include: [{ model: Post, as: 'post' }],
             transaction
@@ -174,14 +201,13 @@ export const updateMarketplacePost = async (req, res) => {
             return res.status(404).json({ message: 'Marketplace post not found' });
         }
 
-        // Cập nhật MarketplacePost
         await marketplacePost.update({
             price,
+            size,
             available,
             expiry_date: expiry_date ? new Date(expiry_date) : null
         }, { transaction });
 
-        // Cập nhật Post liên quan nếu có thay đổi
         if (marketplacePost.post) {
             await marketplacePost.post.update({
                 title,

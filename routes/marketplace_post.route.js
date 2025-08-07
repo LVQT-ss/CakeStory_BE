@@ -23,7 +23,7 @@ const router = express.Router();
  *   post:
  *     tags: [Marketplace]
  *     summary: Create a new marketplace post
- *     description: Create a new marketplace post under an active shop
+ *     description: Create a new marketplace post under an active shop. You may optionally include a list of cakeSizes.
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -42,6 +42,8 @@ const router = express.Router();
  *                 type: string
  *               price:
  *                 type: number
+ *               size:
+ *                 type: string
  *               available:
  *                 type: boolean
  *               expiry_date:
@@ -58,6 +60,17 @@ const router = express.Router();
  *                       type: string
  *                     video_url:
  *                       type: string
+ *               cakeSizes:
+ *                 type: array
+ *                 description: Optional array of cake sizes and prices
+ *                 items:
+ *                   type: object
+ *                   required: [size, price]
+ *                   properties:
+ *                     size:
+ *                       type: string
+ *                     price:
+ *                       type: number
  *     responses:
  *       201:
  *         description: Marketplace post created successfully
@@ -74,7 +87,7 @@ router.post('/', verifyToken, createMarketplacePost);
  *   get:
  *     tags: [Marketplace]
  *     summary: Get all marketplace posts
- *     description: Retrieve all marketplace posts
+ *     description: Retrieve all marketplace posts along with their media, shop info, and cake sizes
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -91,7 +104,7 @@ router.get('/', verifyToken, getAllMarketplacePosts);
  *   get:
  *     tags: [Marketplace]
  *     summary: Get a marketplace post by ID
- *     description: Retrieve details of a specific marketplace post
+ *     description: Retrieve details of a specific marketplace post including shop, media, and cake sizes
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -117,7 +130,7 @@ router.get('/:id', verifyToken, getMarketplacePostById);
  *   put:
  *     tags: [Marketplace]
  *     summary: Update a marketplace post
- *     description: Update the details of a specific marketplace post
+ *     description: Update the details of a specific marketplace post (does not update cakeSizes yet)
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -138,6 +151,8 @@ router.get('/:id', verifyToken, getMarketplacePostById);
  *                 type: string
  *               price:
  *                 type: number
+ *               size:
+ *                 type: string
  *               available:
  *                 type: boolean
  *               expiry_date:
