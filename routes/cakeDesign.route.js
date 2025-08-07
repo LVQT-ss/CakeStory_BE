@@ -38,10 +38,6 @@ const router = express.Router();
  *                 description: Whether the design is public or private
  *                 default: true
  *                 example: true
- *               ai_generated:
- *                 type: string
- *                 description: AI generation method or prompt used (null if not AI generated)
- *                 example: "DALL-E 3: A chocolate cake with vanilla frosting"
  *         application/json:
  *           schema:
  *             type: object
@@ -61,10 +57,6 @@ const router = express.Router();
  *                 description: Whether the design is public or private
  *                 default: true
  *                 example: true
- *               ai_generated:
- *                 type: string
- *                 description: AI generation method or prompt used (null if not AI generated)
- *                 example: "DALL-E 3: A chocolate cake with vanilla frosting"
  *     responses:
  *       201:
  *         description: Cake design created successfully
@@ -102,10 +94,6 @@ const router = express.Router();
  *                     is_public:
  *                       type: boolean
  *                       example: true
- *                     ai_generated:
- *                       type: string
- *                       nullable: true
- *                       example: "DALL-E 3: A chocolate cake with vanilla frosting"
  *       400:
  *         description: Bad Request - Missing required fields or invalid file
  *         content:
