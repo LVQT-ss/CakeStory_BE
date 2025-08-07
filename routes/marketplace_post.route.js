@@ -23,7 +23,7 @@ const router = express.Router();
  *   post:
  *     tags: [Marketplace]
  *     summary: Create a new marketplace post
- *     description: Create a new marketplace post under an active shop. You may optionally include a list of cakeSizes.
+ *     description: Create a new marketplace post under an active shop. 
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -34,15 +34,10 @@ const router = express.Router();
  *             type: object
  *             required:
  *               - title
- *               - price
  *             properties:
  *               title:
  *                 type: string
  *               description:
- *                 type: string
- *               price:
- *                 type: number
- *               size:
  *                 type: string
  *               available:
  *                 type: boolean
@@ -62,7 +57,6 @@ const router = express.Router();
  *                       type: string
  *               cakeSizes:
  *                 type: array
- *                 description: Optional array of cake sizes and prices
  *                 items:
  *                   type: object
  *                   required: [size, price]
@@ -139,6 +133,7 @@ router.get('/:id', verifyToken, getMarketplacePostById);
  *         required: true
  *         schema:
  *           type: integer
+ *         description: ID of the marketplace post to update
  *     requestBody:
  *       content:
  *         application/json:
@@ -148,10 +143,6 @@ router.get('/:id', verifyToken, getMarketplacePostById);
  *               title:
  *                 type: string
  *               description:
- *                 type: string
- *               price:
- *                 type: number
- *               size:
  *                 type: string
  *               available:
  *                 type: boolean
