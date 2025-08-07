@@ -4,6 +4,7 @@ import OrderDetail from '../models/order_detail.model.js';
 import Ingredient from '../models/Ingredient.model.js';
 import Wallet from '../models/wallet.model.js';
 import Transaction from '../models/transaction.model.js';
+import Shop from '../models/shop.model.js';
 import { Op } from 'sequelize';
 
 // CREATE CakeOrder with multiple OrderDetails and Payment Processing
@@ -55,7 +56,28 @@ export const createCakeOrder = async (req, res) => {
       });
     }
 
-    // 2. Tạo đơn hàng trước
+    // 2. Tìm shop owner và wallet để lưu to_wallet_id
+    const shop = await Shop.findByPk(shop_id, { transaction: dbTransaction });
+    if (!shop) {
+      await dbTransaction.rollback();
+      return res.status(404).json({
+        message: 'Shop not found'
+      });
+    }
+
+    const shopWallet = await Wallet.findOne({
+      where: { user_id: shop.user_id },
+      transaction: dbTransaction
+    });
+
+    if (!shopWallet) {
+      await dbTransaction.rollback();
+      return res.status(404).json({
+        message: 'Shop wallet not found. Please create a wallet for shop owner first.'
+      });
+    }
+
+    // 3. Tạo đơn hàng
     const newOrder = await CakeOrder.create({
       customer_id,
       shop_id,
@@ -68,7 +90,7 @@ export const createCakeOrder = async (req, res) => {
       special_instructions,
     }, { transaction: dbTransaction });
 
-    // 3. Tạo OrderDetail nếu có
+    // 4. Tạo OrderDetail nếu có
     if (Array.isArray(order_details) && order_details.length > 0) {
       for (const item of order_details) {
         const ingredient = await Ingredient.findByPk(item.ingredient_id);
@@ -81,7 +103,7 @@ export const createCakeOrder = async (req, res) => {
       }
     }
 
-    // 4. Trừ tiền từ ví customer
+    // 5. Trừ tiền từ ví customer
     const newBalance = currentBalance - total_price;
     await Wallet.update(
       {
@@ -94,15 +116,15 @@ export const createCakeOrder = async (req, res) => {
       }
     );
 
-    // 5. Tạo transaction record để tracking
+    // 6. Tạo transaction record để tracking (PENDING để giữ tiền)
     const paymentTransaction = await Transaction.create({
       from_wallet_id: customerWallet.id,
-      to_wallet_id: null, // Có thể để null hoặc wallet của shop nếu có
+      to_wallet_id: shopWallet.id, // Lưu shop wallet ngay từ đầu
       order_id: newOrder.id,
       amount: total_price,
       transaction_type: 'order_payment',
-      status: 'completed',
-      description: `Payment for cake order #${newOrder.id}`
+      status: 'pending', // PENDING để giữ tiền cho đến khi order completed
+      description: `Payment for cake order #${newOrder.id} (held in escrow)`
     }, { transaction: dbTransaction });
 
     await dbTransaction.commit();
@@ -114,7 +136,9 @@ export const createCakeOrder = async (req, res) => {
         transaction_id: paymentTransaction.id,
         amount_paid: total_price,
         previous_balance: currentBalance,
-        new_balance: newBalance
+        new_balance: newBalance,
+        shop_wallet_id: shopWallet.id,
+        status: 'held_in_escrow'
       }
     });
 
@@ -319,7 +343,7 @@ export const cancelCakeOrder = async (req, res) => {
       where: {
         order_id: order.id,
         transaction_type: 'order_payment',
-        status: 'completed'
+        status: 'pending' // Tìm transaction đang pending để refund
       },
       transaction: dbTransaction
     });
@@ -360,11 +384,11 @@ export const cancelCakeOrder = async (req, res) => {
       }
     );
 
-    // 4. Update transaction gốc thành refund
+    // 4. Update transaction gốc thành refund và completed (để refund)
     await Transaction.update(
       {
         transaction_type: 'order_payment',
-        status: 'completed',
+        status: 'cancelled',
         description: `Refunded payment for cancelled cake order #${order.id}`
       },
       {
