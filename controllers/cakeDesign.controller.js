@@ -118,6 +118,7 @@ export const getCakeDesigns = async (req, res) => {
         }
 
         const { count, rows: cakeDesigns } = await CakeDesign.findAndCountAll({
+            attributes: { exclude: ['design_image'] },
             where: whereClause,
             include: [
                 {
@@ -204,69 +205,10 @@ export const generateAICakeDesign = async (req, res) => {
 
         const { design_image, description } = existingCakeDesign;
 
-        // Parse description to extract cake details
-        const parseDescription = (desc) => {
-            if (!desc) return {};
-
-            const lowerDesc = desc.toLowerCase();
-            const details = {};
-
-            // Extract number of layers
-            const layerMatch = lowerDesc.match(/(\d+)\s*(?:layer|tier|tầng)/);
-            if (layerMatch) details.layers = layerMatch[1];
-
-            // Extract number of candles
-            const candleMatch = lowerDesc.match(/(\d+)\s*(?:candle|nến)/);
-            if (candleMatch) details.candles = candleMatch[1];
-
-            // Extract colors
-            const colorMatches = lowerDesc.match(/(?:pink|brown|chocolate|white|blue|red|yellow|green|purple|black|gold|silver|màu\s*\w+)/g);
-            if (colorMatches) details.colors = colorMatches.join(', ');
-
-            // Extract cake type
-            const cakeTypes = ['chocolate', 'vanilla', 'strawberry', 'red velvet', 'lemon', 'carrot', 'sô cô la', 'vani'];
-            const cakeType = cakeTypes.find(type => lowerDesc.includes(type));
-            if (cakeType) details.type = cakeType;
-
-            return details;
-        };
-
-        const cakeDetails = parseDescription(description);
-
-        // Create enhanced and detailed prompt for DALL-E 3
-        const enhancedPrompt = `Professional food photography of a ${cakeDetails.type || 'beautiful'} cake design:
-
-CAKE SPECIFICATIONS:
-- ${cakeDetails.layers ? `Exactly ${cakeDetails.layers} distinct tiers/layers, clearly visible and well-proportioned` : 'Multi-tiered elegant design'}
-- ${cakeDetails.candles ? `${cakeDetails.candles} birthday candles with lit flames, perfectly positioned on the top tier` : 'Birthday candles with flames if specified'}
-- ${cakeDetails.colors ? `Color scheme: ${cakeDetails.colors}` : 'Harmonious color palette'}
-- ${description ? `Design elements: ${description}` : 'Elegant decorative elements'}
-
-VISUAL REQUIREMENTS:
-- Professional bakery-quality cake photography
-- Clean composition on plain white or neutral background
-- Perfect lighting with soft shadows
-- High-resolution, photorealistic appearance
-- Smooth, perfectly applied frosting and decorations
-- Premium bakery presentation quality
-
-STRICT EXCLUSIONS:
-- No software interfaces, UI elements, or digital tools visible
-- No Photoshop panels, color pickers, or editing interfaces  
-- No brushes, palettes, or design software elements
-- No text, watermarks, or logos
-- No cluttered backgrounds or distracting elements
-- Focus solely on the beautifully crafted cake
-
-Style: Professional food photography, bakery catalog quality, clean and elegant presentation.`;
-
-        console.log('Generating AI image with prompt:', enhancedPrompt);
-        console.log('Using existing design image as reference:', design_image ? 'Yes' : 'No');
-
         // Generate image using OpenAI DALL-E 3
         const response = await openai.images.generate({
             model: "dall-e-3",
-            prompt: enhancedPrompt,
+            prompt: description,
             n: 1,
             size: "1024x1024",
         });
