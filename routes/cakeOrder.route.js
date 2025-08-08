@@ -39,6 +39,7 @@ const router = express.Router();
  *               - shop_id
  *               - base_price
  *               - order_details
+ *               - size
  *             properties:
  *               customer_id:
  *                 type: integer
@@ -48,6 +49,9 @@ const router = express.Router();
  *                 type: integer
  *               base_price:
  *                 type: number
+ *               size:
+ *                 type: string
+ *                 example: "Medium"
  *               status:
  *                 type: string
  *                 enum: [pending, ordered, completed, cancelled]
