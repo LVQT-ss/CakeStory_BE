@@ -699,3 +699,86 @@ export const confirmRequestbyAdmin = async (req, res) => {
         return res.status(500).json({ success: false, message: 'Internal server error' });
     }
 }
+
+// Get all deposits for admin
+export const getAllDepositsForAdmin = async (req, res) => {
+    try {
+        const { page = 1, limit = 10, status, user_id, start_date, end_date } = req.query;
+        const offset = (page - 1) * limit;
+
+        // Build where clause
+        const whereClause = {};
+
+        // Filter by status
+        if (status) {
+            whereClause.status = status;
+        }
+
+        // Filter by user_id
+        if (user_id) {
+            whereClause.user_id = user_id;
+        }
+
+        // Filter by date range
+        if (start_date || end_date) {
+            whereClause.created_at = {};
+            if (start_date) {
+                whereClause.created_at.$gte = new Date(start_date);
+            }
+            if (end_date) {
+                whereClause.created_at.$lte = new Date(end_date);
+            }
+        }
+
+        // Get deposits with user information
+        const { count, rows: deposits } = await DepositRecords.findAndCountAll({
+            where: whereClause,
+            include: [
+                {
+                    model: User,
+                    attributes: ['id', 'username', 'full_name', 'email', 'avatar']
+                }
+            ],
+            order: [['created_at', 'DESC']],
+            limit: parseInt(limit),
+            offset: parseInt(offset)
+        });
+
+        // Calculate summary statistics
+        const totalAmount = await DepositRecords.sum('amount', { where: whereClause });
+        const completedAmount = await DepositRecords.sum('amount', {
+            where: { ...whereClause, status: 'completed' }
+        });
+        const pendingAmount = await DepositRecords.sum('amount', {
+            where: { ...whereClause, status: 'pending' }
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: 'All deposits retrieved successfully',
+            data: {
+                deposits,
+                pagination: {
+                    current_page: parseInt(page),
+                    total_pages: Math.ceil(count / limit),
+                    total_items: count,
+                    items_per_page: parseInt(limit)
+                },
+                summary: {
+                    total_deposits: count,
+                    total_amount: totalAmount || 0,
+                    completed_amount: completedAmount || 0,
+                    pending_amount: pendingAmount || 0
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('getAllDepositsForAdmin error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
+    }
+};

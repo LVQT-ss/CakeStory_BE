@@ -16,7 +16,8 @@ import {
     AdminWallet,
     allWalletAdmin,
     getUserWalletbyId,
-    confirmRequestbyAdmin
+    confirmRequestbyAdmin,
+    getAllDepositsForAdmin
 } from '../controllers/wallet.controller.js';
 const router = express.Router();
 
@@ -287,6 +288,191 @@ router.get('/balance', verifyToken, walletGetBalance);
  *         description: Internal server error
  */
 router.get('/AllDepositHistoryUser', verifyToken, walletGetDepositHistoryUser);
+
+/**
+ * @swagger
+ * /api/wallet/allDepositsAdmin:
+ *   get:
+ *     tags:
+ *       - Wallet
+ *     summary: Get all deposits from all users (Admin only)
+ *     description: Retrieve all deposit records from all users with filtering and pagination options
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of items per page
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [pending, completed, cancelled]
+ *         description: Filter by deposit status
+ *       - in: query
+ *         name: user_id
+ *         schema:
+ *           type: integer
+ *         description: Filter by specific user ID
+ *       - in: query
+ *         name: start_date
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Filter deposits from this date (YYYY-MM-DD)
+ *       - in: query
+ *         name: end_date
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Filter deposits until this date (YYYY-MM-DD)
+ *     responses:
+ *       200:
+ *         description: All deposits retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "All deposits retrieved successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     deposits:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 1
+ *                           user_id:
+ *                             type: integer
+ *                             example: 123
+ *                           deposit_code:
+ *                             type: string
+ *                             example: "DEP1703123456789456"
+ *                           amount:
+ *                             type: number
+ *                             example: 100000
+ *                           status:
+ *                             type: string
+ *                             enum: [pending, completed, cancelled]
+ *                             example: "completed"
+ *                           created_at:
+ *                             type: string
+ *                             format: date-time
+ *                             example: "2024-01-15T10:30:00.000Z"
+ *                           updated_at:
+ *                             type: string
+ *                             format: date-time
+ *                             example: "2024-01-15T10:35:00.000Z"
+ *                           User:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 123
+ *                               username:
+ *                                 type: string
+ *                                 example: "john_doe"
+ *                               full_name:
+ *                                 type: string
+ *                                 example: "John Doe"
+ *                               email:
+ *                                 type: string
+ *                                 example: "john@example.com"
+ *                               avatar:
+ *                                 type: string
+ *                                 example: "https://example.com/avatar.jpg"
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         current_page:
+ *                           type: integer
+ *                           example: 1
+ *                         total_pages:
+ *                           type: integer
+ *                           example: 5
+ *                         total_items:
+ *                           type: integer
+ *                           example: 50
+ *                         items_per_page:
+ *                           type: integer
+ *                           example: 10
+ *                     summary:
+ *                       type: object
+ *                       properties:
+ *                         total_deposits:
+ *                           type: integer
+ *                           example: 50
+ *                         total_amount:
+ *                           type: number
+ *                           example: 5000000
+ *                         completed_amount:
+ *                           type: number
+ *                           example: 4500000
+ *                         pending_amount:
+ *                           type: number
+ *                           example: 500000
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "User not authenticated"
+ *       403:
+ *         description: Forbidden - User is not an admin
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Access denied. Admin privileges required."
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ *                 error:
+ *                   type: string
+ *                   example: "Database connection error"
+ */
+router.get('/allDepositsAdmin', verifyToken, verifyAdmin, getAllDepositsForAdmin);
 
 /**
  * @swagger
