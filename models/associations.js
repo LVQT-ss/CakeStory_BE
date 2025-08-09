@@ -29,6 +29,8 @@ import DepositRecords from "./deposit_records.model.js";
 import WithdrawRecords from "./withdraw_records.model.js";
 import OrderDetail from './order_detail.model.js';
 import CakeSize from "./cake_size.model.js";
+import Complaint from "./complaint.model.js";
+
 function setupAssociations() {
   // User ↔ Shop (1-1)
   User.hasOne(Shop, { foreignKey: "user_id", as: "shop", onDelete: "CASCADE" });
@@ -214,6 +216,19 @@ function setupAssociations() {
   // MarketplacePost ↔ CakeSize (1-N)
   MarketplacePost.hasMany(CakeSize, { foreignKey: 'marketplace_post_id', as: 'cakeSizes' });
   CakeSize.belongsTo(MarketplacePost, { foreignKey: 'marketplace_post_id', as: 'marketplacePost' });
+
+  // Complaint associations
+  // CakeOrder ↔ Complaint (1-N)
+  CakeOrder.hasMany(Complaint, { foreignKey: "order_id", as: "complaints" });
+  Complaint.belongsTo(CakeOrder, { foreignKey: "order_id", as: "order" });
+
+  // User ↔ Complaint (1-N) - User who made the complaint
+  User.hasMany(Complaint, { foreignKey: "user_id", as: "complaints" });
+  Complaint.belongsTo(User, { foreignKey: "user_id", as: "user" });
+
+  // User ↔ Complaint (1-N) - Admin who processed the complaint
+  User.hasMany(Complaint, { foreignKey: "processed_by", as: "processedComplaints" });
+  Complaint.belongsTo(User, { foreignKey: "processed_by", as: "processedBy" });
 
 }
 
