@@ -9,7 +9,8 @@ import {
   getShopByName,
   getAllShopsInactive,
   getShopTotalCustomers,
-  getShopOrderStats
+  getShopOrderStats,
+  getShopRevenue
 } from '../controllers/shop.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
@@ -380,5 +381,86 @@ router.get('/:shopId/customers', verifyToken, getShopTotalCustomers);
  *         description: Server error
  */
 router.get('/:shopId/orderStats', verifyToken, getShopOrderStats);
+
+/**
+ * @swagger
+ * /api/shops/{shopId}/revenue:
+ *   get:
+ *     tags:
+ *       - Shop
+ *     summary: Get shop revenue statistics by order status
+ *     description: Retrieve detailed financial breakdown for a specific shop based on order status
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: shopId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Shop ID to get revenue statistics for
+ *     responses:
+ *       200:
+ *         description: Shop revenue statistics retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Shop revenue statistics retrieved successfully
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     shop_id:
+ *                       type: integer
+ *                       example: 1
+ *                     shop_name:
+ *                       type: string
+ *                       example: "Sweet Dreams Bakery"
+ *                     financial_summary:
+ *                       type: object
+ *                       properties:
+ *                         ordered_money:
+ *                           type: string
+ *                           description: Money from ordered orders (VND)
+ *                           example: "200000.00"
+ *                         completed_money:
+ *                           type: string
+ *                           description: Money from completed orders (VND)
+ *                           example: "5000000.00"
+ *                         cancelled_money:
+ *                           type: string
+ *                           description: Money from cancelled orders (VND)
+ *                           example: "250000.00"
+ *                         complaining_money:
+ *                           type: string
+ *                           description: Money from complaining orders (VND)
+ *                           example: "50000.00"
+ *                     totals:
+ *                       type: object
+ *                       properties:
+ *                         total_money:
+ *                           type: string
+ *                           description: Total money across all order statuses (VND)
+ *                           example: "5750000.00"
+ *                         active_money:
+ *                           type: string
+ *                           description: Money from active orders (pending+ordered+shipped+complaining) (VND)
+ *                           example: "500000.00"
+ *                         earned_money:
+ *                           type: string
+ *                           description: Money from completed orders (earned revenue) (VND)
+ *                           example: "5000000.00"
+ *       404:
+ *         description: Shop not found
+ *       500:
+ *         description: Server error
+ */
+router.get('/:shopId/revenue', verifyToken, getShopRevenue);
 
 export default router;

@@ -301,3 +301,89 @@ export const getShopOrderStats = async (req, res) => {
         });
     }
 };
+
+export const getShopRevenue = async (req, res) => {
+    try {
+        const { shopId } = req.params;
+
+        // First, verify the shop exists
+        const shop = await BakerProfile.findByPk(shopId);
+        if (!shop) {
+            return res.status(404).json({
+                success: false,
+                message: 'Shop not found'
+            });
+        }
+
+        // Get order statistics with financial data
+        const orderStats = await CakeOrder.findAll({
+            where: { shop_id: shopId },
+            attributes: ['id', 'status', 'total_price']
+        });
+
+        // Initialize financial statistics for each status
+        const financialStats = {
+            pending_money: 0,
+            ordered_money: 0,
+            shipped_money: 0,
+            completed_money: 0,
+            cancelled_money: 0,
+            complaining_money: 0
+        };
+
+        // Process each order and categorize by status
+        orderStats.forEach(order => {
+            const orderAmount = parseFloat(order.total_price) || 0;
+
+            // Categorize money by exact order status
+            switch (order.status) {
+                case 'pending':
+                    financialStats.pending_money += orderAmount;
+                    break;
+                case 'ordered':
+                    financialStats.ordered_money += orderAmount;
+                    break;
+                case 'shipped':
+                    financialStats.shipped_money += orderAmount;
+                    break;
+                case 'completed':
+                    financialStats.completed_money += orderAmount;
+                    break;
+                case 'cancelled':
+                    financialStats.cancelled_money += orderAmount;
+                    break;
+                case 'complaining':
+                    financialStats.complaining_money += orderAmount;
+                    break;
+            }
+        });
+
+        // Calculate totals
+        const totalMoney = Object.values(financialStats).reduce((sum, amount) => sum + amount, 0);
+        const activeMoney = financialStats.pending_money + financialStats.ordered_money +
+            financialStats.shipped_money + financialStats.complaining_money;
+
+        return res.status(200).json({
+            success: true,
+            message: 'Shop revenue statistics retrieved successfully',
+            data: {
+                shop_id: parseInt(shopId),
+                shop_name: shop.business_name,
+                financial_summary: {
+                    ordered_money: financialStats.ordered_money.toFixed(2),
+                    completed_money: financialStats.completed_money.toFixed(2),
+                    cancelled_money: financialStats.cancelled_money.toFixed(2),
+                    complaining_money: financialStats.complaining_money.toFixed(2)
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('Error retrieving shop revenue statistics:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error retrieving shop revenue statistics',
+            error: error.message
+        });
+    }
+};
