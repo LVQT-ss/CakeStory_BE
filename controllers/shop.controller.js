@@ -387,3 +387,99 @@ export const getShopRevenue = async (req, res) => {
         });
     }
 };
+
+export const getShopRevenueThisMonth = async (req, res) => {
+    try {
+        const { shopId } = req.params;
+
+        // First, verify the shop exists
+        const shop = await BakerProfile.findByPk(shopId);
+        if (!shop) {
+            return res.status(404).json({
+                success: false,
+                message: 'Shop not found'
+            });
+        }
+
+        // Get current month's start and end dates
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+        // Get order statistics with financial data for current month only
+        const orderStats = await CakeOrder.findAll({
+            where: {
+                shop_id: shopId,
+                created_at: {
+                    [Op.between]: [startOfMonth, endOfMonth]
+                }
+            },
+            attributes: ['id', 'status', 'total_price', 'created_at']
+        });
+
+        // Initialize financial statistics for each status
+        const financialStats = {
+            pending_money: 0,
+            ordered_money: 0,
+            shipped_money: 0,
+            completed_money: 0,
+            cancelled_money: 0,
+            complaining_money: 0
+        };
+
+        // Process each order and categorize by status
+        orderStats.forEach(order => {
+            const orderAmount = parseFloat(order.total_price) || 0;
+
+            // Categorize money by exact order status
+            switch (order.status) {
+                case 'pending':
+                    financialStats.pending_money += orderAmount;
+                    break;
+                case 'ordered':
+                    financialStats.ordered_money += orderAmount;
+                    break;
+                case 'shipped':
+                    financialStats.shipped_money += orderAmount;
+                    break;
+                case 'completed':
+                    financialStats.completed_money += orderAmount;
+                    break;
+                case 'cancelled':
+                    financialStats.cancelled_money += orderAmount;
+                    break;
+                case 'complaining':
+                    financialStats.complaining_money += orderAmount;
+                    break;
+            }
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: 'Shop revenue statistics for this month retrieved successfully',
+            data: {
+                shop_id: parseInt(shopId),
+                shop_name: shop.business_name,
+                month_info: {
+                    current_month: now.toLocaleString('en-US', { month: 'long', year: 'numeric' }),
+                    start_date: startOfMonth.toISOString().split('T')[0],
+                    end_date: endOfMonth.toISOString().split('T')[0]
+                },
+                financial_summary: {
+                    ordered_money: financialStats.ordered_money.toFixed(2),
+                    completed_money: financialStats.completed_money.toFixed(2),
+                    cancelled_money: financialStats.cancelled_money.toFixed(2),
+                    complaining_money: financialStats.complaining_money.toFixed(2)
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('Error retrieving shop revenue statistics for this month:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error retrieving shop revenue statistics for this month',
+            error: error.message
+        });
+    }
+};

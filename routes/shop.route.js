@@ -10,7 +10,8 @@ import {
   getAllShopsInactive,
   getShopTotalCustomers,
   getShopOrderStats,
-  getShopRevenue
+  getShopRevenue,
+  getShopRevenueThisMonth
 } from '../controllers/shop.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
@@ -462,5 +463,86 @@ router.get('/:shopId/orderStats', verifyToken, getShopOrderStats);
  *         description: Server error
  */
 router.get('/:shopId/revenue', verifyToken, getShopRevenue);
+
+/**
+ * @swagger
+ * /api/shops/{shopId}/revenue/month:
+ *   get:
+ *     tags:
+ *       - Shop
+ *     summary: Get shop revenue statistics for current month
+ *     description: Retrieve financial breakdown for a specific shop for the current month only
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: shopId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Shop ID to get monthly revenue statistics for
+ *     responses:
+ *       200:
+ *         description: Shop monthly revenue statistics retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Shop revenue statistics for this month retrieved successfully
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     shop_id:
+ *                       type: integer
+ *                       example: 1
+ *                     shop_name:
+ *                       type: string
+ *                       example: "Sweet Dreams Bakery"
+ *                     month_info:
+ *                       type: object
+ *                       properties:
+ *                         current_month:
+ *                           type: string
+ *                           description: Current month and year
+ *                           example: "December 2024"
+ *                         start_date:
+ *                           type: string
+ *                           description: Start date of current month
+ *                           example: "2024-12-01"
+ *                         end_date:
+ *                           type: string
+ *                           description: End date of current month
+ *                           example: "2024-12-31"
+ *                     financial_summary:
+ *                       type: object
+ *                       properties:
+ *                         ordered_money:
+ *                           type: string
+ *                           description: Money from ordered orders this month (VND)
+ *                           example: "50000.00"
+ *                         completed_money:
+ *                           type: string
+ *                           description: Money from completed orders this month (VND)
+ *                           example: "150000.00"
+ *                         cancelled_money:
+ *                           type: string
+ *                           description: Money from cancelled orders this month (VND)
+ *                           example: "25000.00"
+ *                         complaining_money:
+ *                           type: string
+ *                           description: Money from complaining orders this month (VND)
+ *                           example: "10000.00"
+ *       404:
+ *         description: Shop not found
+ *       500:
+ *         description: Server error
+ */
+router.get('/:shopId/revenue/month', verifyToken, getShopRevenueThisMonth);
 
 export default router;
