@@ -7,7 +7,11 @@ import {
   updateShop,
   deleteShop,
   getShopByName,
-  getAllShopsInactive
+  getAllShopsInactive,
+  getShopTotalCustomers,
+  getShopOrderStats,
+  getShopRevenue,
+  getShopRevenueThisMonth
 } from '../controllers/shop.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
@@ -229,5 +233,316 @@ router.put('/:userId', verifyToken, updateShop);
  *         description: Shop not found
  */
 router.delete('/:userId', verifyToken, deleteShop);
+
+/**
+ * @swagger
+ * /api/shops/{shopId}/customers:
+ *   get:
+ *     tags:
+ *       - Shop
+ *     summary: Get shop customer statistics
+ *     description: Retrieve total unique customers and order statistics for a specific shop
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: shopId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Shop ID to get customer statistics for
+ *     responses:
+ *       200:
+ *         description: Shop customer statistics retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Shop customer statistics retrieved successfully
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     shop_id:
+ *                       type: integer
+ *                       example: 1
+ *                     shop_name:
+ *                       type: string
+ *                       example: "Sweet Dreams Bakery"
+ *                     total_unique_customers:
+ *                       type: integer
+ *                       description: Number of unique customers who have ordered
+ *                       example: 25
+ *                     total_orders:
+ *                       type: integer
+ *                       description: Total number of orders (excluding cancelled)
+ *                       example: 45
+ *                     completed_orders:
+ *                       type: integer
+ *                       description: Number of completed orders
+ *                       example: 40
+ *                     pending_orders:
+ *                       type: integer
+ *                       description: Number of pending orders
+ *                       example: 5
+ *                     average_orders_per_customer:
+ *                       type: string
+ *                       description: Average orders per customer
+ *                       example: "1.80"
+ *       404:
+ *         description: Shop not found
+ *       500:
+ *         description: Server error
+ */
+router.get('/:shopId/customers', verifyToken, getShopTotalCustomers);
+
+/**
+ * @swagger
+ * /api/shops/{shopId}/orderStats:
+ *   get:
+ *     tags:
+ *       - Shop
+ *     summary: Get shop order statistics
+ *     description: Retrieve comprehensive order statistics for a specific shop
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: shopId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Shop ID to get order statistics for
+ *     responses:
+ *       200:
+ *         description: Shop order statistics retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Shop order statistics retrieved successfully
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     shop_id:
+ *                       type: integer
+ *                       example: 1
+ *                     shop_name:
+ *                       type: string
+ *                       example: "Sweet Dreams Bakery"
+ *                     order_statistics:
+ *                       type: object
+ *                       properties:
+ *                         total_orders:
+ *                           type: integer
+ *                           description: Total number of orders (excluding cancelled)
+ *                           example: 45
+ *                         completed_orders:
+ *                           type: integer
+ *                           description: Number of completed orders
+ *                           example: 40
+ *                         pending_orders:
+ *                           type: integer
+ *                           description: Number of pending orders
+ *                           example: 5
+ *                         ordered_orders:
+ *                           type: integer
+ *                           description: Number of ordered orders
+ *                           example: 3
+ *                         shipped_orders:
+ *                           type: integer
+ *                           description: Number of shipped orders
+ *                           example: 2
+ *                         cancelled_orders:
+ *                           type: integer
+ *                           description: Number of cancelled orders
+ *                           example: 10
+ *                         complaining_orders:
+ *                           type: integer
+ *                           description: Number of orders with complaints
+ *                           example: 1
+ *                     completion_rate:
+ *                       type: string
+ *                       description: Percentage of completed orders
+ *                       example: "88.89"
+ *       404:
+ *         description: Shop not found
+ *       500:
+ *         description: Server error
+ */
+router.get('/:shopId/orderStats', verifyToken, getShopOrderStats);
+
+/**
+ * @swagger
+ * /api/shops/{shopId}/revenue:
+ *   get:
+ *     tags:
+ *       - Shop
+ *     summary: Get shop revenue statistics by order status
+ *     description: Retrieve detailed financial breakdown for a specific shop based on order status
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: shopId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Shop ID to get revenue statistics for
+ *     responses:
+ *       200:
+ *         description: Shop revenue statistics retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Shop revenue statistics retrieved successfully
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     shop_id:
+ *                       type: integer
+ *                       example: 1
+ *                     shop_name:
+ *                       type: string
+ *                       example: "Sweet Dreams Bakery"
+ *                     financial_summary:
+ *                       type: object
+ *                       properties:
+ *                         ordered_money:
+ *                           type: string
+ *                           description: Money from ordered orders (VND)
+ *                           example: "200000.00"
+ *                         completed_money:
+ *                           type: string
+ *                           description: Money from completed orders (VND)
+ *                           example: "5000000.00"
+ *                         cancelled_money:
+ *                           type: string
+ *                           description: Money from cancelled orders (VND)
+ *                           example: "250000.00"
+ *                         complaining_money:
+ *                           type: string
+ *                           description: Money from complaining orders (VND)
+ *                           example: "50000.00"
+ *                     totals:
+ *                       type: object
+ *                       properties:
+ *                         total_money:
+ *                           type: string
+ *                           description: Total money across all order statuses (VND)
+ *                           example: "5750000.00"
+ *                         active_money:
+ *                           type: string
+ *                           description: Money from active orders (pending+ordered+shipped+complaining) (VND)
+ *                           example: "500000.00"
+ *                         earned_money:
+ *                           type: string
+ *                           description: Money from completed orders (earned revenue) (VND)
+ *                           example: "5000000.00"
+ *       404:
+ *         description: Shop not found
+ *       500:
+ *         description: Server error
+ */
+router.get('/:shopId/revenue', verifyToken, getShopRevenue);
+
+/**
+ * @swagger
+ * /api/shops/{shopId}/revenue/month:
+ *   get:
+ *     tags:
+ *       - Shop
+ *     summary: Get shop revenue statistics for current month
+ *     description: Retrieve financial breakdown for a specific shop for the current month only
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: shopId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Shop ID to get monthly revenue statistics for
+ *     responses:
+ *       200:
+ *         description: Shop monthly revenue statistics retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Shop revenue statistics for this month retrieved successfully
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     shop_id:
+ *                       type: integer
+ *                       example: 1
+ *                     shop_name:
+ *                       type: string
+ *                       example: "Sweet Dreams Bakery"
+ *                     month_info:
+ *                       type: object
+ *                       properties:
+ *                         current_month:
+ *                           type: string
+ *                           description: Current month and year
+ *                           example: "December 2024"
+ *                         start_date:
+ *                           type: string
+ *                           description: Start date of current month
+ *                           example: "2024-12-01"
+ *                         end_date:
+ *                           type: string
+ *                           description: End date of current month
+ *                           example: "2024-12-31"
+ *                     financial_summary:
+ *                       type: object
+ *                       properties:
+ *                         ordered_money:
+ *                           type: string
+ *                           description: Money from ordered orders this month (VND)
+ *                           example: "50000.00"
+ *                         completed_money:
+ *                           type: string
+ *                           description: Money from completed orders this month (VND)
+ *                           example: "150000.00"
+ *                         cancelled_money:
+ *                           type: string
+ *                           description: Money from cancelled orders this month (VND)
+ *                           example: "25000.00"
+ *                         complaining_money:
+ *                           type: string
+ *                           description: Money from complaining orders this month (VND)
+ *                           example: "10000.00"
+ *       404:
+ *         description: Shop not found
+ *       500:
+ *         description: Server error
+ */
+router.get('/:shopId/revenue/month', verifyToken, getShopRevenueThisMonth);
 
 export default router;
