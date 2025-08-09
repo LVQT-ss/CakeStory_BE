@@ -3,6 +3,7 @@ import sequelize from '../database/db.js';
 import BakerProfile from '../models/shop.model.js';
 import User from '../models/User.model.js';
 import ShopMember from '../models/shop_member.model.js';
+import CakeOrder from '../models/cake_order.model.js';
 import { Op } from 'sequelize';
 
 export const createShop = async (req, res) => {
@@ -160,3 +161,50 @@ export const getAllShopsInactive = async (req, res) => {
         return res.status(500).json({ message: 'Error retrieving all shops', error: error.message });
     }
 };
+
+export const getShopTotalCustomers = async (req, res) => {
+    try {
+        const { shopId } = req.params;
+
+        // First, verify the shop exists
+        const shop = await BakerProfile.findByPk(shopId);
+        if (!shop) {
+            return res.status(404).json({
+                success: false,
+                message: 'Shop not found'
+            });
+        }
+
+        // Get total unique customers who have ordered from this shop
+        // We count distinct customer_ids from cake orders for this shop
+        const totalCustomers = await CakeOrder.count({
+            where: {
+                shop_id: shopId,
+                status: {
+                    [Op.notIn]: ['cancelled'] // Exclude cancelled orders
+                }
+            },
+            distinct: true,
+            col: 'customer_id'
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: 'Shop customer count retrieved successfully',
+            data: {
+                shop_id: parseInt(shopId),
+                shop_name: shop.business_name,
+                total_unique_customers: totalCustomers
+            }
+        });
+
+    } catch (error) {
+        console.error('Error retrieving shop customer count:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error retrieving shop customer count',
+            error: error.message
+        });
+    }
+};
+

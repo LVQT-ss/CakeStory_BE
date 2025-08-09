@@ -7,7 +7,8 @@ import {
   updateShop,
   deleteShop,
   getShopByName,
-  getAllShopsInactive
+  getAllShopsInactive,
+  getShopTotalCustomers,
 } from '../controllers/shop.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
@@ -229,5 +230,57 @@ router.put('/:userId', verifyToken, updateShop);
  *         description: Shop not found
  */
 router.delete('/:userId', verifyToken, deleteShop);
+
+/**
+ * @swagger
+ * /api/shops/{shopId}/customers:
+ *   get:
+ *     tags:
+ *       - Shop
+ *     summary: Get shop customer count
+ *     description: Retrieve total unique customers who have ordered from a specific shop
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: shopId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Shop ID to get customer count for
+ *     responses:
+ *       200:
+ *         description: Shop customer count retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Shop customer count retrieved successfully
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     shop_id:
+ *                       type: integer
+ *                       example: 1
+ *                     shop_name:
+ *                       type: string
+ *                       example: "Sweet Dreams Bakery"
+ *                     total_unique_customers:
+ *                       type: integer
+ *                       description: Number of unique customers who have ordered
+ *                       example: 25
+ *       404:
+ *         description: Shop not found
+ *       500:
+ *         description: Server error
+ */
+router.get('/:shopId/customers', verifyToken, getShopTotalCustomers);
+
 
 export default router;
