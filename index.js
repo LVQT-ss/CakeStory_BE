@@ -24,6 +24,7 @@ import challengePostRoutes from './routes/challenge_post.route.js';
 import cakeOrderRoutes from './routes/cakeOrder.route.js';
 import cakeDesignRoutes from './routes/cakeDesign.route.js';
 import { autoConfirmPendingOrders, autoCompleteShippedOrders } from './controllers/scheduler.js';
+import complaintRoutes from './routes/complaint.routes.js';
 
 dotenv.config();
 
@@ -54,6 +55,8 @@ app.use('/api/challenge-entries', challengeEntryRoutes);
 app.use('/api/challenge-posts', challengePostRoutes);
 app.use('/api/cake-orders', cakeOrderRoutes);
 app.use('/api/cake-designs', cakeDesignRoutes);
+app.use('/api/complaints', complaintRoutes);
+
 // Initialize and synchronize the database
 initDB().then(() => {
     // Setup associations after database is initialized

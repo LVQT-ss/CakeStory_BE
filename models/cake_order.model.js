@@ -11,7 +11,7 @@ const CakeOrder = sequelize.define('CakeOrder', {
   size: { type: DataTypes.STRING, allowNull: true },
   total_price: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
   status: {
-    type: DataTypes.ENUM('pending', 'ordered', 'completed','cancelled', 'shipped'),
+    type: DataTypes.ENUM('pending', 'ordered', 'completed','cancelled', 'shipped', 'complaining'),
     allowNull: false,
     defaultValue: 'pending'
   },
