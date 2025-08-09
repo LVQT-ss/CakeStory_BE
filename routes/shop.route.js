@@ -9,6 +9,7 @@ import {
   getShopByName,
   getAllShopsInactive,
   getShopTotalCustomers,
+  getShopOrderStats
 } from '../controllers/shop.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
@@ -237,8 +238,8 @@ router.delete('/:userId', verifyToken, deleteShop);
  *   get:
  *     tags:
  *       - Shop
- *     summary: Get shop customer count
- *     description: Retrieve total unique customers who have ordered from a specific shop
+ *     summary: Get shop customer statistics
+ *     description: Retrieve total unique customers and order statistics for a specific shop
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -247,10 +248,10 @@ router.delete('/:userId', verifyToken, deleteShop);
  *         required: true
  *         schema:
  *           type: integer
- *         description: Shop ID to get customer count for
+ *         description: Shop ID to get customer statistics for
  *     responses:
  *       200:
- *         description: Shop customer count retrieved successfully
+ *         description: Shop customer statistics retrieved successfully
  *         content:
  *           application/json:
  *             schema:
@@ -261,7 +262,7 @@ router.delete('/:userId', verifyToken, deleteShop);
  *                   example: true
  *                 message:
  *                   type: string
- *                   example: Shop customer count retrieved successfully
+ *                   example: Shop customer statistics retrieved successfully
  *                 data:
  *                   type: object
  *                   properties:
@@ -275,6 +276,22 @@ router.delete('/:userId', verifyToken, deleteShop);
  *                       type: integer
  *                       description: Number of unique customers who have ordered
  *                       example: 25
+ *                     total_orders:
+ *                       type: integer
+ *                       description: Total number of orders (excluding cancelled)
+ *                       example: 45
+ *                     completed_orders:
+ *                       type: integer
+ *                       description: Number of completed orders
+ *                       example: 40
+ *                     pending_orders:
+ *                       type: integer
+ *                       description: Number of pending orders
+ *                       example: 5
+ *                     average_orders_per_customer:
+ *                       type: string
+ *                       description: Average orders per customer
+ *                       example: "1.80"
  *       404:
  *         description: Shop not found
  *       500:
@@ -282,5 +299,86 @@ router.delete('/:userId', verifyToken, deleteShop);
  */
 router.get('/:shopId/customers', verifyToken, getShopTotalCustomers);
 
+/**
+ * @swagger
+ * /api/shops/{shopId}/orderStats:
+ *   get:
+ *     tags:
+ *       - Shop
+ *     summary: Get shop order statistics
+ *     description: Retrieve comprehensive order statistics for a specific shop
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: shopId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Shop ID to get order statistics for
+ *     responses:
+ *       200:
+ *         description: Shop order statistics retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Shop order statistics retrieved successfully
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     shop_id:
+ *                       type: integer
+ *                       example: 1
+ *                     shop_name:
+ *                       type: string
+ *                       example: "Sweet Dreams Bakery"
+ *                     order_statistics:
+ *                       type: object
+ *                       properties:
+ *                         total_orders:
+ *                           type: integer
+ *                           description: Total number of orders (excluding cancelled)
+ *                           example: 45
+ *                         completed_orders:
+ *                           type: integer
+ *                           description: Number of completed orders
+ *                           example: 40
+ *                         pending_orders:
+ *                           type: integer
+ *                           description: Number of pending orders
+ *                           example: 5
+ *                         ordered_orders:
+ *                           type: integer
+ *                           description: Number of ordered orders
+ *                           example: 3
+ *                         shipped_orders:
+ *                           type: integer
+ *                           description: Number of shipped orders
+ *                           example: 2
+ *                         cancelled_orders:
+ *                           type: integer
+ *                           description: Number of cancelled orders
+ *                           example: 10
+ *                         complaining_orders:
+ *                           type: integer
+ *                           description: Number of orders with complaints
+ *                           example: 1
+ *                     completion_rate:
+ *                       type: string
+ *                       description: Percentage of completed orders
+ *                       example: "88.89"
+ *       404:
+ *         description: Shop not found
+ *       500:
+ *         description: Server error
+ */
+router.get('/:shopId/orderStats', verifyToken, getShopOrderStats);
 
 export default router;

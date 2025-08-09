@@ -208,3 +208,96 @@ export const getShopTotalCustomers = async (req, res) => {
     }
 };
 
+export const getShopOrderStats = async (req, res) => {
+    try {
+        const { shopId } = req.params;
+
+        // First, verify the shop exists
+        const shop = await BakerProfile.findByPk(shopId);
+        if (!shop) {
+            return res.status(404).json({
+                success: false,
+                message: 'Shop not found'
+            });
+        }
+
+        // Get order statistics
+        const totalOrders = await CakeOrder.count({
+            where: {
+                shop_id: shopId,
+                status: {
+                    [Op.notIn]: ['cancelled']
+                }
+            }
+        });
+
+        const completedOrders = await CakeOrder.count({
+            where: {
+                shop_id: shopId,
+                status: 'completed'
+            }
+        });
+
+        const pendingOrders = await CakeOrder.count({
+            where: {
+                shop_id: shopId,
+                status: 'pending'
+            }
+        });
+
+        const orderedOrders = await CakeOrder.count({
+            where: {
+                shop_id: shopId,
+                status: 'ordered'
+            }
+        });
+
+        const shippedOrders = await CakeOrder.count({
+            where: {
+                shop_id: shopId,
+                status: 'shipped'
+            }
+        });
+
+        const cancelledOrders = await CakeOrder.count({
+            where: {
+                shop_id: shopId,
+                status: 'cancelled'
+            }
+        });
+
+        const complainingOrders = await CakeOrder.count({
+            where: {
+                shop_id: shopId,
+                status: 'complaining'
+            }
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: 'Shop order statistics retrieved successfully',
+            data: {
+                shop_id: parseInt(shopId),
+                shop_name: shop.business_name,
+                order_statistics: {
+                    total_orders: totalOrders,
+                    completed_orders: completedOrders,
+                    pending_orders: pendingOrders,
+                    ordered_orders: orderedOrders,
+                    shipped_orders: shippedOrders,
+                    cancelled_orders: cancelledOrders,
+                    complaining_orders: complainingOrders
+                },
+                completion_rate: totalOrders > 0 ? ((completedOrders / totalOrders) * 100).toFixed(2) : 0
+            }
+        });
+
+    } catch (error) {
+        console.error('Error retrieving shop order statistics:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error retrieving shop order statistics',
+            error: error.message
+        });
+    }
+};
