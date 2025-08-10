@@ -703,7 +703,7 @@ export const confirmRequestbyAdmin = async (req, res) => {
 // Get all deposits for admin
 export const getAllDepositsForAdmin = async (req, res) => {
     try {
-        const { page = 1, limit = 10, status, user_id, start_date, end_date } = req.query;
+        const { page = 1, limit = 10, status, user_id } = req.query;
         const offset = (page - 1) * limit;
 
         // Build where clause
@@ -717,17 +717,6 @@ export const getAllDepositsForAdmin = async (req, res) => {
         // Filter by user_id
         if (user_id) {
             whereClause.user_id = user_id;
-        }
-
-        // Filter by date range
-        if (start_date || end_date) {
-            whereClause.created_at = {};
-            if (start_date) {
-                whereClause.created_at.$gte = new Date(start_date);
-            }
-            if (end_date) {
-                whereClause.created_at.$lte = new Date(end_date);
-            }
         }
 
         // Get deposits with user information
