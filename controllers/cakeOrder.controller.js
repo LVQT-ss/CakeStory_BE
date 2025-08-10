@@ -16,6 +16,7 @@ export const createCakeOrder = async (req, res) => {
     base_price,
     size,
     special_instructions,
+    tier,
     order_details = []
   } = req.body;
 
@@ -88,6 +89,7 @@ export const createCakeOrder = async (req, res) => {
       total_price,
       status: 'pending',
       special_instructions,
+      tier
     }, { transaction: dbTransaction });
 
     // 4. Tạo OrderDetail nếu có
@@ -215,6 +217,7 @@ export const updateCakeOrder = async (req, res) => {
     base_price,
     size,
     special_instructions,
+    tier,
     order_details = []
   } = req.body;
 
@@ -263,7 +266,8 @@ export const updateCakeOrder = async (req, res) => {
     // Cập nhật CakeOrder
     await CakeOrder.update({
       base_price: base_price || order.base_price,
-      size: size || order.size,
+      size: size || order.size, 
+      tier,
       ingredient_total,
       total_price,
       special_instructions: special_instructions !== undefined ? special_instructions : order.special_instructions

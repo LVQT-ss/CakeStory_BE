@@ -3,7 +3,11 @@ import {
   createComplaint,
   updateComplaint,
   approveComplaint,
-  rejectComplaint
+  rejectComplaint,
+  getAllComplaints,
+  getComplaintById,
+  getComplaintsByShopId,
+  getComplaintsByCustomerId
 } from '../controllers/complaint.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
@@ -15,6 +19,97 @@ const router = express.Router();
  *   name: Complaint
  *   description: APIs for managing complaints about cake orders
  */
+
+/**
+ * @swagger
+ * /api/complaints:
+ *   get:
+ *     tags: [Complaint]
+ *     summary: Get all complaints (admin only)
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of complaints retrieved successfully
+ *       500:
+ *         description: Server error
+ */
+router.get('/', verifyToken, getAllComplaints);
+
+/**
+ * @swagger
+ * /api/complaints/{id}:
+ *   get:
+ *     tags: [Complaint]
+ *     summary: Get complaint by ID
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Complaint ID
+ *     responses:
+ *       200:
+ *         description: Complaint retrieved successfully
+ *       404:
+ *         description: Complaint not found
+ *       500:
+ *         description: Server error
+ */
+router.get('/:id', verifyToken, getComplaintById);
+
+/**
+ * @swagger
+ * /api/complaints/shop/{shop_id}:
+ *   get:
+ *     tags: [Complaint]
+ *     summary: Get all complaints for a specific shop
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: shop_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Shop ID
+ *     responses:
+ *       200:
+ *         description: List of complaints for the shop
+ *       404:
+ *         description: No complaints found for this shop
+ *       500:
+ *         description: Server error
+ */
+router.get('/shop/:shop_id', verifyToken, getComplaintsByShopId);
+
+/**
+ * @swagger
+ * /api/complaints/customer/{customer_id}:
+ *   get:
+ *     tags: [Complaint]
+ *     summary: Get all complaints made by a specific customer
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: customer_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Customer ID
+ *     responses:
+ *       200:
+ *         description: List of complaints by the customer
+ *       404:
+ *         description: No complaints found for this customer
+ *       500:
+ *         description: Server error
+ */
+router.get('/customer/:customer_id', verifyToken, getComplaintsByCustomerId);
 
 /**
  * @swagger
