@@ -323,18 +323,6 @@ router.get('/AllDepositHistoryUser', verifyToken, walletGetDepositHistoryUser);
  *         schema:
  *           type: integer
  *         description: Filter by specific user ID
- *       - in: query
- *         name: start_date
- *         schema:
- *           type: string
- *           format: date
- *         description: Filter deposits from this date (YYYY-MM-DD)
- *       - in: query
- *         name: end_date
- *         schema:
- *           type: string
- *           format: date
- *         description: Filter deposits until this date (YYYY-MM-DD)
  *     responses:
  *       200:
  *         description: All deposits retrieved successfully
@@ -805,7 +793,7 @@ router.post('/withdraw', verifyToken, walletWithdrawRequest);
 router.get('/withdraw-historyAdmin/:id', verifyToken, verifyAdmin, walletGetWithdrawHistoryById);
 /**
  * @swagger
- * /api/wallet/withdrawAll-history:
+ * /api/wallet/withdrawAll-historyAdmin:
  *   get:
  *     summary: Get withdraw request history for the authenticated user
  *     tags: [Wallet]
@@ -895,7 +883,7 @@ router.get('/withdraw-historyAdmin/:id', verifyToken, verifyAdmin, walletGetWith
  *       500:
  *         description: Internal server error
  */
-router.get('/withdrawAll-historyAdmin', verifyAdmin, walletGetAllWithdrawHistory);
+router.get('/withdrawAll-historyAdmin', verifyToken, verifyAdmin, walletGetAllWithdrawHistory);
 
 /**
  * @swagger
