@@ -13,7 +13,8 @@ export const createMarketplacePost = async (req, res) => {
         const {
             title, description,
             available = true, expiry_date,
-            is_public = true, media, cakeSizes
+            is_public = true, media, cakeSizes,
+            tier
         } = req.body;
 
         const user_id = req.userId;
@@ -44,6 +45,7 @@ export const createMarketplacePost = async (req, res) => {
             user_id,
             available,
             expiry_date: expiry_date ? new Date(expiry_date) : null,
+            tier,
             created_at: new Date()
         }, { transaction });
 
@@ -80,7 +82,7 @@ export const createMarketplacePost = async (req, res) => {
                 {
                     model: MarketplacePost,
                     as: 'marketplacePost',
-                    attributes: ['shop_id', 'user_id', 'available', 'expiry_date', 'created_at'],
+                    attributes: ['shop_id', 'user_id', 'available', 'expiry_date','tier', 'created_at'],
                     include: [
                         {
                             model: BakerProfile,
@@ -187,7 +189,7 @@ export const updateMarketplacePost = async (req, res) => {
         const { id } = req.params;
         const {
             title, description, is_public,
-            available, expiry_date
+            available, expiry_date,tier
         } = req.body;
 
         const marketplacePost = await MarketplacePost.findByPk(id, {
@@ -202,7 +204,8 @@ export const updateMarketplacePost = async (req, res) => {
 
         await marketplacePost.update({
             available,
-            expiry_date: expiry_date ? new Date(expiry_date) : null
+            expiry_date: expiry_date ? new Date(expiry_date) : null,
+            tier
         }, { transaction });
 
         if (marketplacePost.post) {
