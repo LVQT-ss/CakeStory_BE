@@ -34,11 +34,15 @@ const router = express.Router();
  *             type: object
  *             required:
  *               - title
+ *               - cakeSizes
  *             properties:
  *               title:
  *                 type: string
  *               description:
  *                 type: string
+ *               tier:            
+ *                 type: string
+ *                 example: basic
  *               available:
  *                 type: boolean
  *               expiry_date:
@@ -144,6 +148,9 @@ router.get('/:id', verifyToken, getMarketplacePostById);
  *                 type: string
  *               description:
  *                 type: string
+ *               tier:             
+ *                 type: string
+ *                 example: premium
  *               available:
  *                 type: boolean
  *               expiry_date:
