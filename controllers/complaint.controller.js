@@ -225,3 +225,93 @@ export const rejectComplaint = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+/**
+ * Get all complaints by shop_id
+ */
+export const getComplaintsByShopId = async (req, res) => {
+  try {
+    const { shop_id } = req.params;
+
+    const complaints = await Complaint.findAll({
+      include: [
+        {
+          model: CakeOrder,
+          as: 'order',
+          where: { shop_id }
+        }
+      ]
+    });
+
+    return res.json(complaints);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+/**
+ * Get all complaints by customer_id
+ */
+export const getComplaintsByCustomerId = async (req, res) => {
+  try {
+    const { customer_id } = req.params;
+
+    const complaints = await Complaint.findAll({
+      include: [
+        {
+          model: CakeOrder,
+          as: 'order',
+          where: { customer_id }
+        }
+      ]
+    });
+
+    return res.json(complaints);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+/**
+ * Get all complaints
+ */
+export const getAllComplaints = async (req, res) => {
+  try {
+    const complaints = await Complaint.findAll({
+      include: [{ model: CakeOrder, as: 'order' }]
+    });
+
+    return res.json(complaints);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+/**
+ * Get complaint by ID with order details
+ */
+export const getComplaintById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const complaint = await Complaint.findByPk(id, {
+      include: [
+        {
+          model: CakeOrder,
+          as: 'order',
+          attributes: ['id', 'customer_id', 'shop_id', 'total_price', 'status', 'created_at']
+        }
+      ]
+    });
+
+    if (!complaint) {
+      return res.status(404).json({ message: "Complaint not found" });
+    }
+
+    return res.json(complaint);
+  } catch (error) {
+    console.error('getComplaintById error:', error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
