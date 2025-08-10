@@ -52,6 +52,9 @@ const router = express.Router();
  *               size:
  *                 type: string
  *                 example: "Medium"
+ *               tier:
+ *                 type: integer
+ *                 example: 2
  *               status:
  *                 type: string
  *                 enum: [pending, ordered, completed, cancelled]

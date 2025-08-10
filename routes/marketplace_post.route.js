@@ -40,9 +40,9 @@ const router = express.Router();
  *                 type: string
  *               description:
  *                 type: string
- *               tier:            
- *                 type: string
- *                 example: basic
+ *               tier:
+ *                 type: integer
+ *                 example: 2
  *               available:
  *                 type: boolean
  *               expiry_date:
