@@ -771,3 +771,45 @@ export const getAllDepositsForAdmin = async (req, res) => {
         });
     }
 };
+
+export const rejectRequestbyAdmin = async (req, res) => {
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'User not authenticated' });
+        }
+
+        // Find the withdraw record by ID
+        const withdrawRecord = await WithdrawRecords.findByPk(req.params.id);
+        if (!withdrawRecord) {
+            return res.status(404).json({
+                success: false,
+                message: 'Withdraw record not found'
+            });
+        }
+
+        // Only allow completing if status is pending
+        if (withdrawRecord.status !== 'pending') {
+            return res.status(400).json({
+                success: false,
+                message: 'Can only confirm pending withdraw requests'
+            });
+        }
+
+        // Update the withdraw record status to completed and set processed time
+        await withdrawRecord.update({
+            status: 'failed',
+            processed_at: new Date()
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: 'Withdraw request confirmed successfully',
+            data: withdrawRecord
+        });
+
+    } catch (error) {
+        console.error('confirmRequestbyAdmin error:', error);
+        return res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+}
