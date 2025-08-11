@@ -169,6 +169,25 @@ export const getAllCakeOrders = async (req, res) => {
   }
 };
 
+// GET CakeOrders by User ID (excluding cancelled)
+export const getCakeOrdersByUserId = async (req, res) => {
+  try {
+    const { user_id } = req.params;
+    const orders = await CakeOrder.findAll({
+      where: {
+        customer_id: user_id,
+      },
+      include: {
+        model: OrderDetail,
+        as: 'orderDetails'
+      }
+    });
+    res.status(200).json(orders);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to retrieve orders', error: error.message });
+  }
+};
+
 // GET CakeOrder by ID (excluding cancelled)
 export const getCakeOrderById = async (req, res) => {
   try {

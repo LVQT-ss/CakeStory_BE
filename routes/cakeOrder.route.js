@@ -7,7 +7,8 @@ import {
   markOrderAsOrdered,
   markOrderAsCompleted,
   cancelCakeOrder,
-  markOrderAsShipped
+  markOrderAsShipped,
+  getCakeOrdersByUserId
 } from '../controllers/cakeOrder.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
@@ -95,6 +96,29 @@ router.post('/', verifyToken, createCakeOrder);
  *         description: Server error
  */
 router.get('/', verifyToken, getAllCakeOrders);
+
+/**
+ * @swagger
+ * /api/cake-orders/user/{user_id}:
+ *   get:
+ *     tags: [CakeOrder]
+ *     summary: Get cake orders by user ID
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: user_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: User ID (customer)
+ *     responses:
+ *       200:
+ *         description: Orders retrieved successfully
+ *       500:
+ *         description: Server error
+ */
+router.get('/user/:user_id', verifyToken, getCakeOrdersByUserId);
 
 /**
  * @swagger

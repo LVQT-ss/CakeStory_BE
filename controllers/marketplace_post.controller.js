@@ -134,7 +134,7 @@ export const getAllMarketplacePosts = async (req, res) => {
                 {
                     model: BakerProfile,
                     as: 'shop',
-                    attributes: ['shop_id', 'business_name'],
+                    attributes: ['shop_id', 'business_name', 'avatar_image'],
                     include: [{ model: User, as: 'user', attributes: ['id', 'username', 'email'] }]
                 },
                 {

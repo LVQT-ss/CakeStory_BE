@@ -94,7 +94,7 @@ router.post('/', verifyToken, createMarketplacePost);
  *       500:
  *         description: Server error
  */
-router.get('/', verifyToken, getAllMarketplacePosts);
+router.get('/',  getAllMarketplacePosts);
 
 /**
  * @swagger
@@ -120,7 +120,7 @@ router.get('/', verifyToken, getAllMarketplacePosts);
  *       500:
  *         description: Server error
  */
-router.get('/:id', verifyToken, getMarketplacePostById);
+router.get('/:id', getMarketplacePostById);
 
 /**
  * @swagger
