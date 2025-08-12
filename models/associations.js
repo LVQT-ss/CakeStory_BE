@@ -6,7 +6,6 @@ import MarketplacePost from "./marketplace_post.model.js";
 import PostData from "./post_data.model.js";
 import Album from "./album.model.js";
 import CakeDesign from "./cake_design.model.js";
-// import CakeDesignDetail from "./cake_design_detail.model.js";
 import Group from "./group.model.js";
 import GroupMember from "./group_member.model.js";
 import Comment from "./comment.model.js";
@@ -18,7 +17,6 @@ import ChallengeEntry from "./challenge_entry.model.js";
 import CakeOrder from "./cake_order.model.js";
 import Review from "./review.model.js";
 import Transaction from "./transaction.model.js";
-// import Subscription from "./subscription.model.js";
 import AlbumPost from './album_post.model.js';
 import GroupPost from './group_post.model.js';
 import ShopMember from "./shop_member.model.js";
@@ -67,10 +65,6 @@ function setupAssociations() {
   // User ↔ CakeDesign (1-N)
   User.hasMany(CakeDesign, { foreignKey: "user_id" });
   CakeDesign.belongsTo(User, { foreignKey: "user_id" });
-
-  // CakeDesign ↔ CakeDesignDetail (1-N)
-  // CakeDesign.hasMany(CakeDesignDetail, { foreignKey: "cake_design_id" });
-  // CakeDesignDetail.belongsTo(CakeDesign, { foreignKey: "cake_design_id" });
 
   // Group ↔ GroupMember (1-N)
   Group.hasMany(GroupMember, { foreignKey: "group_id" });
@@ -154,9 +148,6 @@ function setupAssociations() {
   Post.hasOne(GroupPost, { foreignKey: "post_id" });
   GroupPost.belongsTo(Post, { foreignKey: "post_id" });
 
-  // Shop ↔ CakeDesign (1-N)
-  // Shop.hasMany(CakeDesign, { foreignKey: "shop_id" });
-  // CakeDesign.belongsTo(Shop, { foreignKey: "shop_id" });
 
   // User ↔ MarketplacePost (1-N)
   User.hasMany(MarketplacePost, { foreignKey: "user_id" });

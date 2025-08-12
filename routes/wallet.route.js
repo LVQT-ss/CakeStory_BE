@@ -17,7 +17,8 @@ import {
     allWalletAdmin,
     getUserWalletbyId,
     confirmRequestbyAdmin,
-    getAllDepositsForAdmin
+    getAllDepositsForAdmin,
+    rejectRequestbyAdmin
 } from '../controllers/wallet.controller.js';
 const router = express.Router();
 
@@ -1298,5 +1299,57 @@ router.get('/getUserWalletbyId/:id', verifyToken, verifyAdmin, getUserWalletbyId
  *         description: Internal server error
  */
 router.put('/confirmRequestbyAdmin/:id', verifyToken, verifyAdmin, confirmRequestbyAdmin);
+
+/**
+ * @swagger
+ * /api/wallet/rejectRequestbyAdmin/{id}:
+ *   put:
+ *     summary: reject a withdrawal request by admin
+ *     tags: [Wallet]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Withdrawal request ID to confirm
+ *     responses:
+ *       200:
+ *         description: Withdrawal request confirmed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Withdraw request confirmed successfully
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     status:
+ *                       type: string
+ *                       example: completed
+ *                     processed_at:
+ *                       type: string
+ *                       format: date-time
+ *                       example: 2024-01-01T12:00:00Z
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       404:
+ *         description: Withdraw record not found
+ *       500:
+ *         description: Internal server error
+ */
+router.put('/rejectRequestbyAdmin/:id', verifyToken, verifyAdmin, rejectRequestbyAdmin);
+
 
 export default router;

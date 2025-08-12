@@ -6,6 +6,7 @@ import Wallet from '../models/wallet.model.js';
 import Transaction from '../models/transaction.model.js';
 import Shop from '../models/shop.model.js';
 import { Op } from 'sequelize';
+import User from '../models/User.model.js';
 
 // CREATE CakeOrder with multiple OrderDetails and Payment Processing
 export const createCakeOrder = async (req, res) => {
@@ -158,10 +159,14 @@ export const getAllCakeOrders = async (req, res) => {
       where: {
         status: { [Op.ne]: 'cancelled' }
       },
-      include: {
+      include: [{
         model: OrderDetail,
         as: 'orderDetails'
-      }
+      },
+      {
+        model: User,
+        attributes: ['id', 'username','full_name']
+      }]
     });
     res.status(200).json(orders);
   } catch (error) {
@@ -177,10 +182,16 @@ export const getCakeOrdersByUserId = async (req, res) => {
       where: {
         customer_id: user_id,
       },
-      include: {
-        model: OrderDetail,
-        as: 'orderDetails'
-      }
+      include: [
+        {
+          model: OrderDetail,
+          as: 'orderDetails'
+        },
+        {
+          model: User,
+          attributes: ['id', 'username', 'full_name']
+        }
+      ]  
     });
     res.status(200).json(orders);
   } catch (error) {
@@ -196,10 +207,16 @@ export const getCakeOrderById = async (req, res) => {
         id: req.params.id,
         status: { [Op.ne]: 'cancelled' }
       },
-      include: {
-        model: OrderDetail,
-        as: 'orderDetails'
-      }
+      include: [
+        {
+          model: OrderDetail,
+          as: 'orderDetails'
+        },
+        {
+          model: User,
+          attributes: ['id', 'username','full_name']
+        }
+      ]
     });
 
     if (!order) return res.status(404).json({ message: 'Order not found' });
@@ -218,10 +235,16 @@ export const getCakeOrdersByShopId = async (req, res) => {
         shop_id,
         status: { [Op.ne]: 'cancelled' }
       },
-      include: {
-        model: OrderDetail,
-        as: 'orderDetails'
-      }
+      include: [
+        {
+          model: OrderDetail,
+          as: 'orderDetails'
+        },
+        {
+          model: User,
+          attributes: ['id', 'username','full_name']
+        }
+      ]
     });
     res.status(200).json(orders);
   } catch (error) {
@@ -455,7 +478,7 @@ export const markOrderAsShipped = async (req, res) => {
 
     if (!order) return res.status(404).json({ message: 'Order not found' });
 
-    if (order.status !== 'ordered') {
+    if (order.status !== 'prepared') {
       return res.status(400).json({ message: 'Only ordered orders can be shipped' });
     }
 
@@ -468,6 +491,27 @@ export const markOrderAsShipped = async (req, res) => {
     );
 
     res.status(200).json({ message: 'Order marked as shipped' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to update order', error: error.message });
+  }
+};
+// UPDATE status to "prepared"
+export const markOrderAsPrepared = async (req, res) => {
+  try {
+    const order = await CakeOrder.findByPk(req.params.id);
+
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+
+    if (order.status !== 'ordered') {
+      return res.status(400).json({ message: 'Only ordered orders can be marked as prepared' });
+    }
+
+    await CakeOrder.update(
+      { status: 'prepared' },
+      { where: { id: req.params.id } }
+    );
+
+    res.status(200).json({ message: 'Order marked as prepared' });
   } catch (error) {
     res.status(500).json({ message: 'Failed to update order', error: error.message });
   }

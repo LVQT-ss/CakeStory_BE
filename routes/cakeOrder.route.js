@@ -8,7 +8,8 @@ import {
   markOrderAsCompleted,
   cancelCakeOrder,
   markOrderAsShipped,
-  getCakeOrdersByUserId
+  getCakeOrdersByUserId,
+  markOrderAsPrepared
 } from '../controllers/cakeOrder.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
@@ -267,5 +268,30 @@ router.put('/:id/cancel', verifyToken, cancelCakeOrder);
  *         description: Server error
  */
 router.put('/:id/ship', verifyToken, markOrderAsShipped);
+
+/**
+ * @swagger
+ * /api/cake-orders/{id}/prepared:
+ *   put:
+ *     tags: [CakeOrder]
+ *     summary: Mark a cake order as prepared
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Cake order ID
+ *     responses:
+ *       200:
+ *         description: Order marked as prepared
+ *       404:
+ *         description: Order not found
+ *       500:
+ *         description: Server error
+ */
+router.put('/:id/prepared', verifyToken, markOrderAsPrepared);
 
 export default router;
