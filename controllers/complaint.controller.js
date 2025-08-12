@@ -194,9 +194,6 @@ export const approveComplaint = async (req, res) => {
   }
 };
 
-/**
- * Từ chối complaint (rejected → order completed)
- */
 export const rejectComplaint = async (req, res) => {
   try {
     const { id } = req.params;
@@ -204,6 +201,9 @@ export const rejectComplaint = async (req, res) => {
     const complaint = await Complaint.findByPk(id);
     if (!complaint) {
       return res.status(404).json({ message: "Complaint not found" });
+    }
+    if (complaint.status !== 'pending') {
+      return res.status(400).json({ message: "Complaint has already been processed" });
     }
 
     const order = await CakeOrder.findByPk(complaint.order_id);
@@ -225,6 +225,7 @@ export const rejectComplaint = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+
 /**
  * Get all complaints by shop_id
  */
