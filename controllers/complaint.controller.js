@@ -3,7 +3,7 @@ import CakeOrder from "../models/cake_order.model.js";
 import Wallet from "../models/wallet.model.js";
 import Transaction from "../models/transaction.model.js";
 import sequelize from "../database/db.js";
-
+import User from "../models/User.model.js";
 export const createComplaint = async (req, res) => {
   try {
     const { order_id, reason, evidence_images } = req.body;
@@ -237,7 +237,13 @@ export const getComplaintsByShopId = async (req, res) => {
         {
           model: CakeOrder,
           as: 'order',
-          where: { shop_id }
+          where: { shop_id },
+          include: [
+            {
+              model: User,
+              attributes: ['id', 'username']
+            }
+          ]
         }
       ]
     });
@@ -261,7 +267,13 @@ export const getComplaintsByCustomerId = async (req, res) => {
         {
           model: CakeOrder,
           as: 'order',
-          where: { customer_id }
+          where: { customer_id },
+          include: [
+            {
+              model: User,
+              attributes: ['id', 'username']
+            }
+          ]
         }
       ]
     });
@@ -278,7 +290,18 @@ export const getComplaintsByCustomerId = async (req, res) => {
 export const getAllComplaints = async (req, res) => {
   try {
     const complaints = await Complaint.findAll({
-      include: [{ model: CakeOrder, as: 'order' }]
+      include: [
+        {
+          model: CakeOrder,
+          as: 'order',
+          include: [
+            {
+              model: User,
+              attributes: ['id', 'username']
+            }
+          ]
+        }
+      ]
     });
 
     return res.json(complaints);
@@ -300,7 +323,13 @@ export const getComplaintById = async (req, res) => {
         {
           model: CakeOrder,
           as: 'order',
-          attributes: ['id', 'customer_id', 'shop_id', 'total_price', 'status', 'created_at']
+          attributes: ['id', 'customer_id', 'shop_id', 'total_price', 'status', 'created_at'],
+          include: [
+            {
+              model: User,
+              attributes: ['id', 'username']
+            }
+          ]
         }
       ]
     });
