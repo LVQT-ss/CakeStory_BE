@@ -114,3 +114,47 @@ export const createReview = async (req, res) => {
         });
     }
 };
+
+export const getReviewById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user_id = req.userId; // From verified token
+
+        // Find the review by ID
+        const review = await Review.findOne({
+            where: {
+                id: id,
+                user_id: user_id // Ensure user can only access their own reviews
+            },
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: ['id', 'username', 'full_name', 'avatar']
+                },
+                {
+                    model: CakeOrder,
+                    attributes: ['id', 'total_price', 'status', 'created_at', 'shipped_at']
+                }
+            ]
+        });
+
+        if (!review) {
+            return res.status(404).json({
+                message: 'Review not found or you are not authorized to access this review'
+            });
+        }
+
+        res.status(200).json({
+            message: 'Review retrieved successfully',
+            review: review
+        });
+
+    } catch (error) {
+        console.error('Error retrieving review:', error);
+        res.status(500).json({
+            message: 'Error retrieving review',
+            error: error.message
+        });
+    }
+};
