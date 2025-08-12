@@ -6,6 +6,7 @@ import Wallet from '../models/wallet.model.js';
 import Transaction from '../models/transaction.model.js';
 import Shop from '../models/shop.model.js';
 import { Op } from 'sequelize';
+import User from '../models/User.model.js';
 
 // CREATE CakeOrder with multiple OrderDetails and Payment Processing
 export const createCakeOrder = async (req, res) => {
@@ -158,10 +159,14 @@ export const getAllCakeOrders = async (req, res) => {
       where: {
         status: { [Op.ne]: 'cancelled' }
       },
-      include: {
+      include: [{
         model: OrderDetail,
         as: 'orderDetails'
-      }
+      },
+      {
+        model: User,
+        attributes: ['id', 'username']
+      }]
     });
     res.status(200).json(orders);
   } catch (error) {
@@ -177,10 +182,16 @@ export const getCakeOrdersByUserId = async (req, res) => {
       where: {
         customer_id: user_id,
       },
-      include: {
-        model: OrderDetail,
-        as: 'orderDetails'
-      }
+      include: [
+        {
+          model: OrderDetail,
+          as: 'orderDetails'
+        },
+        {
+          model: User,
+          attributes: ['id', 'username']
+        }
+      ]  
     });
     res.status(200).json(orders);
   } catch (error) {
@@ -196,10 +207,16 @@ export const getCakeOrderById = async (req, res) => {
         id: req.params.id,
         status: { [Op.ne]: 'cancelled' }
       },
-      include: {
-        model: OrderDetail,
-        as: 'orderDetails'
-      }
+      include: [
+        {
+          model: OrderDetail,
+          as: 'orderDetails'
+        },
+        {
+          model: User,
+          attributes: ['id', 'username']
+        }
+      ]
     });
 
     if (!order) return res.status(404).json({ message: 'Order not found' });
@@ -218,10 +235,16 @@ export const getCakeOrdersByShopId = async (req, res) => {
         shop_id,
         status: { [Op.ne]: 'cancelled' }
       },
-      include: {
-        model: OrderDetail,
-        as: 'orderDetails'
-      }
+      include: [
+        {
+          model: OrderDetail,
+          as: 'orderDetails'
+        },
+        {
+          model: User,
+          attributes: ['id', 'username']
+        }
+      ]
     });
     res.status(200).json(orders);
   } catch (error) {
