@@ -129,8 +129,12 @@ function setupAssociations() {
   CakeOrder.belongsTo(MarketplacePost, { foreignKey: "marketplace_post_id" });
 
   // CakeOrder ↔ Review (1-1)
-  CakeOrder.hasOne(Review, { foreignKey: "order_id" });
+  CakeOrder.hasMany(Review, { foreignKey: "order_id" });
   Review.belongsTo(CakeOrder, { foreignKey: "order_id" });
+
+  // User ↔ Review (1-N)
+  User.hasMany(Review, { foreignKey: "user_id", as: "reviews" });
+  Review.belongsTo(User, { foreignKey: "user_id", as: "user" });
 
   // Album ↔ AlbumPost (1-N)
   Album.hasMany(AlbumPost, { foreignKey: "album" });
