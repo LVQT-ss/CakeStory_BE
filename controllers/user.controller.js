@@ -1,5 +1,7 @@
 import User from '../models/User.model.js';
 import Following from '../models/following.model.js';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../utils/firebase.js';
 
 export const followUser = async (req, res) => {
     try {
@@ -175,6 +177,9 @@ export const updateProfile = async (req, res) => {
             });
         }
 
+        // Track if avatar is being updated
+        const isAvatarUpdated = avatar && avatar !== user.avatar;
+
         // Update user fields if provided
         if (email) user.email = email;
         if (full_name) user.full_name = full_name;
@@ -187,6 +192,20 @@ export const updateProfile = async (req, res) => {
 
         // Save the updated user
         await user.save();
+
+        // Update avatar in Firebase Firestore if it was changed
+        if (isAvatarUpdated && user.firebase_uid) {
+            try {
+                const userDocRef = doc(db, "users", user.firebase_uid);
+                await updateDoc(userDocRef, {
+                    avatar: avatar
+                });
+            } catch (firebaseError) {
+                console.error('Error updating avatar in Firebase:', firebaseError);
+                // Don't fail the entire operation if Firebase update fails
+                // Just log the error and continue
+            }
+        }
 
         // Return success response with updated user data
         return res.status(200).json({
