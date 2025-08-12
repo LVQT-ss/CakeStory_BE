@@ -316,3 +316,71 @@ export const updateReview = async (req, res) => {
         });
     }
 };
+
+export const deleteReview = async (req, res) => {
+    const transaction = await sequelize.transaction();
+
+    try {
+        const { id } = req.params;
+        const user_id = req.userId; // From verified token
+
+        // Find the existing review
+        const existingReview = await Review.findOne({
+            where: {
+                id: id,
+                user_id: user_id // Ensure user can only delete their own reviews
+            },
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: ['id', 'username', 'full_name']
+                },
+                {
+                    model: CakeOrder,
+                    attributes: ['id']
+                }
+            ]
+        });
+
+        if (!existingReview) {
+            await transaction.rollback();
+            return res.status(404).json({
+                message: 'Review not found or you are not authorized to delete this review'
+            });
+        }
+
+        // Store review info for response before deletion
+        const reviewInfo = {
+            id: existingReview.id,
+            order_id: existingReview.order_id,
+            rating: existingReview.rating,
+            comment: existingReview.comment,
+            user: {
+                id: existingReview.user.id,
+                username: existingReview.user.username,
+                full_name: existingReview.user.full_name
+            }
+        };
+
+        // Delete the review
+        await existingReview.destroy({ transaction });
+
+        // Commit transaction
+        await transaction.commit();
+
+        res.status(200).json({
+            message: 'Review deleted successfully',
+            deletedReview: reviewInfo
+        });
+
+    } catch (error) {
+        await transaction.rollback();
+        console.error('Error deleting review:', error);
+
+        res.status(500).json({
+            message: 'Error deleting review',
+            error: error.message
+        });
+    }
+};

@@ -1,5 +1,5 @@
 import express from 'express';
-import { createReview, getReviewById, getReviewsByOrderId, updateReview } from '../controllers/review.controller.js';
+import { createReview, getReviewById, getReviewsByOrderId, updateReview, deleteReview } from '../controllers/review.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
@@ -574,5 +574,101 @@ router.get('/order/:orderId', verifyToken, getReviewsByOrderId);
  *                   example: "Database connection error"
  */
 router.put('/:id', verifyToken, updateReview);
+
+/**
+ * @swagger
+ * /api/reviews/{id}:
+ *   delete:
+ *     tags:
+ *       - Reviews
+ *     summary: Delete a review
+ *     description: Delete an existing review. Users can only delete their own reviews.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the review to delete
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: Review deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Review deleted successfully"
+ *                 deletedReview:
+ *                   type: object
+ *                   description: "Information about the deleted review for confirmation"
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     order_id:
+ *                       type: integer
+ *                       example: 1
+ *                     rating:
+ *                       type: integer
+ *                       example: 5
+ *                     comment:
+ *                       type: string
+ *                       example: "Amazing cake! The design was perfect and it tasted delicious."
+ *                     user:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 1
+ *                         username:
+ *                           type: string
+ *                           example: "johndoe"
+ *                         full_name:
+ *                           type: string
+ *                           example: "John Doe"
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Access denied. No token provided."
+ *       404:
+ *         description: Review not found or not authorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Review not found or you are not authorized to delete this review"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Error deleting review"
+ *                 error:
+ *                   type: string
+ *                   example: "Database connection error"
+ */
+router.delete('/:id', verifyToken, deleteReview);
 
 export default router;
