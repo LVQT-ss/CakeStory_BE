@@ -7,7 +7,8 @@ import {
     deleteMemoryPostById,
     getAllMemoryPosts,
     getAllMemoryPostsByUserId,
-    getAllMemoryPostsPaginated
+    getAllMemoryPostsPaginated,
+    searchMemoryPosts
 } from '../controllers/memoryPost.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
@@ -313,6 +314,130 @@ router.post('/', verifyToken, createMemoryPost);
  *                   example: "Database connection error"
  */
 router.get('/paginatedPosts', getAllMemoryPostsPaginated);
+
+/**
+ * @swagger
+ * /api/memory-posts/search:
+ *   get:
+ *     tags:
+ *       - Memory Posts
+ *     summary: Search memory posts by title and description
+ *     description: Search through public memory posts using title and description keywords. Returns all matching posts without pagination.
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Search query to match against title and description
+ *         example: "birthday cake"
+ *     responses:
+ *       200:
+ *         description: Memory posts search completed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Memory posts search completed successfully"
+ *                 searchQuery:
+ *                   type: string
+ *                   example: "birthday cake"
+ *                 totalPosts:
+ *                   type: integer
+ *                   example: 25
+ *                 posts:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       title:
+ *                         type: string
+ *                         example: "My Amazing Birthday Cake"
+ *                       description:
+ *                         type: string
+ *                         example: "This is the beautiful cake I made for my birthday celebration."
+ *                       post_type:
+ *                         type: string
+ *                         example: "memory"
+ *                       is_public:
+ *                         type: boolean
+ *                         example: true
+ *                       created_at:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2024-03-20T10:00:00Z"
+ *                       user:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 1
+ *                           username:
+ *                             type: string
+ *                             example: "johndoe"
+ *                           full_name:
+ *                             type: string
+ *                             example: "John Doe"
+ *                           avatar:
+ *                             type: string
+ *                             example: "https://example.com/avatar.jpg"
+ *                           role:
+ *                             type: string
+ *                             enum: [user, staff, admin]
+ *                             example: "user"
+ *                       media:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             id:
+ *                               type: integer
+ *                               example: 1
+ *                             image_url:
+ *                               type: string
+ *                               example: "https://example.com/cake-image.jpg"
+ *                             video_url:
+ *                               type: string
+ *                               example: null
+ *                       total_likes:
+ *                         type: integer
+ *                         example: 5
+ *                         description: "Total number of likes for this post"
+ *                       total_comments:
+ *                         type: integer
+ *                         example: 3
+ *                         description: "Total number of comments for this post"
+ *       400:
+ *         description: Bad Request - Missing search query
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Search query is required"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Error searching memory posts"
+ *                 error:
+ *                   type: string
+ *                   example: "Database connection error"
+ */
+router.get('/search', searchMemoryPosts);
 
 /**
  * @swagger
@@ -1088,6 +1213,8 @@ router.get('/', getAllMemoryPosts);
  *                   example: "Database connection error"
  */
 router.get('/user/:userId', getAllMemoryPostsByUserId);
+
+
 
 
 export default router;
