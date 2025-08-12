@@ -241,7 +241,7 @@ export const getComplaintsByShopId = async (req, res) => {
           include: [
             {
               model: User,
-              attributes: ['id', 'username']
+              attributes: ['id', 'username','full_name']
             }
           ]
         }
@@ -271,7 +271,7 @@ export const getComplaintsByCustomerId = async (req, res) => {
           include: [
             {
               model: User,
-              attributes: ['id', 'username']
+              attributes: ['id', 'username','full_name']
             }
           ]
         }
@@ -297,7 +297,7 @@ export const getAllComplaints = async (req, res) => {
           include: [
             {
               model: User,
-              attributes: ['id', 'username']
+              attributes: ['id', 'username','full_name']
             }
           ]
         }
@@ -327,7 +327,7 @@ export const getComplaintById = async (req, res) => {
           include: [
             {
               model: User,
-              attributes: ['id', 'username']
+              attributes: ['id', 'username','full_name']
             }
           ]
         }
