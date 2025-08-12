@@ -6,7 +6,8 @@ import {
   getChallengePostsByUserId,
   getChallengePostsByChallengeId,
   updateChallengePost,
-  deleteChallengePost
+  deleteChallengePost,
+  getLeaderBoard
 } from '../controllers/challengePost.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
@@ -85,6 +86,93 @@ router.post('/', verifyToken, createChallengePost);
  *         description: Server error
  */
 router.get('/', verifyToken, getAllChallengePosts);
+
+/**
+ * @swagger
+ * /api/challenge-posts/leaderboard:
+ *   get:
+ *     tags: [ChallengePost]
+ *     summary: Get leaderboard of top 10 challenge posts
+ *     description: Retrieve top 10 challenge posts with the most likes, optionally filtered by challenge ID
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: challenge_id
+ *         schema:
+ *           type: integer
+ *         description: Optional - Filter leaderboard by specific challenge ID
+ *         required: false
+ *     responses:
+ *       200:
+ *         description: Leaderboard retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 leaderboard:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       rank:
+ *                         type: integer
+ *                       post_id:
+ *                         type: integer
+ *                       challenge_id:
+ *                         type: integer
+ *                       challengeName:
+ *                         type: string
+ *                       post:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                           title:
+ *                             type: string
+ *                           description:
+ *                             type: string
+ *                           total_likes:
+ *                             type: integer
+ *                           total_comments:
+ *                             type: integer
+ *                           user:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                               username:
+ *                                 type: string
+ *                               full_name:
+ *                                 type: string
+ *                               avatar:
+ *                                 type: string
+ *                               role:
+ *                                 type: string
+ *                           media:
+ *                             type: array
+ *                             items:
+ *                               type: object
+ *                               properties:
+ *                                 id:
+ *                                   type: integer
+ *                                 image_url:
+ *                                   type: string
+ *                                 video_url:
+ *                                   type: string
+ *                 total_posts:
+ *                   type: integer
+ *                 challenge_id:
+ *                   type: integer
+ *       404:
+ *         description: Challenge not found (when challenge_id is provided)
+ *       500:
+ *         description: Server error
+ */
+router.get('/leaderboard', verifyToken, getLeaderBoard);
 
 /**
  * @swagger
