@@ -3,6 +3,8 @@ import CakeOrder from '../models/cake_order.model.js';
 import Wallet from '../models/wallet.model.js';
 import Transaction from '../models/transaction.model.js';
 import sequelize from '../database/db.js';
+import Challenge from '../models/challenge.model.js';
+import ChallengeEntry from '../models/challenge_entry.model.js';
 import { Op } from 'sequelize';
 
 // Tự động chuyển đơn hàng từ 'pending' sang 'ordered' sau 5 phút
@@ -109,12 +111,12 @@ const autoCompleteShippedOrders = cron.schedule('*/15 * * * *', async () => {
               }
             );
 
-            console.log(`💰 Transferred ${transferAmount} VND to shop for order #${order.id}`);
+            console.log(` Transferred ${transferAmount} VND to shop for order #${order.id}`);
           } else {
-            console.warn(`⚠️ Shop wallet ${pendingTransaction.to_wallet_id} not found for order #${order.id}`);
+            console.warn(` Shop wallet ${pendingTransaction.to_wallet_id} not found for order #${order.id}`);
           }
         } else {
-          console.warn(`⚠️ Pending transaction not found or missing to_wallet_id for order #${order.id}`);
+          console.warn(` Pending transaction not found or missing to_wallet_id for order #${order.id}`);
         }
       }
 
@@ -132,16 +134,75 @@ const autoCompleteShippedOrders = cron.schedule('*/15 * * * *', async () => {
       );
 
       await dbTransaction.commit();
-      console.log(`✅ Auto-completed ${ordersToComplete.length} shipped orders and transferred payments`);
+      console.log(` Auto-completed ${ordersToComplete.length} shipped orders and transferred payments`);
     } else {
       await dbTransaction.commit();
     }
   } catch (error) {
     await dbTransaction.rollback();
-    console.error('❌ Error in auto-complete scheduler:', error);
+    console.error(' Error in auto-complete scheduler:', error);
   }
 }, {
   scheduled: false
 });
 
-export { autoConfirmPendingOrders, autoCompleteShippedOrders };
+// ====== AUTO UPDATE CHALLENGE STATUS ======
+const autoUpdateChallengeStatus = cron.schedule('0 0 * * *', async () => {
+  try {
+    console.log('=== Auto updating challenge statuses ===');
+    const now = new Date();
+
+    // 1. notStart -> onGoing / unAvailable
+    const challengesToStart = await Challenge.findAll({
+      where: {
+        status: 'notStart',
+        start_date: { [Op.lte]: now }
+      }
+    });
+
+    for (const challenge of challengesToStart) {
+      const entryCount = await ChallengeEntry.count({
+        where: { challenge_id: challenge.id }
+      });
+
+      if (
+        challenge.min_participants !== null &&
+        entryCount < challenge.min_participants
+      ) {
+        await Challenge.update(
+          { status: 'unAvailable' },
+          { where: { id: challenge.id } }
+        );
+        console.log(`Challenge #${challenge.id} → unAvailable (participants: ${entryCount}/${challenge.min_participants})`);
+      } else {
+        await Challenge.update(
+          { status: 'onGoing' },
+          { where: { id: challenge.id } }
+        );
+        console.log(`Challenge #${challenge.id} → onGoing`);
+      }
+    }
+
+    // 2. onGoing -> ended
+    const challengesToEnd = await Challenge.findAll({
+      where: {
+        status: 'onGoing',
+        end_date: { [Op.lte]: now }
+      }
+    });
+
+    if (challengesToEnd.length > 0) {
+      await Challenge.update(
+        { status: 'ended' },
+        { where: { id: { [Op.in]: challengesToEnd.map(c => c.id) } } }
+      );
+      console.log(`Ended ${challengesToEnd.length} challenges`);
+    }
+
+    console.log('=== Challenge status update complete ===');
+  } catch (err) {
+    console.error('Error updating challenge statuses:', err);
+  }
+}, { scheduled: false });
+
+export { autoConfirmPendingOrders, autoCompleteShippedOrders, autoUpdateChallengeStatus };

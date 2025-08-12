@@ -828,3 +828,97 @@ export const getChallengePostsByChallengeId = async (req, res) => {
     });
   }
 };
+
+export const getLeaderBoard = async (req, res) => {
+  try {
+    const { challenge_id } = req.query;
+
+    // 1. Bắt buộc phải có challenge_id
+    if (!challenge_id) {
+      return res.status(400).json({
+        message: "challenge_id is required"
+      });
+    }
+
+    // 2. Kiểm tra challenge có tồn tại không
+    const challenge = await Challenge.findByPk(challenge_id);
+    if (!challenge) {
+      return res.status(404).json({
+        message: `Challenge with ID ${challenge_id} not found`
+      });
+    }
+
+    // 3. Lấy các challenge post của challenge này
+    const posts = await ChallengePost.findAll({
+      where: { challenge_id, is_active: true },
+      include: [
+        {
+          model: Post,
+          as: 'post',
+          include: [
+            {
+              model: User,
+              as: 'user',
+              attributes: ['id', 'username', 'full_name', 'avatar', 'role']
+            },
+            {
+              model: PostData,
+              as: 'media',
+              attributes: ['id', 'image_url', 'video_url']
+            }
+          ]
+        }
+      ]
+    });
+
+    // 4. Tính like & comment cho từng post
+    const postsWithLikes = await Promise.all(posts.map(async (challengePost) => {
+      const [likeCount, commentCount] = await Promise.all([
+        Like.count({
+          where: {
+            post_id: challengePost.post_id,
+            design_id: null
+          }
+        }),
+        Comment.count({
+          where: {
+            post_id: challengePost.post_id
+          }
+        })
+      ]);
+
+      return {
+        ...challengePost.toJSON(),
+        post: {
+          ...challengePost.post.toJSON(),
+          total_likes: likeCount,
+          total_comments: commentCount
+        },
+        total_likes: likeCount // Dùng cho sort
+      };
+    }));
+
+    // 5. Sắp xếp & lấy top 10
+    const leaderBoard = postsWithLikes
+      .sort((a, b) => b.total_likes - a.total_likes)
+      .slice(0, 10)
+      .map((post, index) => ({
+        rank: index + 1,
+        ...post
+      }));
+
+    res.status(200).json({
+      message: `Leaderboard retrieved successfully for challenge ID ${challenge_id}`,
+      leaderboard: leaderBoard,
+      total_posts: postsWithLikes.length,
+      challenge_id
+    });
+
+  } catch (err) {
+    console.error('Error fetching leaderboard:', err);
+    res.status(500).json({
+      message: 'Error fetching leaderboard',
+      error: err.message
+    });
+  }
+};
