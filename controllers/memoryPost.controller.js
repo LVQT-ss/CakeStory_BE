@@ -5,6 +5,7 @@ import PostData from '../models/post_data.model.js';
 import Like from '../models/like.model.js';
 import Comment from '../models/comment.model.js';
 import sequelize from '../database/db.js';
+import { Op } from 'sequelize';
 
 export const createMemoryPost = async (req, res) => {
     const transaction = await sequelize.transaction();
@@ -786,6 +787,100 @@ export const getAllMemoryPostsPaginated = async (req, res) => {
         console.error('Error in getAllMemoryPostsPaginated:', error);
         return res.status(500).json({
             message: "Error retrieving memory posts",
+            error: error.message
+        });
+    }
+};
+
+export const searchMemoryPosts = async (req, res) => {
+    try {
+        // Get search query from request parameters
+        const { q: searchQuery } = req.query;
+
+        // Validate search query
+        if (!searchQuery || searchQuery.trim() === '') {
+            return res.status(400).json({
+                message: 'Search query is required'
+            });
+        }
+
+        // Create search conditions for title and description
+        const searchConditions = {
+            post_type: 'memory',
+            is_public: true,
+            [Op.or]: [
+                {
+                    title: {
+                        [Op.iLike]: `%${searchQuery.trim()}%`
+                    }
+                },
+                {
+                    description: {
+                        [Op.iLike]: `%${searchQuery.trim()}%`
+                    }
+                }
+            ]
+        };
+
+        // Get all matching search results
+        const posts = await Post.findAll({
+            where: searchConditions,
+            attributes: ['id', 'title', 'description', 'post_type', 'is_public', 'created_at'],
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: ['id', 'username', 'full_name', 'avatar', 'role']
+                },
+                {
+                    model: MemoryPost,
+                    attributes: ['event_date', 'event_type'],
+                    required: true
+                },
+                {
+                    model: PostData,
+                    as: 'media',
+                    attributes: ['id', 'image_url', 'video_url'],
+                    required: false
+                }
+            ],
+            order: [['created_at', 'DESC']],
+            distinct: true
+        });
+
+        // Get likes and comments count for each post
+        const postsWithCounts = await Promise.all(posts.map(async (post) => {
+            const [likesCount, commentsCount] = await Promise.all([
+                Like.count({ where: { post_id: post.id, design_id: null } }),
+                Comment.count({ where: { post_id: post.id } })
+            ]);
+
+            return {
+                id: post.id,
+                title: post.title,
+                description: post.description,
+                post_type: post.post_type,
+                is_public: post.is_public,
+                created_at: post.created_at,
+                user: post.user,
+                MemoryPost: post.MemoryPost,
+                media: post.media,
+                total_likes: likesCount,
+                total_comments: commentsCount
+            };
+        }));
+
+        return res.status(200).json({
+            message: "Memory posts search completed successfully",
+            searchQuery: searchQuery.trim(),
+            totalPosts: postsWithCounts.length,
+            posts: postsWithCounts
+        });
+
+    } catch (error) {
+        console.error('Error in searchMemoryPosts:', error);
+        return res.status(500).json({
+            message: "Error searching memory posts",
             error: error.message
         });
     }
