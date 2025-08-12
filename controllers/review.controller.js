@@ -1,6 +1,7 @@
 import Review from '../models/review.model.js';
 import CakeOrder from '../models/cake_order.model.js';
 import User from '../models/User.model.js';
+import Shop from '../models/shop.model.js';
 import sequelize from '../database/db.js';
 
 export const createReview = async (req, res) => {
@@ -154,6 +155,82 @@ export const getReviewById = async (req, res) => {
         console.error('Error retrieving review:', error);
         res.status(500).json({
             message: 'Error retrieving review',
+            error: error.message
+        });
+    }
+};
+
+export const getReviewsByOrderId = async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        const user_id = req.userId; // From verified token
+
+        // First, check if the order exists and if the user is authorized to view its reviews
+        const cakeOrder = await CakeOrder.findOne({
+            where: { id: orderId },
+            include: [
+                {
+                    model: User,
+                    attributes: ['id'],
+                    where: { id: user_id }
+                }
+            ]
+        });
+
+        // If order not found with this user, check if user is the shop owner
+        if (!cakeOrder) {
+            const orderWithShop = await CakeOrder.findOne({
+                where: { id: orderId },
+                include: [
+                    {
+                        model: Shop,
+                        include: [
+                            {
+                                model: User,
+                                as: 'user',
+                                attributes: ['id'],
+                                where: { id: user_id }
+                            }
+                        ]
+                    }
+                ]
+            });
+
+            if (!orderWithShop) {
+                return res.status(404).json({
+                    message: 'Order not found or you are not authorized to view reviews for this order'
+                });
+            }
+        }
+
+        // Get all reviews for this order
+        const reviews = await Review.findAll({
+            where: { order_id: orderId },
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: ['id', 'username', 'full_name', 'avatar']
+                },
+                {
+                    model: CakeOrder,
+                    attributes: ['id', 'total_price', 'status', 'created_at', 'shipped_at']
+                }
+            ],
+            order: [['created_at', 'DESC']]
+        });
+
+        res.status(200).json({
+            message: 'Reviews retrieved successfully',
+            orderId: parseInt(orderId),
+            totalReviews: reviews.length,
+            reviews: reviews
+        });
+
+    } catch (error) {
+        console.error('Error retrieving reviews by order:', error);
+        res.status(500).json({
+            message: 'Error retrieving reviews',
             error: error.message
         });
     }

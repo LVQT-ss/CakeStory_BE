@@ -1,5 +1,5 @@
 import express from 'express';
-import { createReview, getReviewById } from '../controllers/review.controller.js';
+import { createReview, getReviewById, getReviewsByOrderId } from '../controllers/review.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
@@ -285,5 +285,138 @@ router.post('/', verifyToken, createReview);
  *                   example: "Database connection error"
  */
 router.get('/:id', verifyToken, getReviewById);
+
+/**
+ * @swagger
+ * /api/reviews/order/{orderId}:
+ *   get:
+ *     tags:
+ *       - Reviews
+ *     summary: Get all reviews for a specific cake order
+ *     description: Retrieve all reviews for a specific cake order. Only accessible by the customer who placed the order or the shop owner.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: orderId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the cake order
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: Reviews retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Reviews retrieved successfully"
+ *                 orderId:
+ *                   type: integer
+ *                   example: 1
+ *                 totalReviews:
+ *                   type: integer
+ *                   example: 2
+ *                 reviews:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       user_id:
+ *                         type: integer
+ *                         example: 1
+ *                       order_id:
+ *                         type: integer
+ *                         example: 1
+ *                       rating:
+ *                         type: integer
+ *                         example: 5
+ *                       comment:
+ *                         type: string
+ *                         example: "Amazing cake! The design was perfect and it tasted delicious."
+ *                       created_at:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2024-03-20T10:00:00Z"
+ *                       user:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 1
+ *                           username:
+ *                             type: string
+ *                             example: "johndoe"
+ *                           full_name:
+ *                             type: string
+ *                             example: "John Doe"
+ *                           avatar:
+ *                             type: string
+ *                             example: "https://example.com/avatar.jpg"
+ *                       CakeOrder:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 1
+ *                           total_price:
+ *                             type: number
+ *                             example: 45.99
+ *                           status:
+ *                             type: string
+ *                             example: "completed"
+ *                           created_at:
+ *                             type: string
+ *                             format: date-time
+ *                             example: "2024-03-15T08:00:00Z"
+ *                           shipped_at:
+ *                             type: string
+ *                             format: date-time
+ *                             example: "2024-03-18T14:30:00Z"
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Access denied. No token provided."
+ *       404:
+ *         description: Order not found or not authorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Order not found or you are not authorized to view reviews for this order"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Error retrieving reviews"
+ *                 error:
+ *                   type: string
+ *                   example: "Database connection error"
+ */
+router.get('/order/:orderId', verifyToken, getReviewsByOrderId);
 
 export default router;
