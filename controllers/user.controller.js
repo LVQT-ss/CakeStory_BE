@@ -161,12 +161,10 @@ export const updateProfile = async (req, res) => {
     try {
         const userId = req.params.id; // Get user ID from request parameters
         const {
-            email,
             full_name,
             address,
             phone_number,
             avatar,
-            role
         } = req.body;
 
         // Find user by ID
@@ -181,14 +179,10 @@ export const updateProfile = async (req, res) => {
         const isAvatarUpdated = avatar && avatar !== user.avatar;
 
         // Update user fields if provided
-        if (email) user.email = email;
         if (full_name) user.full_name = full_name;
         if (address) user.address = address;
         if (phone_number) user.phone_number = phone_number;
         if (avatar) user.avatar = avatar;
-        if (role && ['user', 'account_staff', 'complaint_handler', 'admin', 'baker'].includes(role)) {
-            user.role = role;
-        }
 
         // Save the updated user
         await user.save();
@@ -213,12 +207,10 @@ export const updateProfile = async (req, res) => {
             user: {
                 id: user.id,
                 username: user.username,
-                email: user.email,
                 full_name: user.full_name,
                 address: user.address,
                 phone_number: user.phone_number,
                 avatar: user.avatar,
-                role: user.role
             }
         });
 
