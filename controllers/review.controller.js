@@ -235,3 +235,84 @@ export const getReviewsByOrderId = async (req, res) => {
         });
     }
 };
+
+export const updateReview = async (req, res) => {
+    const transaction = await sequelize.transaction();
+
+    try {
+        const { id } = req.params;
+        const { rating, comment } = req.body;
+        const user_id = req.userId; // From verified token
+
+        // Validate rating if provided
+        if (rating !== undefined && (rating < 1 || rating > 5)) {
+            await transaction.rollback();
+            return res.status(400).json({
+                message: 'Rating must be between 1 and 5'
+            });
+        }
+
+        // Find the existing review
+        const existingReview = await Review.findOne({
+            where: {
+                id: id,
+                user_id: user_id // Ensure user can only update their own reviews
+            }
+        });
+
+        if (!existingReview) {
+            await transaction.rollback();
+            return res.status(404).json({
+                message: 'Review not found or you are not authorized to update this review'
+            });
+        }
+
+        // Prepare update data
+        const updateData = {};
+        if (rating !== undefined) updateData.rating = rating;
+        if (comment !== undefined) updateData.comment = comment;
+
+        // Check if there's actually something to update
+        if (Object.keys(updateData).length === 0) {
+            await transaction.rollback();
+            return res.status(400).json({
+                message: 'No valid fields provided for update'
+            });
+        }
+
+        // Update the review
+        await existingReview.update(updateData, { transaction });
+
+        // Commit transaction
+        await transaction.commit();
+
+        // Fetch the updated review with related data
+        const updatedReview = await Review.findByPk(id, {
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: ['id', 'username', 'full_name', 'avatar']
+                },
+                {
+                    model: CakeOrder,
+                    attributes: ['id', 'total_price', 'status', 'created_at', 'shipped_at']
+                }
+            ]
+        });
+
+        res.status(200).json({
+            message: 'Review updated successfully',
+            review: updatedReview
+        });
+
+    } catch (error) {
+        await transaction.rollback();
+        console.error('Error updating review:', error);
+
+        res.status(500).json({
+            message: 'Error updating review',
+            error: error.message
+        });
+    }
+};

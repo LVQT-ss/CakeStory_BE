@@ -1,5 +1,5 @@
 import express from 'express';
-import { createReview, getReviewById, getReviewsByOrderId } from '../controllers/review.controller.js';
+import { createReview, getReviewById, getReviewsByOrderId, updateReview } from '../controllers/review.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
@@ -418,5 +418,161 @@ router.get('/:id', verifyToken, getReviewById);
  *                   example: "Database connection error"
  */
 router.get('/order/:orderId', verifyToken, getReviewsByOrderId);
+
+/**
+ * @swagger
+ * /api/reviews/{id}:
+ *   put:
+ *     tags:
+ *       - Reviews
+ *     summary: Update a review
+ *     description: Update an existing review. Users can only update their own reviews.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the review to update
+ *         example: 1
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               rating:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 5
+ *                 example: 4
+ *                 description: Updated rating from 1 to 5 stars
+ *               comment:
+ *                 type: string
+ *                 example: "Updated review: Good cake but could be better!"
+ *                 description: Updated review comment
+ *     responses:
+ *       200:
+ *         description: Review updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Review updated successfully"
+ *                 review:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     user_id:
+ *                       type: integer
+ *                       example: 1
+ *                     order_id:
+ *                       type: integer
+ *                       example: 1
+ *                     rating:
+ *                       type: integer
+ *                       example: 4
+ *                     comment:
+ *                       type: string
+ *                       example: "Updated review: Good cake but could be better!"
+ *                     created_at:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2024-03-20T10:00:00Z"
+ *                     updated_at:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2024-03-21T15:30:00Z"
+ *                     user:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 1
+ *                         username:
+ *                           type: string
+ *                           example: "johndoe"
+ *                         full_name:
+ *                           type: string
+ *                           example: "John Doe"
+ *                         avatar:
+ *                           type: string
+ *                           example: "https://example.com/avatar.jpg"
+ *                     CakeOrder:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 1
+ *                         total_price:
+ *                           type: number
+ *                           example: 45.99
+ *                         status:
+ *                           type: string
+ *                           example: "completed"
+ *                         created_at:
+ *                           type: string
+ *                           format: date-time
+ *                           example: "2024-03-15T08:00:00Z"
+ *                         shipped_at:
+ *                           type: string
+ *                           format: date-time
+ *                           example: "2024-03-18T14:30:00Z"
+ *       400:
+ *         description: Bad Request - Invalid input or no fields to update
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Rating must be between 1 and 5"
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Access denied. No token provided."
+ *       404:
+ *         description: Review not found or not authorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Review not found or you are not authorized to update this review"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Error updating review"
+ *                 error:
+ *                   type: string
+ *                   example: "Database connection error"
+ */
+router.put('/:id', verifyToken, updateReview);
 
 export default router;
