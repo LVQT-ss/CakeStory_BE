@@ -5,6 +5,8 @@ import { storage } from '../utils/firebase.js';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import OpenAI from 'openai';
 import axios from 'axios';
+import { Buffer } from 'buffer';
+import process from 'process';
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
@@ -205,10 +207,56 @@ export const generateAICakeDesign = async (req, res) => {
 
         const { design_image, description } = existingCakeDesign;
 
-        // Generate image using OpenAI DALL-E 3
+        // Helper function to convert image to base64 if it's a URL
+        const getBase64Image = async (imageInput) => {
+            if (imageInput.startsWith('data:image/')) {
+                // Already base64
+                return imageInput;
+            } else if (imageInput.startsWith('http://') || imageInput.startsWith('https://')) {
+                // Download and convert URL to base64
+                const response = await axios.get(imageInput, { responseType: 'arraybuffer' });
+                const base64 = Buffer.from(response.data).toString('base64');
+                const mimeType = response.headers['content-type'] || 'image/jpeg';
+                return `data:${mimeType};base64,${base64}`;
+            } else {
+                // Pure base64, add data URL prefix
+                return `data:image/jpeg;base64,${imageInput}`;
+            }
+        };
+
+        // Convert image to base64 for OpenAI Vision API
+        const base64Image = await getBase64Image(design_image);
+
+        // First, use GPT-4 Vision to analyze the image and create a detailed prompt
+        const visionResponse = await openai.chat.completions.create({
+            model: "gpt-4-vision-preview",
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "text",
+                            text: `Analyze this cake design image and create a detailed description for generating a similar cake using DALL-E 3. Focus on: colors, decorations, layers, frosting style, toppings, shape, and overall aesthetic. Original description: "${description || 'No description provided'}". Make it creative and detailed for AI image generation.`
+                        },
+                        {
+                            type: "image_url",
+                            image_url: {
+                                url: base64Image
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens: 300
+        });
+
+        const enhancedPrompt = visionResponse.choices[0].message.content;
+        console.log('Enhanced prompt from vision analysis:', enhancedPrompt);
+
+        // Generate image using OpenAI DALL-E 3 with enhanced prompt
         const response = await openai.images.generate({
             model: "dall-e-3",
-            prompt: description,
+            prompt: enhancedPrompt,
             n: 1,
             size: "1024x1024",
         });
@@ -291,6 +339,15 @@ export const generateAICakeDesign = async (req, res) => {
                 success: false,
                 message: 'Error generating AI image',
                 error: 'AI service temporarily unavailable. Please check your OpenAI API key.'
+            });
+        }
+
+        // Handle Vision API specific errors
+        if (error.message.includes('vision') || error.message.includes('image_url')) {
+            return res.status(500).json({
+                success: false,
+                message: 'Error analyzing image with AI vision',
+                error: 'AI vision service temporarily unavailable. Please try again later.'
             });
         }
 
