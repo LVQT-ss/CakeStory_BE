@@ -1,5 +1,5 @@
 import express from 'express';
-import { verifyToken, verifyAdmin } from '../middleware/verifyUser.js';
+import { verifyToken, verifyAdmin, verifyStaff } from '../middleware/verifyUser.js';
 import {
     walletDeposit,
     payOSWebhook,
@@ -461,7 +461,7 @@ router.get('/AllDepositHistoryUser', verifyToken, walletGetDepositHistoryUser);
  *                   type: string
  *                   example: "Database connection error"
  */
-router.get('/allDepositsAdmin', verifyToken, verifyAdmin, getAllDepositsForAdmin);
+router.get('/allDepositsAdmin', verifyToken, verifyStaff, getAllDepositsForAdmin);
 
 /**
  * @swagger
@@ -564,7 +564,7 @@ router.get('/allDepositsAdmin', verifyToken, verifyAdmin, getAllDepositsForAdmin
  *                   type: string
  *                   example: "Internal server error"
  */
-router.get('/depositHistoryAdmin/:id', verifyToken, verifyAdmin, walletGetDepositHistoryByIdAdmin);
+router.get('/depositHistoryAdmin/:id', verifyToken, verifyStaff, walletGetDepositHistoryByIdAdmin);
 
 /**
  * @swagger
@@ -791,7 +791,7 @@ router.post('/withdraw', verifyToken, walletWithdrawRequest);
  *       500:
  *         description: Internal server error
  */
-router.get('/withdraw-historyAdmin/:id', verifyToken, verifyAdmin, walletGetWithdrawHistoryById);
+router.get('/withdraw-historyAdmin/:id', verifyToken, verifyStaff, walletGetWithdrawHistoryById);
 /**
  * @swagger
  * /api/wallet/withdrawAll-historyAdmin:
@@ -884,7 +884,7 @@ router.get('/withdraw-historyAdmin/:id', verifyToken, verifyAdmin, walletGetWith
  *       500:
  *         description: Internal server error
  */
-router.get('/withdrawAll-historyAdmin', verifyToken, verifyAdmin, walletGetAllWithdrawHistory);
+router.get('/withdrawAll-historyAdmin', verifyToken, verifyStaff, walletGetAllWithdrawHistory);
 
 /**
  * @swagger
@@ -1200,7 +1200,7 @@ router.get('/AdminWallet', verifyToken, verifyAdmin, AdminWallet);
  *       500:
  *         description: Internal server error
  */
-router.get('/allWalletAdmin', verifyToken, verifyAdmin, allWalletAdmin);
+router.get('/allWalletAdmin', verifyToken, verifyStaff, allWalletAdmin);
 
 /**
  * @swagger
