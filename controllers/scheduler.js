@@ -45,13 +45,13 @@ const autoConfirmPendingOrders = cron.schedule('*/5 * * * *', async () => {
 });
 
 // Tự động chuyển đơn hàng từ 'shipped' sang 'completed' sau 2 tiếng và chuyển tiền
-const autoCompleteShippedOrders = cron.schedule('*/15 * * * *', async () => {
+const autoCompleteShippedOrders = cron.schedule('*/1 * * * *', async () => {
   const dbTransaction = await sequelize.transaction();
 
   try {
     console.log('Checking for shipped orders to auto-complete and transfer money...');
 
-    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000); // 2 tiếng trước
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 1000); // 2 tiếng trước
 
     const ordersToComplete = await CakeOrder.findAll({
       where: {
@@ -76,17 +76,22 @@ const autoCompleteShippedOrders = cron.schedule('*/15 * * * *', async () => {
         });
 
         if (pendingTransaction && pendingTransaction.to_wallet_id) {
-          // 2. Chuyển tiền từ customer đã trừ sang shop wallet
-          const transferAmount = parseFloat(pendingTransaction.amount);
+          // 2. Chuyển tiền từ customer đã trừ sang shop wallet với phí 5%
+          const totalAmount = parseFloat(pendingTransaction.amount);
+          const feePercentage = 0.05; // 5%
+          const adminFee = totalAmount * feePercentage;
+          const shopAmount = totalAmount - adminFee;
 
-          // Lấy shop wallet và cập nhật balance
-          const shopWallet = await Wallet.findByPk(pendingTransaction.to_wallet_id, {
-            transaction: dbTransaction
-          });
+          // Lấy shop wallet và admin wallet
+          const [shopWallet, adminWallet] = await Promise.all([
+            Wallet.findByPk(pendingTransaction.to_wallet_id, { transaction: dbTransaction }),
+            Wallet.findOne({ where: { user_id: 1 }, transaction: dbTransaction })
+          ]);
 
-          if (shopWallet) {
+          if (shopWallet && adminWallet) {
+            // Cập nhật shop wallet balance (95% của số tiền)
             const currentShopBalance = parseFloat(shopWallet.balance);
-            const newShopBalance = currentShopBalance + transferAmount;
+            const newShopBalance = currentShopBalance + shopAmount;
 
             await Wallet.update(
               {
@@ -99,7 +104,22 @@ const autoCompleteShippedOrders = cron.schedule('*/15 * * * *', async () => {
               }
             );
 
-            // 3. Cập nhật transaction status thành completed
+            // Cập nhật admin wallet balance (5% phí)
+            const currentAdminBalance = parseFloat(adminWallet.balance);
+            const newAdminBalance = currentAdminBalance + adminFee;
+
+            await Wallet.update(
+              {
+                balance: newAdminBalance,
+                updated_at: new Date()
+              },
+              {
+                where: { id: adminWallet.id },
+                transaction: dbTransaction
+              }
+            );
+
+            // 3. Cập nhật transaction gốc thành completed
             await Transaction.update(
               {
                 status: 'completed',
@@ -111,9 +131,14 @@ const autoCompleteShippedOrders = cron.schedule('*/15 * * * *', async () => {
               }
             );
 
-            console.log(` Transferred ${transferAmount} VND to shop for order #${order.id}`);
+            console.log(` Order #${order.id}: Transferred ${shopAmount} VND to shop, ${adminFee} VND admin fee (total: ${totalAmount} VND)`);
           } else {
-            console.warn(` Shop wallet ${pendingTransaction.to_wallet_id} not found for order #${order.id}`);
+            if (!shopWallet) {
+              console.warn(` Shop wallet ${pendingTransaction.to_wallet_id} not found for order #${order.id}`);
+            }
+            if (!adminWallet) {
+              console.warn(` Admin wallet (user_id: 1) not found for order #${order.id}`);
+            }
           }
         } else {
           console.warn(` Pending transaction not found or missing to_wallet_id for order #${order.id}`);

@@ -5,6 +5,8 @@ import { storage } from '../utils/firebase.js';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import OpenAI from 'openai';
 import axios from 'axios';
+import { Buffer } from 'buffer';
+import process from 'process';
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
@@ -205,10 +207,66 @@ export const generateAICakeDesign = async (req, res) => {
 
         const { design_image, description } = existingCakeDesign;
 
-        // Generate image using OpenAI DALL-E 3
+        // Helper function to convert image to base64 if it's a URL
+        const getBase64Image = async (imageInput) => {
+            if (imageInput.startsWith('data:image/')) {
+                // Already base64
+                return imageInput;
+            } else if (imageInput.startsWith('http://') || imageInput.startsWith('https://')) {
+                // Download and convert URL to base64
+                const response = await axios.get(imageInput, { responseType: 'arraybuffer' });
+                const base64 = Buffer.from(response.data).toString('base64');
+                const mimeType = response.headers['content-type'] || 'image/jpeg';
+                return `data:${mimeType};base64,${base64}`;
+            } else {
+                // Pure base64, add data URL prefix
+                return `data:image/jpeg;base64,${imageInput}`;
+            }
+        };
+
+        // Convert image to base64 for OpenAI Vision API
+        const base64Image = await getBase64Image(design_image);
+
+        // First, use GPT-4 Vision to analyze the image and create a detailed prompt
+        const visionResponse = await openai.chat.completions.create({
+            model: "gpt-4-vision-preview",
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "text",
+                            text: `Analyze this cake design image and create a detailed description for generating a similar cake using DALL-E 3. Focus on: colors, decorations, layers, frosting style, toppings, shape, and overall aesthetic. Original description. Make it creative and detailed for AI image generation.
+                            Create a beautiful, professional cake design based on this description: "${description || 'A beautiful cake design'}". 
+        The new design should be elegant and visually appealing with:
+        - Professional cake styling and presentation
+        - Appealing colors and artistic decoration
+        - High-quality, bakery-worthy appearance
+        - Creative and unique design elements
+        - Do not put any unrelated object in the image
+        - Do not put any length of ruler in the image
+        Make it look like a premium cake design that would be featured in a high-end bakery`
+
+                        },
+                        {
+                            type: "image_url",
+                            image_url: {
+                                url: base64Image
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens: 300
+        });
+
+        const enhancedPrompt = visionResponse.choices[0].message.content;
+        console.log('Enhanced prompt from vision analysis:', enhancedPrompt);
+
+        // Generate image using OpenAI DALL-E 3 with enhanced prompt
         const response = await openai.images.generate({
             model: "dall-e-3",
-            prompt: description,
+            prompt: enhancedPrompt,
             n: 1,
             size: "1024x1024",
         });
@@ -294,6 +352,15 @@ export const generateAICakeDesign = async (req, res) => {
             });
         }
 
+        // Handle Vision API specific errors
+        if (error.message.includes('vision') || error.message.includes('image_url')) {
+            return res.status(500).json({
+                success: false,
+                message: 'Error analyzing image with AI vision',
+                error: 'AI vision service temporarily unavailable. Please try again later.'
+            });
+        }
+
         // Handle Firebase errors
         if (error.message.includes('Firebase') || error.message.includes('storage')) {
             return res.status(500).json({
@@ -320,5 +387,66 @@ export const generateAICakeDesign = async (req, res) => {
     }
 };
 
+// Get all cake designs by specific user ID
+export const getCakeDesignsByUserId = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { page = 1, limit = 10, include_private = false } = req.query;
+        const currentUserId = req.userId; // From JWT token
+        const offset = (page - 1) * limit;
 
+        // Validate userId parameter
+        if (!userId || isNaN(userId)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Valid user ID is required'
+            });
+        }
 
+        // Build where clause
+        const whereClause = { user_id: parseInt(userId) };
+
+        // If requesting another user's designs, only show public ones
+        // If requesting own designs, show all (public + private) or based on include_private flag
+        if (parseInt(userId) !== currentUserId) {
+            whereClause.is_public = true;
+        } else if (include_private === 'false') {
+            whereClause.is_public = true;
+        }
+
+        const { count, rows: cakeDesigns } = await CakeDesign.findAndCountAll({
+            attributes: { exclude: ['design_image'] },
+            where: whereClause,
+            include: [
+                {
+                    model: User,
+                    attributes: ['id', 'username', 'full_name', 'avatar']
+                }
+            ],
+            order: [['created_at', 'DESC']],
+            limit: parseInt(limit),
+            offset: parseInt(offset)
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Cake designs fetched successfully',
+            data: {
+                cakeDesigns,
+                pagination: {
+                    current_page: parseInt(page),
+                    total_pages: Math.ceil(count / limit),
+                    total_items: count,
+                    items_per_page: parseInt(limit)
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching cake designs by user ID:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
+    }
+};
