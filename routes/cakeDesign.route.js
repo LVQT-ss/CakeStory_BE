@@ -2,7 +2,8 @@ import express from 'express';
 import {
     createCakeDesign,
     getCakeDesigns,
-    generateAICakeDesign
+    generateAICakeDesign,
+    getCakeDesignsByUserId
 } from '../controllers/cakeDesign.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 import upload, { convertToBase64 } from '../middleware/upload.js';
@@ -455,5 +456,188 @@ router.get('/', verifyToken, getCakeDesigns);
  *                   example: "AI service temporarily unavailable"
  */
 router.put('/generate-ai', verifyToken, generateAICakeDesign);
+
+/**
+ * @swagger
+ * /api/cake-designs/user/{userId}:
+ *   get:
+ *     tags:
+ *       - Cake Design
+ *     summary: Get all cake designs by specific user ID
+ *     description: Retrieve all cake designs created by a specific user. Returns only public designs for other users, but can include private designs for the authenticated user's own designs.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the user whose cake designs to retrieve
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of items per page
+ *       - in: query
+ *         name: include_private
+ *         schema:
+ *           type: boolean
+ *           default: false
+ *         description: Include private designs (only works for own designs)
+ *     responses:
+ *       200:
+ *         description: Cake designs by user fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Cake designs by user john_doe fetched successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     user:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 1
+ *                         username:
+ *                           type: string
+ *                           example: "john_doe"
+ *                         full_name:
+ *                           type: string
+ *                           example: "John Doe"
+ *                         avatar:
+ *                           type: string
+ *                           example: "https://example.com/avatar.jpg"
+ *                     cakeDesigns:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 1
+ *                           user_id:
+ *                             type: integer
+ *                             example: 1
+ *                           description:
+ *                             type: string
+ *                             example: "Beautiful wedding cake design"
+ *                           design_image:
+ *                             type: string
+ *                             example: "https://example.com/cake1.jpg"
+ *                           created_at:
+ *                             type: string
+ *                             format: date-time
+ *                             example: "2024-01-15T10:30:00.000Z"
+ *                           is_public:
+ *                             type: boolean
+ *                             example: true
+ *                           ai_generated:
+ *                             type: string
+ *                             nullable: true
+ *                             example: "https://firebasestorage.googleapis.com/ai-generated-cake.png"
+ *                           User:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 1
+ *                               username:
+ *                                 type: string
+ *                                 example: "john_doe"
+ *                               full_name:
+ *                                 type: string
+ *                                 example: "John Doe"
+ *                               avatar:
+ *                                 type: string
+ *                                 example: "https://example.com/avatar.jpg"
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         current_page:
+ *                           type: integer
+ *                           example: 1
+ *                         total_pages:
+ *                           type: integer
+ *                           example: 5
+ *                         total_items:
+ *                           type: integer
+ *                           example: 50
+ *                         items_per_page:
+ *                           type: integer
+ *                           example: 10
+ *       400:
+ *         description: Bad Request - Invalid user ID
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Valid user ID is required"
+ *       404:
+ *         description: Not Found - User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "User not found"
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Access denied. No token provided."
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ *                 error:
+ *                   type: string
+ *                   example: "Database connection error"
+ */
+router.get('/user/:userId', verifyToken, getCakeDesignsByUserId);
 
 export default router;

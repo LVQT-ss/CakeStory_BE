@@ -377,5 +377,78 @@ export const generateAICakeDesign = async (req, res) => {
     }
 };
 
+// Get all cake designs by specific user ID
+export const getCakeDesignsByUserId = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { page = 1, limit = 10, include_private = false } = req.query;
+        const currentUserId = req.userId; // From JWT token
+        const offset = (page - 1) * limit;
 
+        // Validate userId parameter
+        if (!userId || isNaN(userId)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Valid user ID is required'
+            });
+        }
 
+        // Check if user exists
+        const targetUser = await User.findByPk(userId, {
+            attributes: ['id', 'username', 'full_name', 'avatar']
+        });
+
+        if (!targetUser) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        // Build where clause
+        const whereClause = { user_id: parseInt(userId) };
+
+        // If requesting another user's designs, only show public ones
+        // If requesting own designs, show all (public + private) or based on include_private flag
+        if (parseInt(userId) !== currentUserId) {
+            whereClause.is_public = true;
+        } else if (include_private === 'false') {
+            whereClause.is_public = true;
+        }
+
+        const { count, rows: cakeDesigns } = await CakeDesign.findAndCountAll({
+            where: whereClause,
+            include: [
+                {
+                    model: User,
+                    attributes: ['id', 'username', 'full_name', 'avatar']
+                }
+            ],
+            order: [['created_at', 'DESC']],
+            limit: parseInt(limit),
+            offset: parseInt(offset)
+        });
+
+        res.status(200).json({
+            success: true,
+            message: `Cake designs by user ${targetUser.username} fetched successfully`,
+            data: {
+                user: targetUser,
+                cakeDesigns,
+                pagination: {
+                    current_page: parseInt(page),
+                    total_pages: Math.ceil(count / limit),
+                    total_items: count,
+                    items_per_page: parseInt(limit)
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching cake designs by user ID:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
+    }
+};
