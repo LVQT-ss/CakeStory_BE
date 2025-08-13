@@ -464,7 +464,7 @@ router.put('/generate-ai', verifyToken, generateAICakeDesign);
  *     tags:
  *       - Cake Design
  *     summary: Get all cake designs by specific user ID
- *     description: Retrieve all cake designs created by a specific user. Returns only public designs for other users, but can include private designs for the authenticated user's own designs.
+ *     description: Retrieve all cake designs created by a specific user (excluding design_image data). Returns only public designs for other users, but can include private designs for the authenticated user's own designs.
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -505,25 +505,10 @@ router.put('/generate-ai', verifyToken, generateAICakeDesign);
  *                   example: true
  *                 message:
  *                   type: string
- *                   example: "Cake designs by user john_doe fetched successfully"
+ *                   example: "Cake designs fetched successfully"
  *                 data:
  *                   type: object
  *                   properties:
- *                     user:
- *                       type: object
- *                       properties:
- *                         id:
- *                           type: integer
- *                           example: 1
- *                         username:
- *                           type: string
- *                           example: "john_doe"
- *                         full_name:
- *                           type: string
- *                           example: "John Doe"
- *                         avatar:
- *                           type: string
- *                           example: "https://example.com/avatar.jpg"
  *                     cakeDesigns:
  *                       type: array
  *                       items:

@@ -236,7 +236,17 @@ export const generateAICakeDesign = async (req, res) => {
                     content: [
                         {
                             type: "text",
-                            text: `Analyze this cake design image and create a detailed description for generating a similar cake using DALL-E 3. Focus on: colors, decorations, layers, frosting style, toppings, shape, and overall aesthetic. Original description: "${description || 'No description provided'}". Make it creative and detailed for AI image generation.`
+                            text: `Analyze this cake design image and create a detailed description for generating a similar cake using DALL-E 3. Focus on: colors, decorations, layers, frosting style, toppings, shape, and overall aesthetic. Original description. Make it creative and detailed for AI image generation.
+                            Create a beautiful, professional cake design based on this description: "${description || 'A beautiful cake design'}". 
+        The new design should be elegant and visually appealing with:
+        - Professional cake styling and presentation
+        - Appealing colors and artistic decoration
+        - High-quality, bakery-worthy appearance
+        - Creative and unique design elements
+        - Do not put any unrelated object in the image
+        - Do not put any length of ruler in the image
+        Make it look like a premium cake design that would be featured in a high-end bakery`
+
                         },
                         {
                             type: "image_url",
@@ -393,18 +403,6 @@ export const getCakeDesignsByUserId = async (req, res) => {
             });
         }
 
-        // Check if user exists
-        const targetUser = await User.findByPk(userId, {
-            attributes: ['id', 'username', 'full_name', 'avatar']
-        });
-
-        if (!targetUser) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found'
-            });
-        }
-
         // Build where clause
         const whereClause = { user_id: parseInt(userId) };
 
@@ -417,6 +415,7 @@ export const getCakeDesignsByUserId = async (req, res) => {
         }
 
         const { count, rows: cakeDesigns } = await CakeDesign.findAndCountAll({
+            attributes: { exclude: ['design_image'] },
             where: whereClause,
             include: [
                 {
@@ -431,9 +430,8 @@ export const getCakeDesignsByUserId = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: `Cake designs by user ${targetUser.username} fetched successfully`,
+            message: 'Cake designs fetched successfully',
             data: {
-                user: targetUser,
                 cakeDesigns,
                 pagination: {
                     current_page: parseInt(page),
