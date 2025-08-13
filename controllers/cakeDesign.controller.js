@@ -229,7 +229,7 @@ export const generateAICakeDesign = async (req, res) => {
 
         // First, use GPT-4 Vision to analyze the image and create a detailed prompt
         const visionResponse = await openai.chat.completions.create({
-            model: "gpt-4-vision-preview",
+            model: "dall-e-3",
             messages: [
                 {
                     role: "user",
