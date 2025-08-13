@@ -28,6 +28,7 @@ import WithdrawRecords from "./withdraw_records.model.js";
 import OrderDetail from './order_detail.model.js';
 import CakeSize from "./cake_size.model.js";
 import Complaint from "./complaint.model.js";
+import ShopGallery from './shop_gallery.model.js';
 
 function setupAssociations() {
   // User ↔ Shop (1-1)
@@ -225,6 +226,9 @@ function setupAssociations() {
   User.hasMany(Complaint, { foreignKey: "processed_by", as: "processedComplaints" });
   Complaint.belongsTo(User, { foreignKey: "processed_by", as: "processedBy" });
 
+    // Shop ↔ ShopGallery (1-N)
+  Shop.hasMany(ShopGallery, { foreignKey: 'shop_id', as: 'gallery' });
+  ShopGallery.belongsTo(Shop, { foreignKey: 'shop_id', as: 'shop' });
 }
 
 export default setupAssociations;
