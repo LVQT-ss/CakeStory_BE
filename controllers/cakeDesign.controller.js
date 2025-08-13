@@ -1,5 +1,7 @@
 import CakeDesign from '../models/cake_design.model.js';
 import User from '../models/User.model.js';
+import Wallet from '../models/wallet.model.js';
+import Transaction from '../models/transaction.model.js';
 import { Op } from 'sequelize';
 import { storage } from '../utils/firebase.js';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -7,6 +9,7 @@ import OpenAI from 'openai';
 import axios from 'axios';
 import { Buffer } from 'buffer';
 import process from 'process';
+import sequelize from '../database/db.js';
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
@@ -161,6 +164,7 @@ export const generateAICakeDesign = async (req, res) => {
     try {
         const { cake_design_id } = req.body;
         const user_id = req.userId; // From JWT token
+        const AI_GENERATION_COST = 1000; // Cost per image generation
 
         // Validate required fields
         if (!cake_design_id) {
@@ -170,42 +174,130 @@ export const generateAICakeDesign = async (req, res) => {
             });
         }
 
-        // Check if user exists
-        const user = await User.findByPk(user_id);
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found'
-            });
-        }
+        // Use transaction to ensure data consistency
+        const result = await sequelize.transaction(async (t) => {
+            // 1. Check if user exists
+            const user = await User.findByPk(user_id, { transaction: t });
+            if (!user) {
+                throw new Error('User not found');
+            }
 
-        // Find the existing cake design by ID
-        const existingCakeDesign = await CakeDesign.findByPk(cake_design_id);
-        if (!existingCakeDesign) {
-            return res.status(404).json({
-                success: false,
-                message: 'Cake design not found'
+            // 2. Check if user has wallet
+            const wallet = await Wallet.findOne({
+                where: { user_id: user_id },
+                transaction: t
             });
-        }
 
-        // Check if user has permission to access this cake design
-        // (either it's public or it belongs to the user)
-        if (!existingCakeDesign.is_public && existingCakeDesign.user_id !== user_id) {
-            return res.status(403).json({
-                success: false,
-                message: 'Access denied. You can only generate AI designs from your own designs or public designs.'
+            if (!wallet) {
+                // Tạo transaction với status failed nếu không tìm thấy wallet
+                const transaction = await Transaction.create({
+                    from_wallet_id: null,
+                    amount: AI_GENERATION_COST,
+                    transaction_type: 'ai_generation',
+                    status: 'failed',
+                    description: `AI Cake Design Generation for design ID ${cake_design_id} - Wallet not found`,
+                }, { transaction: t });
+                console.log(`❌ Transaction ${transaction.id} marked as failed - Wallet not found`);
+                throw new Error('Wallet not found. Please contact support.');
+            }
+
+            // 3. Find the existing cake design by ID
+            const existingCakeDesign = await CakeDesign.findByPk(cake_design_id, { transaction: t });
+            if (!existingCakeDesign) {
+                // Tạo transaction failed cho cake design không tồn tại
+                const transaction = await Transaction.create({
+                    from_wallet_id: wallet.id,
+                    amount: AI_GENERATION_COST,
+                    transaction_type: 'ai_generation',
+                    status: 'failed',
+                    description: `AI Cake Design Generation for design ID ${cake_design_id} - Cake design not found`,
+                }, { transaction: t });
+                console.log(`❌ Transaction ${transaction.id} marked as failed - Cake design not found`);
+                throw new Error('Cake design not found');
+            }
+
+            // 4. Check if user has permission to access this cake design
+            if (!existingCakeDesign.is_public && existingCakeDesign.user_id !== user_id) {
+                const transaction = await Transaction.create({
+                    from_wallet_id: wallet.id,
+                    amount: AI_GENERATION_COST,
+                    transaction_type: 'ai_generation',
+                    status: 'failed',
+                    description: `AI Cake Design Generation for design ID ${cake_design_id} - Access denied`,
+                }, { transaction: t });
+                console.log(`❌ Transaction ${transaction.id} marked as failed - Access denied`);
+                throw new Error('Access denied. You can only generate AI designs from your own designs or public designs.');
+            }
+
+            // 5. Check if AI image already exists
+            if (existingCakeDesign.ai_generated) {
+                const transaction = await Transaction.create({
+                    from_wallet_id: wallet.id,
+                    amount: AI_GENERATION_COST,
+                    transaction_type: 'ai_generation',
+                    status: 'failed',
+                    description: `AI Cake Design Generation for design ID ${cake_design_id} - AI image already exists`,
+                }, { transaction: t });
+                console.log(`❌ Transaction ${transaction.id} marked as failed - AI image already exists`);
+                throw new Error('AI image already exists for this cake design. You can only generate one AI image per design.');
+            }
+
+            // 6. Create transaction record (pending status) TRƯỚC khi kiểm tra balance
+            const transaction = await Transaction.create({
+                from_wallet_id: wallet.id,
+                amount: AI_GENERATION_COST,
+                transaction_type: 'ai_generation',
+                status: 'pending',
+                description: `AI Cake Design Generation for design ID ${cake_design_id}`,
+            }, { transaction: t });
+
+            // 7. Check if user has sufficient balance
+            if (wallet.balance < AI_GENERATION_COST) {
+                // Update transaction status to failed
+                await Transaction.update({
+                    status: 'failed'
+                }, {
+                    where: { id: transaction.id },
+                    transaction: t
+                });
+                console.log(`❌ Transaction ${transaction.id} marked as failed - Insufficient balance`);
+                throw new Error(`Insufficient balance. Required: ${AI_GENERATION_COST} VND, Available: ${wallet.balance} VND`);
+            }
+
+            // 8. TRỪ TIỀN NGAY LẬP TỨC sau khi kiểm tra đủ tiền
+            const newBalance = wallet.balance - AI_GENERATION_COST;
+            console.log(`💰 TRỪ TIỀN NGAY: ${wallet.balance} - ${AI_GENERATION_COST} = ${newBalance}`);
+
+            await Wallet.update({
+                balance: newBalance,
+                updated_at: new Date()
+            }, {
+                where: { id: wallet.id },
+                transaction: t
             });
-        }
 
-        // Check if AI image already exists
-        if (existingCakeDesign.ai_generated) {
-            return res.status(400).json({
-                success: false,
-                message: 'AI image already exists for this cake design. You can only generate one AI image per design.'
+            // Verify trừ tiền thành công
+            const updatedWallet = await Wallet.findByPk(wallet.id, { transaction: t });
+            console.log(`✅ Đã trừ tiền thành công: ${updatedWallet.balance}`);
+
+            // 9. UPDATE TRANSACTION STATUS = COMPLETED sau khi trừ tiền thành công
+            await Transaction.update({
+                status: 'completed'
+            }, {
+                where: { id: transaction.id },
+                transaction: t
             });
-        }
+            console.log(`✅ Transaction ${transaction.id} đã được update thành completed`);
 
-        const { design_image, description } = existingCakeDesign;
+            return {
+                transaction,
+                existingCakeDesign,
+                wallet: updatedWallet,
+                previousBalance: wallet.balance
+            };
+        });
+
+        const { design_image, description } = result.existingCakeDesign;
 
         // Helper function to convert image to base64 if it's a URL
         const getBase64Image = async (imageInput) => {
@@ -311,6 +403,14 @@ export const generateAICakeDesign = async (req, res) => {
 
         console.log('Database updated successfully');
 
+        // Update transaction with cake design ID (status đã là completed rồi)
+        await Transaction.update({
+            description: `AI Cake Design Generation for design ID ${cake_design_id} - Completed successfully`
+        }, {
+            where: { id: result.transaction.id }
+        });
+        console.log(`✅ Đã cập nhật description cho transaction ${result.transaction.id}`);
+
         // Fetch the updated cake design with user information
         const updatedCakeDesign = await CakeDesign.findByPk(cake_design_id, {
             include: [
@@ -325,23 +425,92 @@ export const generateAICakeDesign = async (req, res) => {
             throw new Error('Failed to fetch updated cake design');
         }
 
+        // Final check balance sau khi hoàn thành
+        const finalWallet = await Wallet.findByPk(result.wallet.id);
+        console.log(`🎯 Balance cuối cùng: ${finalWallet.balance}`);
+
         res.status(200).json({
             success: true,
             message: 'AI cake design generated successfully',
             data: {
-                id: updatedCakeDesign.id,
-                user_id: updatedCakeDesign.user_id,
-                description: updatedCakeDesign.description,
-                design_image: updatedCakeDesign.design_image, // Keep original user image
-                created_at: updatedCakeDesign.created_at,
-                is_public: updatedCakeDesign.is_public,
-                ai_generated: updatedCakeDesign.ai_generated, // Store Firebase URL here
-                User: updatedCakeDesign.User
+                cakeDesign: {
+                    id: updatedCakeDesign.id,
+                    user_id: updatedCakeDesign.user_id,
+                    description: updatedCakeDesign.description,
+                    design_image: updatedCakeDesign.design_image, // Keep original user image
+                    created_at: updatedCakeDesign.created_at,
+                    is_public: updatedCakeDesign.is_public,
+                    ai_generated: updatedCakeDesign.ai_generated, // Store Firebase URL here
+                    User: updatedCakeDesign.User
+                },
+                transaction: {
+                    id: result.transaction.id,
+                    amount: result.transaction.amount,
+                    status: 'completed',
+                    description: result.transaction.description
+                },
+                wallet: {
+                    previousBalance: result.previousBalance,
+                    newBalance: finalWallet.balance,
+                    deductedAmount: result.transaction.amount
+                }
             }
         });
 
     } catch (error) {
         console.error('Error generating AI cake design:', error);
+
+        // Handle specific payment error cases
+        if (error.message.includes('Insufficient balance')) {
+            return res.status(402).json({
+                success: false,
+                message: 'Insufficient balance',
+                error: error.message,
+                requiredAmount: 1000,
+                suggestion: 'Please top up your wallet to continue using AI cake design generation'
+            });
+        }
+
+        if (error.message.includes('Wallet not found')) {
+            return res.status(404).json({
+                success: false,
+                message: 'Wallet not found',
+                error: error.message,
+                suggestion: 'Please contact support to create your wallet'
+            });
+        }
+
+        if (error.message.includes('User not found')) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found',
+                error: error.message
+            });
+        }
+
+        if (error.message.includes('Cake design not found')) {
+            return res.status(404).json({
+                success: false,
+                message: 'Cake design not found',
+                error: error.message
+            });
+        }
+
+        if (error.message.includes('Access denied')) {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied',
+                error: error.message
+            });
+        }
+
+        if (error.message.includes('AI image already exists')) {
+            return res.status(400).json({
+                success: false,
+                message: 'AI image already exists',
+                error: error.message
+            });
+        }
 
         // Handle OpenAI specific errors
         if (error.message.includes('OpenAI') || error.message.includes('API key')) {
