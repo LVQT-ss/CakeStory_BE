@@ -156,9 +156,6 @@ export const createCakeOrder = async (req, res) => {
 export const getAllCakeOrders = async (req, res) => {
   try {
     const orders = await CakeOrder.findAll({
-      where: {
-        status: { [Op.ne]: 'cancelled' }
-      },
       include: [{
         model: OrderDetail,
         as: 'orderDetails'
@@ -205,7 +202,6 @@ export const getCakeOrderById = async (req, res) => {
     const order = await CakeOrder.findOne({
       where: {
         id: req.params.id,
-        status: { [Op.ne]: 'cancelled' }
       },
       include: [
         {
@@ -337,30 +333,44 @@ export const updateCakeOrder = async (req, res) => {
   }
 };
 
-// UPDATE status to "ordered"
+// UPDATE status to "ordered" only if current status = "pending"
 export const markOrderAsOrdered = async (req, res) => {
   try {
-    const [updated] = await CakeOrder.update(
+    const order = await CakeOrder.findByPk(req.params.id);
+
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+
+    if (order.status !== 'pending') {
+      return res.status(400).json({ message: 'Only pending orders can be marked as ordered' });
+    }
+
+    await CakeOrder.update(
       { status: 'ordered' },
       { where: { id: req.params.id } }
     );
 
-    if (!updated) return res.status(404).json({ message: 'Order not found' });
     res.status(200).json({ message: 'Order marked as ordered' });
   } catch (error) {
     res.status(500).json({ message: 'Failed to update order', error: error.message });
   }
 };
 
-// UPDATE status to "completed"
+// UPDATE status to "completed" only if current status = "shipped"
 export const markOrderAsCompleted = async (req, res) => {
   try {
-    const [updated] = await CakeOrder.update(
+    const order = await CakeOrder.findByPk(req.params.id);
+
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+
+    if (order.status !== 'shipped') {
+      return res.status(400).json({ message: 'Only shipped orders can be marked as completed' });
+    }
+
+    await CakeOrder.update(
       { status: 'completed' },
       { where: { id: req.params.id } }
     );
 
-    if (!updated) return res.status(404).json({ message: 'Order not found' });
     res.status(200).json({ message: 'Order marked as completed' });
   } catch (error) {
     res.status(500).json({ message: 'Failed to update order', error: error.message });
