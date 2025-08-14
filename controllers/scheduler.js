@@ -45,13 +45,13 @@ const autoConfirmPendingOrders = cron.schedule('*/5 * * * *', async () => {
 });
 
 // Tự động chuyển đơn hàng từ 'shipped' sang 'completed' sau 2 tiếng và chuyển tiền
-const autoCompleteShippedOrders = cron.schedule('*/1 * * * *', async () => {
+const autoCompleteShippedOrders = cron.schedule('*/15 * * * *', async () => {
   const dbTransaction = await sequelize.transaction();
 
   try {
     console.log('Checking for shipped orders to auto-complete and transfer money...');
 
-    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 1000); // 2 tiếng trước
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000); // 2 tiếng trước
 
     const ordersToComplete = await CakeOrder.findAll({
       where: {
