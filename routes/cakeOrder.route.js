@@ -87,7 +87,7 @@ router.post('/', verifyToken, createCakeOrder);
  * /api/cake-orders:
  *   get:
  *     tags: [CakeOrder]
- *     summary: Get all non-cancelled cake orders
+ *     summary: Get all cake orders
  *     security:
  *       - bearerAuth: []
  *     responses:
