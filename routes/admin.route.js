@@ -61,8 +61,8 @@ const router = express.Router();
  *       500:
  *         description: Server error
  */
-router.get('/users', verifyToken, verifyAdmin , getAllUsers);
-
+router.get('/users', verifyToken, verifyAdmin, getAllUsers);
+// đang bỏ premium
 /**
  * @swagger
  * /api/admin/users/premium:
@@ -169,7 +169,7 @@ router.get('/users/premium', verifyToken, verifyAdmin, getAllUsersByPremium);
  *       500:
  *         description: Server error
  */
-router.get('/users/:id', verifyToken, verifyAdmin ,getUserById);
+router.get('/users/:id', verifyToken, verifyAdmin, getUserById);
 
 /**
  * @swagger
@@ -219,6 +219,6 @@ router.get('/users/:id', verifyToken, verifyAdmin ,getUserById);
  *       500:
  *         description: Server error
  */
-router.delete('/users/:id', verifyToken, verifyAdmin,deleteUser);
+router.delete('/users/:id', verifyToken, verifyAdmin, deleteUser);
 
 export default router;

@@ -165,7 +165,7 @@ export const getAllCakeOrders = async (req, res) => {
       },
       {
         model: User,
-        attributes: ['id', 'username','full_name']
+        attributes: ['id', 'username', 'full_name']
       }]
     });
     res.status(200).json(orders);
@@ -191,7 +191,7 @@ export const getCakeOrdersByUserId = async (req, res) => {
           model: User,
           attributes: ['id', 'username', 'full_name']
         }
-      ]  
+      ]
     });
     res.status(200).json(orders);
   } catch (error) {
@@ -214,7 +214,7 @@ export const getCakeOrderById = async (req, res) => {
         },
         {
           model: User,
-          attributes: ['id', 'username','full_name']
+          attributes: ['id', 'username', 'full_name']
         }
       ]
     });
@@ -242,7 +242,7 @@ export const getCakeOrdersByShopId = async (req, res) => {
         },
         {
           model: User,
-          attributes: ['id', 'username','full_name']
+          attributes: ['id', 'username', 'full_name']
         }
       ]
     });
@@ -308,7 +308,7 @@ export const updateCakeOrder = async (req, res) => {
     // Cập nhật CakeOrder
     await CakeOrder.update({
       base_price: base_price || order.base_price,
-      size: size || order.size, 
+      size: size || order.size,
       tier,
       ingredient_total,
       total_price,
@@ -351,7 +351,7 @@ export const markOrderAsOrdered = async (req, res) => {
     res.status(500).json({ message: 'Failed to update order', error: error.message });
   }
 };
-
+// đang bỏ function này
 // UPDATE status to "completed"
 export const markOrderAsCompleted = async (req, res) => {
   try {

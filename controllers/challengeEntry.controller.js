@@ -79,7 +79,7 @@ export const getChallengeEntriesByChallengeId = async (req, res) => {
     res.status(500).json({ message: 'Error fetching entries', error: err.message });
   }
 };
-
+// bỏ function này 
 // UPDATE
 export const updateChallengeEntry = async (req, res) => {
   try {
@@ -120,3 +120,6 @@ export const deleteChallengeEntry = async (req, res) => {
     res.status(500).json({ message: 'Error deleting entry', error: err.message });
   }
 };
+
+
+

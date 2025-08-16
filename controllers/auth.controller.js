@@ -136,6 +136,14 @@ export const login = async (req, res) => {
             return res.status(401).json({ message: "User not found in database" });
         }
 
+        // Check if user account is active
+        if (!user.is_active) {
+            return res.status(403).json({
+                message: "Your account is not active. Please check your email to activate your account.",
+                error: "ACCOUNT_INACTIVE"
+            });
+        }
+
         // Create JWT token with user information
         const token = jwt.sign(
             {

@@ -82,7 +82,7 @@ export const deleteUser = async (req, res) => {
         });
     }
 };
-
+// đang bỏ premium
 export const getAllUsersByPremium = async (req, res) => {
     try {
         // Use the database column name 'is_premium' instead of the alias 'isPremium'
