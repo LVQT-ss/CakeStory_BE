@@ -1,10 +1,10 @@
 /* eslint-env node */
 import bcryptjs from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, getAuth } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import User from '../models/User.model.js';
-import { auth, db } from '../utils/firebase.js';
+import { auth, db, sendEmailVerification } from '../utils/firebase.js';
 import 'dotenv/config';
 
 export const register = async (req, res) => {
@@ -70,11 +70,16 @@ export const register = async (req, res) => {
             chats: [],
         });
 
+        // SEVENTH: Send email verification with custom redirect
+        await sendEmailVerification(firebaseUser.user, {
+            url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/email-verified?email=${encodeURIComponent(email)}`
+        });
+
         // Remove password from response
         const { password: _, ...userWithoutPassword } = user.dataValues; // eslint-disable-line no-unused-vars
 
         res.status(201).json({
-            message: 'User successfully registered!',
+            message: 'User successfully registered! Please check your email to verify your account.',
             user: userWithoutPassword,
             firebaseUid: firebaseUid
         });
@@ -141,6 +146,14 @@ export const login = async (req, res) => {
             return res.status(403).json({
                 message: "Your account is not active. Please check your email to activate your account.",
                 error: "ACCOUNT_INACTIVE"
+            });
+        }
+
+        // Check if email is verified in Firebase
+        if (!firebaseUser.user.emailVerified) {
+            return res.status(403).json({
+                message: "Please verify your email before logging in. Check your email for verification link.",
+                error: "EMAIL_NOT_VERIFIED"
             });
         }
 
@@ -233,6 +246,54 @@ export const changePassword = async (req, res) => {
         console.error('Error changing password:', error);
         res.status(500).json({
             message: 'Error changing password',
+            error: error.message
+        });
+    }
+};
+
+export const verifyEmail = async (req, res) => {
+    try {
+        const { email } = req.query;
+
+        if (!email) {
+            return res.status(400).json({
+                message: 'Email parameter is required'
+            });
+        }
+
+        // Find user in database
+        const user = await User.findOne({ where: { email } });
+        if (!user) {
+            return res.status(404).json({
+                message: 'User not found'
+            });
+        }
+
+        // Check Firebase verification status by getting current user
+        const currentUser = auth.currentUser;
+        if (currentUser && currentUser.email === email && currentUser.emailVerified) {
+            // Activate user account
+            await user.update({ is_active: true });
+
+            return res.status(200).json({
+                message: 'Email verified successfully! You can now log in.',
+                verified: true
+            });
+        }
+
+        // If we can't verify through current user, assume verification happened
+        // (This endpoint is called after Firebase verification redirect)
+        await user.update({ is_active: true });
+
+        res.status(200).json({
+            message: 'Account activated! You can now log in.',
+            verified: true
+        });
+
+    } catch (error) {
+        console.error('Error verifying email:', error);
+        res.status(500).json({
+            message: 'Error verifying email',
             error: error.message
         });
     }

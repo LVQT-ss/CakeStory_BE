@@ -2,7 +2,8 @@ import express from 'express';
 import {
     register,
     login,
-    changePassword
+    changePassword,
+    verifyEmail
     // requestPasswordReset,
     // resetPassword,
 } from '../controllers/auth.controller.js';
@@ -327,5 +328,7 @@ router.post('/login', login);
  *                   example: "Database connection error"
  */
 router.put('/change-password', verifyToken, changePassword);
+
+router.get('/verify', verifyEmail);
 
 export default router;
