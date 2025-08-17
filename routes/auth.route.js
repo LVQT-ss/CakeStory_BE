@@ -329,6 +329,52 @@ router.post('/login', login);
  */
 router.put('/change-password', verifyToken, changePassword);
 
+/**
+ * @swagger
+ * /api/auth/verify:
+ *   get:
+ *     summary: Verify user email address
+ *     tags:
+ *     - Auth Controller
+ *     parameters:
+ *       - in: query
+ *         name: email
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Email address to verify
+ *     responses:
+ *       200:
+ *         description: Email verified successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Email verified successfully"
+ *       400:
+ *         description: Invalid or missing email parameter
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Email parameter is required"
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "User not found"
+ */
 router.get('/verify', verifyEmail);
 
 export default router;
