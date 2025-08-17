@@ -30,6 +30,7 @@ export const createChallengePost = async (req, res) => {
     const existingChallengePost = await ChallengePost.findOne({
       where: {
         user_id,
+        challenge_id,
         is_active: true
       },
       transaction
