@@ -332,7 +332,7 @@ router.put('/change-password', verifyToken, changePassword);
 /**
  * @swagger
  * /api/auth/verify:
- *   get:
+ *   put:
  *     summary: Verify user email address
  *     tags:
  *     - Auth Controller
@@ -375,6 +375,6 @@ router.put('/change-password', verifyToken, changePassword);
  *                   type: string
  *                   example: "User not found"
  */
-router.get('/verify', verifyEmail);
+router.put('/verify', verifyEmail);
 
 export default router;
