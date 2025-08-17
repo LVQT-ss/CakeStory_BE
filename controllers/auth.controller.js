@@ -149,13 +149,7 @@ export const login = async (req, res) => {
             });
         }
 
-        // Check if email is verified in Firebase
-        if (!firebaseUser.user.emailVerified) {
-            return res.status(403).json({
-                message: "Please verify your email before logging in. Check your email for verification link.",
-                error: "EMAIL_NOT_VERIFIED"
-            });
-        }
+
 
         // Create JWT token with user information
         const token = jwt.sign(
