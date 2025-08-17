@@ -56,11 +56,6 @@ const User = sequelize.define('User', {
         allowNull: false,
         defaultValue: false,
     },
-    isPremium: {
-        type: DataTypes.BOOLEAN,
-        allowNull: false,
-        defaultValue: false,
-    },
     AiImageFree: {
         type: DataTypes.INTEGER,
         allowNull: false,
