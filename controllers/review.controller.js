@@ -2,6 +2,7 @@ import Review from '../models/review.model.js';
 import CakeOrder from '../models/cake_order.model.js';
 import User from '../models/User.model.js';
 import Shop from '../models/shop.model.js';
+import MarketplacePost from '../models/marketplace_post.model.js';
 import sequelize from '../database/db.js';
 
 export const createReview = async (req, res) => {
@@ -229,6 +230,101 @@ export const getReviewsByOrderId = async (req, res) => {
 
     } catch (error) {
         console.error('Error retrieving reviews by order:', error);
+        res.status(500).json({
+            message: 'Error retrieving reviews',
+            error: error.message
+        });
+    }
+};
+
+export const getReviewsByMarketplaceId = async (req, res) => {
+    try {
+        const { marketplaceId } = req.params;
+        const user_id = req.userId; // From verified token
+
+        // First, check if the marketplace post exists and if the user is authorized to view its reviews
+        const marketplacePost = await MarketplacePost.findOne({
+            where: { post_id: marketplaceId },
+            include: [
+                {
+                    model: Shop,
+                    as: 'shop',
+                    include: [
+                        {
+                            model: User,
+                            as: 'user',
+                            attributes: ['id'],
+                            where: { id: user_id }
+                        }
+                    ]
+                }
+            ]
+        });
+
+        // If marketplace post not found with this user as shop owner, check if user is the customer
+        if (!marketplacePost) {
+            const orderWithMarketplace = await CakeOrder.findOne({
+                where: { marketplace_post_id: marketplaceId },
+                include: [
+                    {
+                        model: User,
+                        attributes: ['id'],
+                        where: { id: user_id }
+                    }
+                ]
+            });
+
+            if (!orderWithMarketplace) {
+                return res.status(404).json({
+                    message: 'Marketplace post not found or you are not authorized to view reviews for this marketplace post'
+                });
+            }
+        }
+
+        // Get all orders for this marketplace post
+        const orders = await CakeOrder.findAll({
+            where: { marketplace_post_id: marketplaceId },
+            attributes: ['id']
+        });
+
+        const orderIds = orders.map(order => order.id);
+
+        if (orderIds.length === 0) {
+            return res.status(200).json({
+                message: 'No orders found for this marketplace post',
+                marketplaceId: parseInt(marketplaceId),
+                totalReviews: 0,
+                reviews: []
+            });
+        }
+
+        // Get all reviews for these orders
+        const reviews = await Review.findAll({
+            where: { order_id: orderIds },
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: ['id', 'username', 'full_name', 'avatar']
+                },
+                {
+                    model: CakeOrder,
+                    attributes: ['id', 'total_price', 'status', 'created_at', 'shipped_at', 'marketplace_post_id']
+                }
+            ],
+            order: [['created_at', 'DESC']]
+        });
+
+        res.status(200).json({
+            message: 'Reviews retrieved successfully',
+            marketplaceId: parseInt(marketplaceId),
+            totalOrders: orderIds.length,
+            totalReviews: reviews.length,
+            reviews: reviews
+        });
+
+    } catch (error) {
+        console.error('Error retrieving reviews by marketplace:', error);
         res.status(500).json({
             message: 'Error retrieving reviews',
             error: error.message

@@ -1,5 +1,5 @@
 import express from 'express';
-import { createReview, getReviewById, getReviewsByOrderId, updateReview, deleteReview } from '../controllers/review.controller.js';
+import { createReview, getReviewById, getReviewsByOrderId, getReviewsByMarketplaceId, updateReview, deleteReview } from '../controllers/review.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
@@ -418,6 +418,145 @@ router.get('/:id', verifyToken, getReviewById);
  *                   example: "Database connection error"
  */
 router.get('/order/:orderId', verifyToken, getReviewsByOrderId);
+
+/**
+ * @swagger
+ * /api/reviews/marketplace/{marketplaceId}:
+ *   get:
+ *     tags:
+ *       - Reviews
+ *     summary: Get all reviews for a specific marketplace post
+ *     description: Retrieve all reviews for a specific marketplace post. Only accessible by the shop owner or customers who ordered from this marketplace post.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: marketplaceId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the marketplace post
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: Reviews retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Reviews retrieved successfully"
+ *                 marketplaceId:
+ *                   type: integer
+ *                   example: 1
+ *                 totalOrders:
+ *                   type: integer
+ *                   example: 5
+ *                 totalReviews:
+ *                   type: integer
+ *                   example: 3
+ *                 reviews:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       user_id:
+ *                         type: integer
+ *                         example: 1
+ *                       order_id:
+ *                         type: integer
+ *                         example: 1
+ *                       rating:
+ *                         type: integer
+ *                         example: 5
+ *                       comment:
+ *                         type: string
+ *                         example: "Amazing cake! The design was perfect and it tasted delicious."
+ *                       created_at:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2024-03-20T10:00:00Z"
+ *                       user:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 1
+ *                           username:
+ *                             type: string
+ *                             example: "johndoe"
+ *                           full_name:
+ *                             type: string
+ *                             example: "John Doe"
+ *                           avatar:
+ *                             type: string
+ *                             example: "https://example.com/avatar.jpg"
+ *                       CakeOrder:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 1
+ *                           total_price:
+ *                             type: number
+ *                             example: 45.99
+ *                           status:
+ *                             type: string
+ *                             example: "completed"
+ *                           created_at:
+ *                             type: string
+ *                             format: date-time
+ *                             example: "2024-03-15T08:00:00Z"
+ *                           shipped_at:
+ *                             type: string
+ *                             format: date-time
+ *                             example: "2024-03-18T14:30:00Z"
+ *                           marketplace_post_id:
+ *                             type: integer
+ *                             example: 1
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Access denied. No token provided."
+ *       404:
+ *         description: Marketplace post not found or not authorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Marketplace post not found or you are not authorized to view reviews for this marketplace post"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Error retrieving reviews"
+ *                 error:
+ *                   type: string
+ *                   example: "Database connection error"
+ */
+router.get('/marketplace/:marketplaceId', verifyToken, getReviewsByMarketplaceId);
 
 /**
  * @swagger
