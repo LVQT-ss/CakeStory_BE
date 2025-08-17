@@ -82,30 +82,3 @@ export const deleteUser = async (req, res) => {
         });
     }
 };
-// đang bỏ premium
-export const getAllUsersByPremium = async (req, res) => {
-    try {
-        // Use the database column name 'is_premium' instead of the alias 'isPremium'
-        const premiumUsers = await User.findAll({
-            where: { is_premium: true }, // Changed from isPremium to is_premium
-            attributes: { exclude: ['password'] }
-        });
-
-        if (premiumUsers.length === 0) {
-            return res.status(404).json({
-                message: 'No premium users found'
-            });
-        }
-
-        return res.status(200).json({
-            message: 'Premium users retrieved successfully',
-            users: premiumUsers
-        });
-    } catch (error) {
-        console.error('Error getting premium users:', error);
-        return res.status(500).json({
-            message: 'Error getting premium users',
-            error: error.message
-        });
-    }
-};

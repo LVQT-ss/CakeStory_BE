@@ -1,5 +1,5 @@
 import express from 'express';
-import { getAllUsers, getUserById, deleteUser, getAllUsersByPremium } from '../controllers/admin.controller.js';
+import { getAllUsers, getUserById, deleteUser } from '../controllers/admin.controller.js';
 import { verifyAdmin, verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
@@ -62,48 +62,7 @@ const router = express.Router();
  *         description: Server error
  */
 router.get('/users', verifyToken, verifyAdmin, getAllUsers);
-// đang bỏ premium
-/**
- * @swagger
- * /api/admin/users/premium:
- *   get:
- *     tags:
- *       - Admin
- *     summary: Get users by premium status
- *     description: Retrieve all users who are premium (admin only)
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Premium users retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Premium users retrieved successfully
- *                 users:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       id:
- *                         type: integer
- *                       username:
- *                         type: string
- *                       email:
- *                         type: string
- *                       isPremium:
- *                         type: boolean
- *                         example: true
- *       404:
- *         description: No premium users found
- *       500:
- *         description: Server error
- */
-router.get('/users/premium', verifyToken, verifyAdmin, getAllUsersByPremium);
+
 
 /**
  * @swagger

@@ -401,11 +401,8 @@ router.put('/:id', updateProfile);
  *                         enum: [user, account_staff, complaint_handler, admin]
  *                         example: user
  *                       is_active:
- *                         type: boolean
- *                         example: true
- *                       isPremium:
- *                         type: boolean
- *                         example: false
+    *                         type: boolean
+   *                         example: true
  *                       created_at:
  *                         type: string
  *                         format: date-time
