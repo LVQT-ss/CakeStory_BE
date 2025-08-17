@@ -2,7 +2,9 @@ import express from 'express';
 import {
     generateImage,
     getUserGeneratedImages,
-    totalAmountAiGenerate
+    totalAmountAiGenerate,
+    freeGenerateImage,
+    getFreeUsageCount
 } from '../controllers/ai_generate.controller.js';
 import { verifyToken, verifyAdmin } from '../middleware/verifyUser.js';
 
@@ -90,5 +92,79 @@ router.get('/images', verifyToken, getUserGeneratedImages);
  */
 router.get('/totalAmountAiGenerate', verifyToken, verifyAdmin, totalAmountAiGenerate);
 
+/**
+ * @swagger
+ * /api/ai/freeGenerateImage:
+ *   post:
+ *     tags: [AI Generation]
+ *     summary: Generate an AI image from a prompt
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - prompt
+ *             properties:
+ *               prompt:
+ *                 type: string
+ *                 description: The prompt to generate the image from
+ *     responses:
+ *       200:
+ *         description: Image generated successfully
+ *       400:
+ *         description: Invalid request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+router.post('/freeGenerateImage', verifyToken, freeGenerateImage);
+
+/**
+ * @swagger
+ * /api/ai/freeUsageCount:
+ *   get:
+ *     tags: [AI Generation]
+ *     summary: Get remaining free AI image generation count for current user
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Free usage count retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Free usage count retrieved successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     userId:
+ *                       type: integer
+ *                       example: 1
+ *                     username:
+ *                       type: string
+ *                       example: "johndoe"
+ *                     remainingFree:
+ *                       type: integer
+ *                       example: 2
+ *                     maxFree:
+ *                       type: integer
+ *                       example: 3
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Server error
+ */
+router.get('/freeUsageCount', verifyToken, getFreeUsageCount);
 
 export default router;

@@ -60,6 +60,12 @@ const User = sequelize.define('User', {
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: false,
+    },
+    AiImageFree: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 3,
+        comment: 'Number of free AI image generations remaining'
     }
 }, {
     tableName: 'user',
@@ -76,6 +82,9 @@ const User = sequelize.define('User', {
                     updated_at: new Date()
                 }, { transaction: options.transaction });
                 console.log(`✅ Wallet created for user ${user.id} with balance 0`);
+
+                // AiImageFree is already set to 3 by default in the model definition
+                console.log(`✅ User ${user.id} has ${user.AiImageFree} free AI image generations`);
             } catch (error) {
                 console.error(`❌ Failed to create wallet for user ${user.id}:`, error);
                 throw error;
