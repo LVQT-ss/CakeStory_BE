@@ -44,14 +44,17 @@ export const walletDeposit = async (req, res) => {
             });
         }
 
-        // Find or create wallet (we need this to ensure wallet exists)
-        const [wallet] = await Wallet.findOrCreate({
-            where: { user_id: userId },
-            defaults: {
-                balance: 0,
-                updated_at: new Date()
-            }
+        // Find wallet
+        const wallet = await Wallet.findOne({
+            where: { user_id: userId }
         });
+
+        if (!wallet) {
+            return res.status(404).json({
+                success: false,
+                message: 'Wallet not found'
+            });
+        }
 
         // Get user details
         const user = await User.findByPk(userId);
@@ -62,20 +65,34 @@ export const walletDeposit = async (req, res) => {
             });
         }
 
-        // Generate unique deposit code
-        const depositCode = `DEP${Date.now()}${userId}`;
+        // Generate deposit code (MMDDHHmm + userId)
+        const date = new Date();
+        const dateFormat =
+            (date.getMonth() + 1).toString().padStart(2, '0') +
+            date.getDate().toString().padStart(2, '0') +
+            date.getHours().toString().padStart(2, '0') +
+            date.getMinutes().toString().padStart(2, '0');
+        const depositCode = parseInt(`${dateFormat}${userId}`);
 
         // Create deposit record (we need this for tracking)
         const depositRecord = await DepositRecords.create({
             user_id: userId,
-            deposit_code: depositCode,
+            deposit_code: depositCode.toString(),
             amount: amount,
+            status: 'pending'
+        });
+
+        console.log(`💾 Created deposit record:`, {
+            id: depositRecord.id,
+            depositCode: depositCode.toString(),
+            userId,
+            amount,
             status: 'pending'
         });
 
         // Create PayOS payment request
         const paymentData = {
-            orderCode: depositRecord.id,
+            orderCode: depositCode, // Numeric code: amountYYYYMMuserID
             amount: parseInt(amount), // PayOS requires integer amount
             description: `Nap ${amount} VND`, // Similar to the coin package format
             expiredAt: Math.floor(Date.now() / 1000) + (30 * 60), // 30 minutes expiry
@@ -139,11 +156,18 @@ export const walletDeposit = async (req, res) => {
 
 export const payOSWebhook = async (req, res) => {
     try {
-        console.log('PayOS Webhook received:', {
+        console.log('🔔 PayOS Webhook received:', {
             method: req.method,
-            headers: req.headers,
-            body: req.body
+            url: req.url,
+            signature: req.headers['x-payos-signature'],
+            body: JSON.stringify(req.body, null, 2)
         });
+
+        // TODO: Add PayOS signature verification here
+        // const signature = req.headers['x-payos-signature'];
+        // if (!verifyPayOSSignature(req.body, signature)) {
+        //     return res.status(401).json({ message: 'Invalid signature' });
+        // }
 
         // Handle GET request (direct access for testing)
         if (req.method === 'GET') {
@@ -169,37 +193,119 @@ export const payOSWebhook = async (req, res) => {
         // Handle PayOS webhook format
         let orderCode, amount, isSuccessful = false;
 
+        console.log('Raw webhook data:', JSON.stringify(webhookData, null, 2));
+
         if (webhookData.data) {
             // PayOS webhook format: { code: '00', success: true, data: { orderCode, amount, status } }
             orderCode = webhookData.data.orderCode;
             amount = webhookData.data.amount;
-            // Check if payment is successful using PayOS format
-            isSuccessful = webhookData.code === '00' && webhookData.success === true;
+            // Check if payment is successful using PayOS format - check both conditions
+            isSuccessful = (webhookData.code === '00' && webhookData.success === true) ||
+                (webhookData.data.status === 'PAID');
+            console.log('PayOS format detected - checking status:', {
+                code: webhookData.code,
+                success: webhookData.success,
+                dataStatus: webhookData.data.status,
+                codeCheck: webhookData.code === '00',
+                successCheck: webhookData.success === true,
+                statusCheck: webhookData.data.status === 'PAID'
+            });
         } else {
             // Direct format: { orderCode, amount, status }
             orderCode = webhookData.orderCode;
             amount = webhookData.amount;
             isSuccessful = webhookData.status === 'PAID';
+            console.log('Direct format detected - checking status:', {
+                status: webhookData.status,
+                statusCheck: webhookData.status === 'PAID'
+            });
         }
 
         console.log('Processing webhook:', {
             orderCode,
+            orderCodeType: typeof orderCode,
             amount,
             isSuccessful,
             webhookCode: webhookData.code,
             webhookSuccess: webhookData.success
         });
 
+        console.log('Final processing decision:', {
+            hasOrderCode: !!orderCode,
+            isSuccessful,
+            willProcess: orderCode && isSuccessful
+        });
+
         // If payment is successful, process it
         if (orderCode && isSuccessful) {
             console.log(`🎉 Payment successful for order ${orderCode}!`);
 
-            // Find deposit record
-            const depositRecord = await DepositRecords.findByPk(orderCode);
+            // Find deposit record by deposit_code
+            console.log(`🔍 Searching for deposit record with code: ${orderCode} (type: ${typeof orderCode})`);
+
+            let depositRecord = await DepositRecords.findOne({
+                where: { deposit_code: orderCode.toString() }
+            });
+
+            // If not found with string conversion, try with exact match
+            if (!depositRecord && typeof orderCode === 'number') {
+                console.log(`🔍 Trying exact number match for orderCode: ${orderCode}`);
+                depositRecord = await DepositRecords.findOne({
+                    where: { deposit_code: orderCode }
+                });
+            }
+
+            // If still not found, try searching by converting both to strings for comparison
             if (!depositRecord) {
-                console.log(`❌ Deposit record ${orderCode} not found`);
+                console.log(`🔍 Trying alternative search methods...`);
+                const allPendingRecords = await DepositRecords.findAll({
+                    where: { status: 'pending' },
+                    attributes: ['id', 'deposit_code', 'user_id', 'amount', 'status']
+                });
+                console.log(`📋 All pending records:`, allPendingRecords.map(r => ({
+                    id: r.id,
+                    deposit_code: r.deposit_code,
+                    deposit_code_type: typeof r.deposit_code,
+                    user_id: r.user_id,
+                    amount: r.amount
+                })));
+
+                // Try to find a match by comparing values
+                depositRecord = allPendingRecords.find(record =>
+                    record.deposit_code == orderCode ||
+                    record.deposit_code === orderCode.toString() ||
+                    parseInt(record.deposit_code) === parseInt(orderCode)
+                );
+
+                if (depositRecord) {
+                    console.log(`✅ Found matching record through alternative search:`, depositRecord.deposit_code);
+                }
+            }
+
+            if (!depositRecord) {
+                console.log(`❌ Deposit record with code ${orderCode} not found`);
+                // Let's also check what records exist for debugging
+                const allRecords = await DepositRecords.findAll({
+                    attributes: ['id', 'deposit_code', 'user_id', 'status'],
+                    limit: 5,
+                    order: [['created_at', 'DESC']]
+                });
+                console.log(`📊 Recent deposit records:`, allRecords.map(r => ({
+                    id: r.id,
+                    deposit_code: r.deposit_code,
+                    user_id: r.user_id,
+                    status: r.status
+                })));
                 return res.status(404).json({ message: "Deposit record not found" });
             }
+
+            console.log(`✅ Found deposit record:`, {
+                id: depositRecord.id,
+                deposit_code: depositRecord.deposit_code,
+                user_id: depositRecord.user_id,
+                amount: depositRecord.amount,
+                status: depositRecord.status
+            });
 
             if (depositRecord.status === 'completed') {
                 console.log(`✅ Deposit record ${orderCode} already completed`);
@@ -224,22 +330,25 @@ export const payOSWebhook = async (req, res) => {
 
             // Use a DB transaction for atomicity
             await sequelize.transaction(async (t) => {
-                // Update deposit record
-                console.log(`Updating deposit record ${depositRecord.id} to completed...`);
-                const [depositUpdateCount] = await DepositRecords.update(
+                // Update deposit record status to completed
+                console.log(`💾 Updating deposit record ${depositRecord.id} status from '${depositRecord.status}' to 'completed'...`);
+                await DepositRecords.update(
                     { status: 'completed' },
                     { where: { id: depositRecord.id }, transaction: t }
                 );
-                console.log(`Deposit record update result: ${depositUpdateCount}`);
 
                 // Update wallet balance
-                const newBalance = parseFloat(wallet.balance) + parseFloat(amount);
-                console.log(`Updating wallet ${wallet.id} balance: ${wallet.balance} + ${amount} = ${newBalance}`);
-                const [walletUpdateCount] = await Wallet.update(
-                    { balance: newBalance, updated_at: new Date() },
+                const currentBalance = parseFloat(wallet.balance);
+                const depositAmount = parseFloat(amount);
+                const newBalance = currentBalance + depositAmount;
+
+                console.log(`💰 Updating wallet ${wallet.id} balance: ${currentBalance} + ${depositAmount} = ${newBalance}`);
+                await Wallet.update(
+                    { balance: newBalance },
                     { where: { id: wallet.id }, transaction: t }
                 );
-                console.log(`Wallet update result: ${walletUpdateCount}`);
+
+                console.log(`✅ Transaction completed successfully!`);
             });
 
             console.log(`✅ SUCCESS: Deposit ${orderCode} processed and wallet updated.`);
@@ -386,8 +495,7 @@ export const walletWithdrawRequest = async (req, res) => {
             const newBalance = currentBalance - withdrawAmount;
             await Wallet.update(
                 {
-                    balance: newBalance,
-                    updated_at: new Date()
+                    balance: newBalance
                 },
                 {
                     where: { id: wallet.id },

@@ -51,6 +51,9 @@ const router = express.Router();
  *             schema:
  *               type: object
  *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
  *                 message:
  *                   type: string
  *                   example: Payment link generated successfully
@@ -61,28 +64,137 @@ const router = express.Router();
  *                       type: string
  *                       description: URL to complete payment
  *                       example: https://payos.vn/payment/...
- *                     depositCode:
+ *                     qrCode:
  *                       type: string
- *                       description: Unique deposit reference code
- *                       example: DEP1234567890123
- *                     amount:
- *                       type: number
- *                       description: Amount to be deposited
- *                       example: 100000
+ *                       description: QR code string for payment
+ *                       example: "00020101021238..."
+ *                     qrCodeImageUrl:
+ *                       type: string
+ *                       description: Base64 encoded QR code image
+ *                       example: "data:image/png;base64,..."
+ *                     depositRecord:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           description: Deposit record ID
+ *                           example: 123
+ *                         depositCode:
+ *                           type: string
+ *                           description: Unique deposit reference code
+ *                           example: DEP1234567890123
+ *                         amount:
+ *                           type: number
+ *                           description: Amount to be deposited
+ *                           example: 100000
+ *                         status:
+ *                           type: string
+ *                           enum: [pending, completed, cancelled]
+ *                           example: pending
+ *                     user:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 1
+ *                         username:
+ *                           type: string
+ *                           example: "john_doe"
+ *                         email:
+ *                           type: string
+ *                           example: "john@example.com"
+ *                         currentBalance:
+ *                           type: number
+ *                           example: 50000
+ *                         newBalanceAfterDeposit:
+ *                           type: number
+ *                           example: 150000
+ *                     paymentInfo:
+ *                       type: object
+ *                       properties:
+ *                         description:
+ *                           type: string
+ *                           example: "Nap 100000 VND"
+ *                         amount:
+ *                           type: number
+ *                           example: 100000
+ *                         currency:
+ *                           type: string
+ *                           example: "VND"
+ *                         expiresAt:
+ *                           type: string
+ *                           format: date-time
+ *                           example: "2024-01-15T11:00:00Z"
+ *                         expiresInMinutes:
+ *                           type: integer
+ *                           example: 30
  *       400:
- *         description: Invalid amount
+ *         description: Invalid request
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
  *                 message:
  *                   type: string
- *                   example: Invalid amount. Amount must be greater than 0
+ *                   examples:
+ *                     missing_amount:
+ *                       summary: Missing amount
+ *                       value: "Missing required field: amount"
+ *                     invalid_amount:
+ *                       summary: Invalid amount
+ *                       value: "Amount must be greater than 0"
  *       401:
  *         description: Unauthorized - Invalid or missing token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "User not authenticated"
+ *       404:
+ *         description: User or wallet not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   examples:
+ *                     user_not_found:
+ *                       summary: User not found
+ *                       value: "User not found"
+ *                     wallet_not_found:
+ *                       summary: Wallet not found
+ *                       value: "Wallet not found"
  *       500:
  *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ *                 error:
+ *                   type: string
+ *                   example: "Error details..."
  */
 router.post('/deposit', verifyToken, walletDeposit);
 
