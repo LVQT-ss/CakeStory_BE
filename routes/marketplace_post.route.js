@@ -128,7 +128,7 @@ router.get('/:id', getMarketplacePostById);
  *   put:
  *     tags: [Marketplace]
  *     summary: Update a marketplace post
- *     description: Update the details of a specific marketplace post (does not update cakeSizes yet)
+ *     description: Update the details of a specific marketplace post including its post info, media, and cake sizes
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -139,6 +139,7 @@ router.get('/:id', getMarketplacePostById);
  *           type: integer
  *         description: ID of the marketplace post to update
  *     requestBody:
+ *       required: true
  *       content:
  *         application/json:
  *           schema:
@@ -146,18 +147,48 @@ router.get('/:id', getMarketplacePostById);
  *             properties:
  *               title:
  *                 type: string
+ *                 example: "Bánh kem socola update"
  *               description:
  *                 type: string
- *               tier:             
- *                 type: string
- *                 example: premium
+ *                 example: "Mẫu bánh mới ngon hơn"
+ *               is_public:
+ *                 type: boolean
+ *                 example: true
  *               available:
  *                 type: boolean
+ *                 example: false
  *               expiry_date:
  *                 type: string
  *                 format: date
- *               is_public:
- *                 type: boolean
+ *                 example: "2025-09-01"
+ *               tier:
+ *                 type: integer
+ *                 example: 2
+ *               media:
+ *                 type: array
+ *                 description: Replace old media with new list
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     image_url:
+ *                       type: string
+ *                       example: "https://example.com/new-image1.jpg"
+ *                     video_url:
+ *                       type: string
+ *                       example: "https://example.com/new-video.mp4"
+ *               cakeSizes:
+ *                 type: array
+ *                 description: Replace old cake sizes with new list
+ *                 items:
+ *                   type: object
+ *                   required: [size, price]
+ *                   properties:
+ *                     size:
+ *                       type: string
+ *                       example: "Large"
+ *                     price:
+ *                       type: number
+ *                       example: 300000
  *     responses:
  *       200:
  *         description: Marketplace post updated successfully
