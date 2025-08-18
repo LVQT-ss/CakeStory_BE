@@ -6,8 +6,6 @@ import MarketplacePost from "./marketplace_post.model.js";
 import PostData from "./post_data.model.js";
 import Album from "./album.model.js";
 import CakeDesign from "./cake_design.model.js";
-import Group from "./group.model.js";
-import GroupMember from "./group_member.model.js";
 import Comment from "./comment.model.js";
 import Like from "./like.model.js";
 import Following from "./following.model.js";
@@ -18,7 +16,6 @@ import CakeOrder from "./cake_order.model.js";
 import Review from "./review.model.js";
 import Transaction from "./transaction.model.js";
 import AlbumPost from './album_post.model.js';
-import GroupPost from './group_post.model.js';
 import ShopMember from "./shop_member.model.js";
 import Ingredient from './Ingredient.model.js';
 import AiGeneratedImage from "./ai_generated_image.model.js";
@@ -67,13 +64,6 @@ function setupAssociations() {
   User.hasMany(CakeDesign, { foreignKey: "user_id" });
   CakeDesign.belongsTo(User, { foreignKey: "user_id" });
 
-  // Group ↔ GroupMember (1-N)
-  Group.hasMany(GroupMember, { foreignKey: "group_id" });
-  GroupMember.belongsTo(Group, { foreignKey: "group_id" });
-
-  // User ↔ GroupMember (1-N)
-  User.hasMany(GroupMember, { foreignKey: "user_id" });
-  GroupMember.belongsTo(User, { foreignKey: "user_id" });
 
   // Post ↔ Comment (1-N)
   Post.hasMany(Comment, { foreignKey: "post_id" });
@@ -145,13 +135,7 @@ function setupAssociations() {
   Post.hasOne(AlbumPost, { foreignKey: "post_id" });
   AlbumPost.belongsTo(Post, { foreignKey: "post_id" });
 
-  // Group ↔ GroupPost (1-N)
-  Group.hasMany(GroupPost, { foreignKey: "group_id" });
-  GroupPost.belongsTo(Group, { foreignKey: "group_id" });
-
-  // Post ↔ GroupPost (1-1)
-  Post.hasOne(GroupPost, { foreignKey: "post_id" });
-  GroupPost.belongsTo(Post, { foreignKey: "post_id" });
+  // (GroupPost associations removed)
 
 
   // User ↔ MarketplacePost (1-N)
@@ -226,7 +210,7 @@ function setupAssociations() {
   User.hasMany(Complaint, { foreignKey: "processed_by", as: "processedComplaints" });
   Complaint.belongsTo(User, { foreignKey: "processed_by", as: "processedBy" });
 
-    // Shop ↔ ShopGallery (1-N)
+  // Shop ↔ ShopGallery (1-N)
   Shop.hasMany(ShopGallery, { foreignKey: 'shop_id', as: 'gallery' });
   ShopGallery.belongsTo(Shop, { foreignKey: 'shop_id', as: 'shop' });
 }
