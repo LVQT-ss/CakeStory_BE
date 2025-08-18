@@ -72,9 +72,7 @@ const User = sequelize.define('User', {
             try {
                 await Wallet.create({
                     user_id: user.id,
-                    balance: 0,
-                    created_at: new Date(),
-                    updated_at: new Date()
+                    balance: 0
                 }, { transaction: options.transaction });
                 console.log(`✅ Wallet created for user ${user.id} with balance 0`);
 
