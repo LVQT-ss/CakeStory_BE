@@ -18,11 +18,11 @@ const Wallet = sequelize.define('Wallet', {
     balance: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false,
-    },
-    updated_at: {
-        type: DataTypes.DATE,
-        allowNull: true,
     }
-
+}, {
+    tableName: 'wallet',
+    timestamps: true,
+    underscored: true
 });
+
 export default Wallet;
