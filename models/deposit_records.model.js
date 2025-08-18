@@ -27,10 +27,10 @@ const DepositRecords = sequelize.define('DepositRecords', {
         type: DataTypes.ENUM('pending', 'completed', 'cancelled'),
         allowNull: false,
     },
-    created_at: {
-        type: DataTypes.DATE,
-        allowNull: false,
-    },
+}, {
+    tableName: 'deposit_records',
+    timestamps: true,
+    underscored: true
 });
 
 export default DepositRecords;

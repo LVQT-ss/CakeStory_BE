@@ -28,6 +28,9 @@ import DepositRecords from '../models/deposit_records.model.js';
 import WithdrawRecords from '../models/withdraw_records.model.js';
 import ShopMember from '../models/shop_member.model.js';
 import Ingredient from '../models/Ingredient.model.js';
+import CakeSize from '../models/cake_size.model.js';
+import Complaint from "../models/complaint.model.js";
+import ShopGallery from '../models/shop_gallery.model.js';
 const initDB = async () => {
     try {
         await sequelize.authenticate();

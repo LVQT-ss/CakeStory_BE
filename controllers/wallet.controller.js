@@ -70,8 +70,7 @@ export const walletDeposit = async (req, res) => {
             user_id: userId,
             deposit_code: depositCode,
             amount: amount,
-            status: 'pending',
-            created_at: new Date()
+            status: 'pending'
         });
 
         // Create PayOS payment request
