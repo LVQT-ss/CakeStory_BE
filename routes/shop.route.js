@@ -88,7 +88,7 @@ router.post('/', verifyToken, createShop);
  *       500:
  *         description: Server error
  */
-router.get('/all', verifyToken, getAllShopsInactive);
+router.get('/all', verifyToken, getAllShopsInactive); 
 
 /**
  * @swagger
@@ -130,7 +130,7 @@ router.get('/', verifyToken, getAllShops);
  *       404:
  *         description: No shop matches
  */
-router.get('/name/:name', verifyToken, getShopByName);
+router.get('/name/:name', getShopByName);
 
 /**
  * @swagger
@@ -154,7 +154,7 @@ router.get('/name/:name', verifyToken, getShopByName);
  *       404:
  *         description: Shop not found
  */
-router.get('/:userId', verifyToken, getShopByUserId);
+router.get('/:userId', getShopByUserId);
 
 /**
  * @swagger
