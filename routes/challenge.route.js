@@ -95,7 +95,7 @@ router.post('/', verifyToken, createChallenge);
  *       500:
  *         description: Server error
  */
-router.get('/', verifyToken, getAllChallenges);
+router.get('/', getAllChallenges);
 
 /**
  * @swagger
@@ -128,7 +128,7 @@ router.get('/', verifyToken, getAllChallenges);
  *       500:
  *         description: Server error
  */
-router.get('/:id', verifyToken, getChallengeById);
+router.get('/:id', getChallengeById);
 
 /**
  * @swagger
