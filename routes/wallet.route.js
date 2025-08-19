@@ -1270,7 +1270,7 @@ router.get('/totalWithdrawUser', verifyToken, walletGetTotalWithdrawUser);
  *       500:
  *         description: Internal server error
  */
-router.get('/AdminWallet', verifyToken, verifyAdmin, AdminWallet);
+router.get('/AdminWallet', verifyToken, verifyStaff, AdminWallet);
 
 /**
  * @swagger
@@ -1410,7 +1410,7 @@ router.get('/getUserWalletbyId/:id', verifyToken, verifyAdmin, getUserWalletbyId
  *       500:
  *         description: Internal server error
  */
-router.put('/confirmRequestbyAdmin/:id', verifyToken, verifyAdmin, confirmRequestbyAdmin);
+router.put('/confirmRequestbyAdmin/:id', verifyToken, verifyStaff, confirmRequestbyAdmin);
 
 /**
  * @swagger
@@ -1461,7 +1461,7 @@ router.put('/confirmRequestbyAdmin/:id', verifyToken, verifyAdmin, confirmReques
  *       500:
  *         description: Internal server error
  */
-router.put('/rejectRequestbyAdmin/:id', verifyToken, verifyAdmin, rejectRequestbyAdmin);
+router.put('/rejectRequestbyAdmin/:id', verifyToken, verifyStaff, rejectRequestbyAdmin);
 
 
 export default router;
