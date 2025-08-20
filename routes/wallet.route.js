@@ -1418,7 +1418,7 @@ router.put('/confirmRequestbyAdmin/:id', verifyToken, verifyStaff, confirmReques
  * @swagger
  * /api/wallet/rejectRequestbyAdmin/{id}:
  *   put:
- *     summary: reject a withdrawal request by admin
+ *     summary: Reject a withdrawal request by admin and refund amount to user wallet
  *     tags: [Wallet]
  *     security:
  *       - bearerAuth: []
@@ -1428,10 +1428,10 @@ router.put('/confirmRequestbyAdmin/:id', verifyToken, verifyStaff, confirmReques
  *         required: true
  *         schema:
  *           type: integer
- *         description: Withdrawal request ID to confirm
+ *         description: Withdrawal request ID to reject
  *     responses:
  *       200:
- *         description: Withdrawal request confirmed successfully
+ *         description: Withdrawal request rejected successfully and amount refunded
  *         content:
  *           application/json:
  *             schema:
@@ -1442,26 +1442,76 @@ router.put('/confirmRequestbyAdmin/:id', verifyToken, verifyStaff, confirmReques
  *                   example: true
  *                 message:
  *                   type: string
- *                   example: Withdraw request confirmed successfully
+ *                   example: "Withdraw request rejected and amount refunded to wallet"
  *                 data:
  *                   type: object
  *                   properties:
- *                     id:
+ *                     withdrawId:
  *                       type: integer
+ *                       description: ID of the rejected withdrawal
  *                       example: 1
+ *                     refundedAmount:
+ *                       type: number
+ *                       description: Amount refunded to user wallet
+ *                       example: 100000
+ *                     newWalletBalance:
+ *                       type: number
+ *                       description: Updated wallet balance after refund
+ *                       example: 500000
  *                     status:
  *                       type: string
- *                       example: completed
- *                     processed_at:
- *                       type: string
- *                       format: date-time
- *                       example: 2024-01-01T12:00:00Z
+ *                       description: Updated status of withdrawal request
+ *                       example: "failed"
+ *       400:
+ *         description: Bad request - Can only reject pending requests
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Can only reject pending withdraw requests"
  *       401:
  *         description: Unauthorized - Invalid or missing token
  *       404:
- *         description: Withdraw record not found
+ *         description: Withdraw record or wallet not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   examples:
+ *                     withdraw_not_found:
+ *                       summary: Withdraw record not found
+ *                       value: "Withdraw record not found"
+ *                     wallet_not_found:
+ *                       summary: User wallet not found
+ *                       value: "User wallet not found"
  *       500:
  *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ *                 error:
+ *                   type: string
+ *                   example: "Database transaction failed"
  */
 router.put('/rejectRequestbyAdmin/:id', verifyToken, verifyStaff, rejectRequestbyAdmin);
 

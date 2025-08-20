@@ -898,29 +898,72 @@ export const rejectRequestbyAdmin = async (req, res) => {
             });
         }
 
-        // Only allow completing if status is pending
+        // Only allow rejecting if status is pending
         if (withdrawRecord.status !== 'pending') {
             return res.status(400).json({
                 success: false,
-                message: 'Can only confirm pending withdraw requests'
+                message: 'Can only reject pending withdraw requests'
             });
         }
 
-        // Update the withdraw record status to completed and set processed time
-        await withdrawRecord.update({
-            status: 'failed',
-            processed_at: new Date()
+        // Find the user's wallet to refund the amount
+        const wallet = await Wallet.findOne({
+            where: { user_id: withdrawRecord.user_id }
+        });
+
+        if (!wallet) {
+            return res.status(404).json({
+                success: false,
+                message: 'User wallet not found'
+            });
+        }
+
+        // Use database transaction to ensure data consistency
+        await sequelize.transaction(async (t) => {
+            // Return the amount to user's wallet
+            const currentBalance = parseFloat(wallet.balance);
+            const refundAmount = parseFloat(withdrawRecord.amount);
+            const newBalance = currentBalance + refundAmount;
+
+            await Wallet.update(
+                { balance: newBalance },
+                {
+                    where: { id: wallet.id },
+                    transaction: t
+                }
+            );
+
+            // Update the withdraw record status to failed and set processed time
+            await WithdrawRecords.update(
+                {
+                    status: 'failed',
+                    processed_at: new Date()
+                },
+                {
+                    where: { id: withdrawRecord.id },
+                    transaction: t
+                }
+            );
         });
 
         return res.status(200).json({
             success: true,
-            message: 'Withdraw request confirmed successfully',
-            data: withdrawRecord
+            message: 'Withdraw request rejected and amount refunded to wallet',
+            data: {
+                withdrawId: withdrawRecord.id,
+                refundedAmount: withdrawRecord.amount,
+                newWalletBalance: parseFloat(wallet.balance) + parseFloat(withdrawRecord.amount),
+                status: 'failed'
+            }
         });
 
     } catch (error) {
-        console.error('confirmRequestbyAdmin error:', error);
-        return res.status(500).json({ success: false, message: 'Internal server error' });
+        console.error('rejectRequestbyAdmin error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
     }
 }
 
