@@ -72,7 +72,8 @@ export const walletDeposit = async (req, res) => {
             date.getDate().toString().padStart(2, '0') +
             date.getHours().toString().padStart(2, '0') +
             date.getMinutes().toString().padStart(2, '0');
-        const depositCode = parseInt(`${dateFormat}${userId}`);
+        const randomDigits = Math.floor(Math.random() * 900) + 100;
+        const depositCode = parseInt(`${dateFormat}${userId}${randomDigits}`);
 
         // Create deposit record (we need this for tracking)
         const depositRecord = await DepositRecords.create({
