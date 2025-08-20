@@ -355,25 +355,120 @@ export const markOrderAsOrdered = async (req, res) => {
   }
 };
 
-// UPDATE status to "completed"
+// UPDATE status to "completed" + release payment with 5% fee
 export const markOrderAsCompleted = async (req, res) => {
-  try {
-    const order = await CakeOrder.findByPk(req.params.id);
+  const dbTransaction = await sequelize.transaction();
 
-    if (!order) return res.status(404).json({ message: 'Order not found' });
+  try {
+    // 1. Lấy order
+    const order = await CakeOrder.findByPk(req.params.id, { transaction: dbTransaction });
+    if (!order) {
+      await dbTransaction.rollback();
+      return res.status(404).json({ message: 'Order not found' });
+    }
 
     if (order.status !== 'shipped') {
+      await dbTransaction.rollback();
       return res.status(400).json({ message: 'Only shipped orders can be marked as completed' });
     }
 
-    await CakeOrder.update(
-      { status: 'completed' },
-      { where: { id: req.params.id } }
+    // 2. Lấy transaction pending (escrow)
+    const originalPayment = await Transaction.findOne({
+      where: {
+        order_id: order.id,
+        transaction_type: 'order_payment',
+        status: 'pending'
+      },
+      transaction: dbTransaction
+    });
+    if (!originalPayment) {
+      await dbTransaction.rollback();
+      return res.status(404).json({ message: 'No pending payment transaction found for this order' });
+    }
+
+    // 3. Lấy shop -> user_id của chủ shop
+    const shop = await Shop.findByPk(order.shop_id, { transaction: dbTransaction });
+    if (!shop) {
+      await dbTransaction.rollback();
+      return res.status(404).json({ message: 'Shop not found' });
+    }
+
+    // 4. Lấy shop wallet (theo user_id của shop owner)
+    const shopWallet = await Wallet.findOne({
+      where: { user_id: shop.user_id },
+      transaction: dbTransaction
+    });
+    if (!shopWallet) {
+      await dbTransaction.rollback();
+      return res.status(404).json({ message: 'Shop wallet not found' });
+    }
+
+    // 5. Lấy admin wallet
+    const ADMIN_USER_ID = 1; // <-- nên config ENV
+    const adminWallet = await Wallet.findOne({
+      where: { user_id: ADMIN_USER_ID },
+      transaction: dbTransaction
+    });
+    if (!adminWallet) {
+      await dbTransaction.rollback();
+      return res.status(404).json({ message: 'Admin wallet not found' });
+    }
+
+    // 6. Tính toán chia tiền
+    const totalAmount = parseFloat(originalPayment.amount);
+    const shopShare = parseFloat((totalAmount * 0.95).toFixed(2));
+    const adminShare = parseFloat((totalAmount * 0.05).toFixed(2));
+
+    // 7. Update shop wallet
+    const newShopBalance = parseFloat(shopWallet.balance) + shopShare;
+    await shopWallet.update(
+      { balance: newShopBalance, updated_at: new Date() },
+      { transaction: dbTransaction }
     );
 
-    res.status(200).json({ message: 'Order marked as completed' });
+    // 8. Update admin wallet
+    const newAdminBalance = parseFloat(adminWallet.balance) + adminShare;
+    await adminWallet.update(
+      { balance: newAdminBalance, updated_at: new Date() },
+      { transaction: dbTransaction }
+    );
+
+    // 9. Update transaction (escrow → completed)
+    await originalPayment.update(
+      {
+        status: 'completed',
+        description: `Released payment for order #${order.id}. Shop received 95%, Admin received 5%`
+      },
+      { transaction: dbTransaction }
+    );
+
+    // 10. Update order status
+    await order.update(
+      { status: 'completed' },
+      { transaction: dbTransaction }
+    );
+
+    await dbTransaction.commit();
+
+    res.status(200).json({
+      message: 'Order marked as completed and payment released',
+      payment: {
+        transaction_id: originalPayment.id,
+        total_amount: totalAmount,
+        shop_received: shopShare,
+        admin_fee: adminShare,
+        shop_wallet_balance: newShopBalance,
+        admin_wallet_balance: newAdminBalance
+      }
+    });
+
   } catch (error) {
-    res.status(500).json({ message: 'Failed to update order', error: error.message });
+    await dbTransaction.rollback();
+    console.error('markOrderAsCompleted error:', error);
+    res.status(500).json({
+      message: 'Failed to complete order and release payment',
+      error: error.message
+    });
   }
 };
 
