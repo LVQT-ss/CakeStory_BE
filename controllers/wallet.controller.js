@@ -1,8 +1,10 @@
 import Wallet from '../models/wallet.model.js';
 import DepositRecords from '../models/deposit_records.model.js';
 import WithdrawRecords from '../models/withdraw_records.model.js';
+import Transaction from '../models/transaction.model.js';
 import PayOS from '@payos/node';
 import sequelize from '../database/db.js';
+import { Op } from 'sequelize';
 import QRCode from 'qrcode';
 import User from '../models/User.model.js';
 import dotenv from 'dotenv';
@@ -919,5 +921,115 @@ export const rejectRequestbyAdmin = async (req, res) => {
     } catch (error) {
         console.error('confirmRequestbyAdmin error:', error);
         return res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+}
+
+export const getAllTransactions = async (req, res) => {
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'User not authenticated' });
+        }
+
+        const transactions = await Transaction.findAll({
+            order: [['created_at', 'DESC']],
+            include: [
+                {
+                    model: Wallet,
+                    as: 'fromWallet',
+                    include: [{
+                        model: User,
+                        attributes: ['id', 'username', 'full_name', 'avatar', 'role']
+                    }]
+                },
+                {
+                    model: Wallet,
+                    as: 'toWallet',
+                    include: [{
+                        model: User,
+                        attributes: ['id', 'username', 'full_name', 'avatar', 'role']
+                    }]
+                }
+            ]
+        });
+
+        return res.status(200).json({
+            success: true,
+            transactions
+        });
+    } catch (error) {
+        console.error('getAllTransactions error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
+    }
+}
+
+export const getUserTransactions = async (req, res) => {
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'User not authenticated' });
+        }
+
+        const targetUserId = req.params.userId;
+        if (!targetUserId) {
+            return res.status(400).json({ success: false, message: 'User ID is required' });
+        }
+
+        // First, find the user's wallet
+        const userWallet = await Wallet.findOne({
+            where: { user_id: targetUserId }
+        });
+
+        if (!userWallet) {
+            return res.status(404).json({
+                success: false,
+                message: 'User wallet not found'
+            });
+        }
+
+        // Find transactions where the user's wallet is either sender or receiver
+        const transactions = await Transaction.findAll({
+            where: {
+                [Op.or]: [
+                    { from_wallet_id: userWallet.id },
+                    { to_wallet_id: userWallet.id }
+                ]
+            },
+            order: [['created_at', 'DESC']],
+            include: [
+                {
+                    model: Wallet,
+                    as: 'fromWallet',
+                    include: [{
+                        model: User,
+                        attributes: ['id', 'username', 'full_name', 'avatar', 'role']
+                    }]
+                },
+                {
+                    model: Wallet,
+                    as: 'toWallet',
+                    include: [{
+                        model: User,
+                        attributes: ['id', 'username', 'full_name', 'avatar', 'role']
+                    }]
+                }
+            ]
+        });
+
+        return res.status(200).json({
+            success: true,
+            transactions
+        });
+    } catch (error) {
+        console.error('getUserTransactions error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
     }
 }

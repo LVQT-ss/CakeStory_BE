@@ -18,7 +18,9 @@ import {
     getUserWalletbyId,
     confirmRequestbyAdmin,
     getAllDepositsForAdmin,
-    rejectRequestbyAdmin
+    rejectRequestbyAdmin,
+    getAllTransactions,
+    getUserTransactions
 } from '../controllers/wallet.controller.js';
 const router = express.Router();
 
@@ -1463,5 +1465,213 @@ router.put('/confirmRequestbyAdmin/:id', verifyToken, verifyStaff, confirmReques
  */
 router.put('/rejectRequestbyAdmin/:id', verifyToken, verifyStaff, rejectRequestbyAdmin);
 
+/**
+ * @swagger
+ * /api/wallet/transactions:
+ *   get:
+ *     summary: Get all transactions
+ *     tags: [Wallet]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved all transactions
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 transactions:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       from_wallet_id:
+ *                         type: integer
+ *                         example: 1
+ *                       to_wallet_id:
+ *                         type: integer
+ *                         example: 2
+ *                       order_id:
+ *                         type: integer
+ *                         example: 123
+ *                       amount:
+ *                         type: number
+ *                         example: 100000
+ *                       transaction_type:
+ *                         type: string
+ *                         enum: [order_payment, refund, ai_generation]
+ *                         example: "order_payment"
+ *                       status:
+ *                         type: string
+ *                         enum: [pending, completed, failed, cancelled]
+ *                         example: "completed"
+ *                       description:
+ *                         type: string
+ *                         example: "Payment for order #123"
+ *                       created_at:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2024-01-15T10:30:00.000Z"
+ *                       fromWallet:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 1
+ *                           user_id:
+ *                             type: integer
+ *                             example: 1
+ *                           balance:
+ *                             type: number
+ *                             example: 100000
+ *                           User:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 1
+ *                               username:
+ *                                 type: string
+ *                                 example: "john_doe"
+ *                               full_name:
+ *                                 type: string
+ *                                 example: "John Doe"
+ *                               avatar:
+ *                                 type: string
+ *                                 example: "https://example.com/avatar.jpg"
+ *                               role:
+ *                                 type: string
+ *                                 example: "user"
+ *                       toWallet:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 2
+ *                           user_id:
+ *                             type: integer
+ *                             example: 2
+ *                           balance:
+ *                             type: number
+ *                             example: 50000
+ *                           User:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 2
+ *                               username:
+ *                                 type: string
+ *                                 example: "jane_doe"
+ *                               full_name:
+ *                                 type: string
+ *                                 example: "Jane Doe"
+ *                               avatar:
+ *                                 type: string
+ *                                 example: "https://example.com/avatar2.jpg"
+ *                               role:
+ *                                 type: string
+ *                                 example: "user"
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/transactions', verifyToken, verifyStaff, getAllTransactions);
+
+/**
+ * @swagger
+ * /api/wallet/transactions/{userId}:
+ *   get:
+ *     summary: Get all transactions for a specific user
+ *     tags: [Wallet]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID of the user to get transactions for
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved user transactions
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 transactions:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       from_wallet_id:
+ *                         type: integer
+ *                         example: 1
+ *                       to_wallet_id:
+ *                         type: integer
+ *                         example: 2
+ *                       order_id:
+ *                         type: integer
+ *                         example: 123
+ *                       amount:
+ *                         type: number
+ *                         example: 100000
+ *                       transaction_type:
+ *                         type: string
+ *                         enum: [order_payment, refund, ai_generation]
+ *                         example: "order_payment"
+ *                       status:
+ *                         type: string
+ *                         enum: [pending, completed, failed, cancelled]
+ *                         example: "completed"
+ *                       description:
+ *                         type: string
+ *                         example: "Payment for order #123"
+ *                       created_at:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2024-01-15T10:30:00.000Z"
+ *                       User:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 1
+ *                           username:
+ *                             type: string
+ *                             example: "john_doe"
+ *                           full_name:
+ *                             type: string
+ *                             example: "John Doe"
+ *                           avatar:
+ *                             type: string
+ *                             example: "https://example.com/avatar.jpg"
+ *                           role:
+ *                             type: string
+ *                             example: "user"
+ *       400:
+ *         description: Bad request - User ID is required
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/transactions/:userId', verifyToken, getUserTransactions);
 
 export default router;
