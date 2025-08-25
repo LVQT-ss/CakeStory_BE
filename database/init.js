@@ -1,37 +1,16 @@
 // src/database/init.js
 import sequelize from './db.js';
-// Import tất cả model cần thiết
-import User from '../models/User.model.js';
-import Shop from '../models/shop.model.js';
-import Post from '../models/post.model.js';
-import MemoryPost from '../models/memory_post.model.js';
-import MarketplacePost from '../models/marketplace_post.model.js';
-import PostData from '../models/post_data.model.js';
-import Album from '../models/album.model.js';
-import AlbumPost from '../models/album_post.model.js';
-import CakeDesign from '../models/cake_design.model.js';
-import Comment from '../models/comment.model.js';
-import Like from '../models/like.model.js';
-import Following from '../models/following.model.js';
-import Challenge from '../models/challenge.model.js';
-import ChallengePost from '../models/challenge_post.model.js';
-import ChallengeEntry from '../models/challenge_entry.model.js';
-import CakeOrder from '../models/cake_order.model.js';
-import Review from '../models/review.model.js';
-import Transaction from '../models/transaction.model.js';
-import AiGeneratedImage from '../models/ai_generated_image.model.js';
-import Wallet from '../models/wallet.model.js';
-import DepositRecords from '../models/deposit_records.model.js';
-import WithdrawRecords from '../models/withdraw_records.model.js';
-import ShopMember from '../models/shop_member.model.js';
-import Ingredient from '../models/Ingredient.model.js';
-import CakeSize from '../models/cake_size.model.js';
-import Complaint from "../models/complaint.model.js";
-import ShopGallery from '../models/shop_gallery.model.js';
+import setupAssociations from '../models/associations.js';
 const initDB = async () => {
     try {
         await sequelize.authenticate();
         console.log('Database connected successfully.');
+
+        // Ensure schema exists (public)
+        await sequelize.createSchema('public', { logging: false }).catch(() => { });
+
+        // Thiết lập quan hệ trước khi sync
+        setupAssociations();
 
         // Đồng bộ các mô hình với cơ sở dữ liệu
         await sequelize.sync({ alter: true });

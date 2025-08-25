@@ -63,7 +63,6 @@ app.use('/api/shop-gallery', shopGalleryRoutes);
 initDB().then(() => {
     // Setup associations after database is initialized
 
-    setupAssociations();
     autoConfirmPendingOrders.start();
     autoCompleteShippedOrders.start();
     autoUpdateChallengeStatus.start();
