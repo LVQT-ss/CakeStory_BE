@@ -7,7 +7,7 @@ const ShopGallery = sequelize.define('shop_gallery', {
     autoIncrement: true,
     primaryKey: true
   },
-  shop_id: { // Khóa ngoại tới shop
+  shop_id: { 
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
