@@ -7,7 +7,6 @@ const Challenge = sequelize.define('Challenge', {
   description: { type: DataTypes.TEXT },
   start_date: { type: DataTypes.DATE, allowNull: false },
   end_date: { type: DataTypes.DATE, allowNull: false },
-  winning_challenge_id: { type: DataTypes.INTEGER },
   prize_description: { type: DataTypes.TEXT },
   status: {
     type: DataTypes.ENUM("notStart", "onGoing", "ended", "unAvailable")
