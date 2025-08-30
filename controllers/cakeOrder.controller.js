@@ -7,8 +7,7 @@ import Transaction from '../models/transaction.model.js';
 import Shop from '../models/shop.model.js';
 import { Op } from 'sequelize';
 import User from '../models/User.model.js';
-import MarketplacePost from '../models/marketplace_post.model.js';
-import PostData from '../models/post_data.model.js';
+
 // CREATE CakeOrder with multiple OrderDetails and Payment Processing
 export const createCakeOrder = async (req, res) => {
   const {
@@ -221,8 +220,12 @@ export const getCakeOrderById = async (req, res) => {
         },
         {
           model: User,
-          attributes: ['id', 'username', 'full_name']
-        }
+          attributes: ['id', 'username', 'full_name', 'email', 'address', 'phone_number']
+        },
+        {
+          model: Shop,
+          attributes: ['shop_id', 'business_name', 'phone_number', 'business_address']
+        },
       ]
     });
 
