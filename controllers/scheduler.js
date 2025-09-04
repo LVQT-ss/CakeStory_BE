@@ -7,18 +7,18 @@ import Challenge from '../models/challenge.model.js';
 import ChallengeEntry from '../models/challenge_entry.model.js';
 import { Op } from 'sequelize';
 
-// Tự động chuyển đơn hàng từ 'pending' sang 'ordered' sau 5 phút
-const autoConfirmPendingOrders = cron.schedule('*/5 * * * *', async () => {
+// Tự động chuyển đơn hàng từ 'pending' sang 'ordered' sau 30 giây
+const autoConfirmPendingOrders = cron.schedule('*/30 * * * * *', async () => {
   try {
     console.log('Checking for pending orders to auto-confirm...');
 
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000); // 5 phút trước
+    const thirtySecondsAgo = new Date(Date.now() - 30 * 1000); // 30 giây trước
 
     const pendingOrders = await CakeOrder.findAll({
       where: {
         status: 'pending',
         created_at: {
-          [Op.lte]: fiveMinutesAgo
+          [Op.lte]: thirtySecondsAgo
         }
       }
     });
