@@ -135,6 +135,7 @@ export const getAllMarketplacePosts = async (req, res) => {
                     model: BakerProfile,
                     as: 'shop',
                     attributes: ['shop_id', 'business_name', 'avatar_image'],
+                    where: { is_active: true },
                     include: [{ model: User, as: 'user', attributes: ['id', 'username', 'email'] }]
                 },
                 {
@@ -164,6 +165,7 @@ export const getMarketplacePostById = async (req, res) => {
                 {
                     model: BakerProfile,
                     as: 'shop',
+                    where: { is_active: true },
                     include: [{ model: User, as: 'user', attributes: ['id', 'username', 'email'] }]
                 },
                 {

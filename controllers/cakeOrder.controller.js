@@ -156,14 +156,20 @@ export const createCakeOrder = async (req, res) => {
 export const getAllCakeOrders = async (req, res) => {
   try {
     const orders = await CakeOrder.findAll({
-      include: [{
-        model: OrderDetail,
-        as: 'orderDetails'
-      },
-      {
-        model: User,
-        attributes: ['id', 'username', 'full_name']
-      }]
+      include: [
+        {
+          model: OrderDetail,
+          as: 'orderDetails'
+        },
+        {
+          model: User,
+          attributes: ['id', 'username', 'full_name', 'email', 'address', 'phone_number']
+        },
+        {
+          model: Shop,
+          attributes: ['shop_id', 'business_name', 'phone_number', 'business_address']
+        },
+      ]
     });
     res.status(200).json(orders);
   } catch (error) {
@@ -186,8 +192,12 @@ export const getCakeOrdersByUserId = async (req, res) => {
         },
         {
           model: User,
-          attributes: ['id', 'username', 'full_name']
-        }
+          attributes: ['id', 'username', 'full_name', 'email', 'address', 'phone_number']
+        },
+        {
+          model: Shop,
+          attributes: ['shop_id', 'business_name', 'phone_number', 'business_address']
+        },
       ]
     });
     res.status(200).json(orders);
@@ -210,8 +220,12 @@ export const getCakeOrderById = async (req, res) => {
         },
         {
           model: User,
-          attributes: ['id', 'username', 'full_name']
-        }
+          attributes: ['id', 'username', 'full_name', 'email', 'address', 'phone_number']
+        },
+        {
+          model: Shop,
+          attributes: ['shop_id', 'business_name', 'phone_number', 'business_address']
+        },
       ]
     });
 
@@ -238,8 +252,12 @@ export const getCakeOrdersByShopId = async (req, res) => {
         },
         {
           model: User,
-          attributes: ['id', 'username', 'full_name']
-        }
+          attributes: ['id', 'username', 'full_name', 'email', 'address', 'phone_number']
+        },
+        {
+          model: Shop,
+          attributes: ['shop_id', 'business_name', 'phone_number', 'business_address']
+        },
       ]
     });
     res.status(200).json(orders);
