@@ -172,7 +172,7 @@ const autoCompleteShippedOrders = cron.schedule('*/15 * * * *', async () => {
 });
 
 // ====== AUTO UPDATE CHALLENGE STATUS ======
-const autoUpdateChallengeStatus = cron.schedule('0 0 * * *', async () => {
+const autoUpdateChallengeStatus = cron.schedule('0 7 * * *', async () => {
   try {
     console.log('=== Auto updating challenge statuses ===');
     const now = new Date();
