@@ -3,6 +3,7 @@ import {
     createCakeDesign,
     getCakeDesigns,
     generateAICakeDesign,
+    editCakeDesign,
     getCakeDesignsByUserId
 } from '../controllers/cakeDesign.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
@@ -456,6 +457,179 @@ router.get('/', verifyToken, getCakeDesigns);
  *                   example: "AI service temporarily unavailable"
  */
 router.put('/generate-ai', verifyToken, generateAICakeDesign);
+
+/**
+ * @swagger
+ * /api/cake-designs/edit:
+ *   put:
+ *     tags:
+ *       - Cake Design
+ *     summary: Create AI variation of cake design using DALL-E 2
+ *     description: Create an AI-powered variation of an existing cake design. Scans the entire image and creates a new variation. Costs 500 VND per variation.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - cake_design_id
+ *             properties:
+ *               cake_design_id:
+ *                 type: integer
+ *                 description: ID of the existing cake design to create variation from
+ *                 example: 1
+ *               edit_prompt:
+ *                 type: string
+ *                 description: Optional description for the variation (for metadata only)
+ *                 example: "Birthday cake variation"
+ *     responses:
+ *       200:
+ *         description: Cake design edited successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "AI cake design variation created successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     originalDesign:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 1
+ *                         design_image:
+ *                           type: string
+ *                           example: "https://firebase.com/original.png"
+ *                     editedDesign:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 22
+ *                         user_id:
+ *                           type: integer
+ *                           example: 1
+ *                         description:
+ *                           type: string
+ *                           example: "Beautiful cake - Edited: Add chocolate sprinkles"
+ *                         design_image:
+ *                           type: string
+ *                           example: "https://firebase.com/edited.png"
+ *                         created_at:
+ *                           type: string
+ *                           format: date-time
+ *                           example: "2025-01-15T10:30:00.000Z"
+ *                         is_public:
+ *                           type: boolean
+ *                           example: true
+ *                         ai_generated:
+ *                           type: string
+ *                           example: "DALL-E 2 Variation based on: Birthday cake variation"
+ *                     transaction:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 123
+ *                         amount:
+ *                           type: integer
+ *                           example: 500
+ *                         status:
+ *                           type: string
+ *                           example: "completed"
+ *                     wallet:
+ *                       type: object
+ *                       properties:
+ *                         previousBalance:
+ *                           type: integer
+ *                           example: 2000
+ *                         newBalance:
+ *                           type: integer
+ *                           example: 1500
+ *                         deductedAmount:
+ *                           type: integer
+ *                           example: 500
+ *       400:
+ *         description: Bad Request - Missing required fields
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "cake_design_id and edit_prompt are required"
+ *       402:
+ *         description: Payment Required - Insufficient balance
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Insufficient balance"
+ *                 requiredAmount:
+ *                   type: integer
+ *                   example: 500
+ *       403:
+ *         description: Forbidden - Access denied
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Access denied"
+ *       404:
+ *         description: Not Found - Resource not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Resource not found"
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
+router.put('/edit', verifyToken, editCakeDesign);
 
 /**
  * @swagger

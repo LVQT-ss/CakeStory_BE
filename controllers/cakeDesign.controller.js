@@ -5,11 +5,16 @@ import Transaction from '../models/transaction.model.js';
 import { Op } from 'sequelize';
 import { storage } from '../utils/firebase.js';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import OpenAI from 'openai';
 import axios from 'axios';
 import { Buffer } from 'buffer';
 import process from 'process';
 import sequelize from '../database/db.js';
 import FormData from 'form-data';
+
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+});
 
 // Helper function to validate Base64 image
 const isValidBase64Image = (str) => {
@@ -295,78 +300,80 @@ export const generateAICakeDesign = async (req, res) => {
 
         const { design_image, description } = result.existingCakeDesign;
 
-        // Convert image to buffer for DALL-E 2 edit
-        let imageBuffer;
-        if (design_image.startsWith('data:image/')) {
-            // Base64 to buffer
-            const base64Data = design_image.split(',')[1];
-            imageBuffer = Buffer.from(base64Data, 'base64');
-        } else if (design_image.startsWith('http://') || design_image.startsWith('https://')) {
-            // URL to buffer
-            const response = await axios.get(design_image, { responseType: 'arraybuffer' });
-            imageBuffer = Buffer.from(response.data);
-        } else {
-            // Pure base64 to buffer
-            imageBuffer = Buffer.from(design_image, 'base64');
-        }
-
-        // Create default mask for editing (center circle)
-        const { createCanvas } = await import('canvas');
-        const canvas = createCanvas(1024, 1024);
-        const ctx = canvas.getContext('2d');
-
-        // Transparent background (areas to keep unchanged)
-        ctx.clearRect(0, 0, 1024, 1024);
-
-        // White circle in center (area to edit)
-        ctx.fillStyle = 'rgba(255, 255, 255, 1)';
-        ctx.beginPath();
-        ctx.arc(512, 512, 300, 0, 2 * Math.PI);
-        ctx.fill();
-
-        const maskBuffer = canvas.toBuffer('image/png');
-
-        // Create enhanced prompt for editing
-        const editPrompt = `Transform this cake design into a beautiful, professional cake with:
-        - Enhanced decorations and artistic elements
-        - Premium bakery-quality appearance  
-        - Creative and unique design features
-        - Appealing colors and textures
-        - Professional cake styling
-        Based on description: "${description || 'A beautiful cake design'}"`;
-
-        // Create FormData for DALL-E 2 edit endpoint
-        const formData = new FormData();
-        formData.append('image', imageBuffer, {
-            filename: 'cake_design.png',
-            contentType: 'image/png'
-        });
-        formData.append('mask', maskBuffer, {
-            filename: 'mask.png',
-            contentType: 'image/png'
-        });
-        formData.append('prompt', editPrompt);
-        formData.append('n', '1');
-        formData.append('size', '1024x1024');
-
-        // Use DALL-E 2 edit endpoint instead of generation
-        const response = await axios.post('https://api.openai.com/v1/images/edits', formData, {
-            headers: {
-                ...formData.getHeaders(),
-                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+        // Helper function to convert image to base64 if it's a URL
+        const getBase64Image = async (imageInput) => {
+            if (imageInput.startsWith('data:image/')) {
+                // Already base64
+                return imageInput;
+            } else if (imageInput.startsWith('http://') || imageInput.startsWith('https://')) {
+                // Download and convert URL to base64
+                const response = await axios.get(imageInput, { responseType: 'arraybuffer' });
+                const base64 = Buffer.from(response.data).toString('base64');
+                const mimeType = response.headers['content-type'] || 'image/jpeg';
+                return `data:${mimeType};base64,${base64}`;
+            } else {
+                // Pure base64, add data URL prefix
+                return `data:image/jpeg;base64,${imageInput}`;
             }
+        };
+
+        // Convert image to base64 for OpenAI Vision API
+        const base64Image = await getBase64Image(design_image);
+
+        // First, use GPT-4 Vision to analyze the image and create a detailed prompt
+        const visionResponse = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "text",
+                            text: `Analyze this cake design image and create a detailed description for generating a similar cake using DALL-E 3. Focus on: colors, decorations, layers, frosting style, toppings, shape, and overall aesthetic. Original description. Make it creative and detailed for AI image generation.
+                            Create a beautiful, professional cake design based on this description: "${description || 'A beautiful cake design'}". 
+        The new design should be elegant and visually appealing with:
+        - Professional cake styling and presentation
+        - Appealing colors and artistic decoration
+        - High-quality, bakery-worthy appearance
+        - Creative and unique design elements
+        - Do not put any unrelated object in the image
+        - Do not put any length of ruler in the image
+        Make it look like a premium cake design that would be featured in a high-end bakery`
+
+                        },
+                        {
+                            type: "image_url",
+                            image_url: {
+                                url: base64Image
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens: 300
         });
 
-        // Get the edited image URL
-        const generatedImageUrl = response.data.data[0].url;
-        console.log('AI image edited successfully:', generatedImageUrl);
+        const enhancedPrompt = visionResponse.choices[0].message.content;
+        console.log('Enhanced prompt from vision analysis:', enhancedPrompt);
+
+        // Generate image using OpenAI DALL-E 3 with enhanced prompt
+        const response = await openai.images.generate({
+            model: "dall-e-3",
+            prompt: enhancedPrompt,
+            n: 1,
+            size: "1024x1024",
+        });
+
+        // Get the generated image URL
+        const generatedImageUrl = response.data[0].url;
+        console.log('AI image generated successfully:', generatedImageUrl);
 
         // Download the generated image
         const imageResponse = await axios.get(generatedImageUrl, { responseType: 'arraybuffer' });
         const generatedImageBuffer = Buffer.from(imageResponse.data);
 
         // Generate unique filename for Firebase
-        const filename = `ai_cake_designs/${user_id}/${Date.now()}_ai_edited.png`;
+        const filename = `ai_cake_designs/${user_id}/${Date.now()}_ai_generated.png`;
 
         // Upload to Firebase Storage
         const storageRef = ref(storage, filename);
@@ -376,7 +383,7 @@ export const generateAICakeDesign = async (req, res) => {
                 userId: user_id.toString(),
                 originalDescription: description || 'A beautiful cake design',
                 aiGenerated: 'true',
-                model: 'dall-e-2-edit',
+                model: 'dall-e-3',
                 originalCakeDesignId: cake_design_id.toString()
             }
         };
@@ -399,7 +406,7 @@ export const generateAICakeDesign = async (req, res) => {
 
         // Update transaction with cake design ID (status đã là completed rồi)
         await Transaction.update({
-            description: `AI Cake Design Edit for design ID ${cake_design_id} - Completed successfully`
+            description: `AI Cake Design Generation for design ID ${cake_design_id} - Completed successfully`
         }, {
             where: { id: result.transaction.id }
         });
@@ -425,7 +432,7 @@ export const generateAICakeDesign = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: 'AI cake design edited successfully',
+            message: 'AI cake design generated successfully',
             data: {
                 cakeDesign: {
                     id: updatedCakeDesign.id,
@@ -539,6 +546,251 @@ export const generateAICakeDesign = async (req, res) => {
                 success: false,
                 message: 'Network error occurred',
                 error: 'Please check your internet connection and try again.'
+            });
+        }
+
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
+    }
+};
+
+// Edit specific parts of cake design using DALL-E 2 inpainting
+export const editCakeDesign = async (req, res) => {
+    try {
+        const { cake_design_id, edit_prompt } = req.body;
+        const user_id = req.userId;
+        const AI_EDIT_COST = 500; // Cost per image edit (cheaper than generation)
+
+        // Validate required fields
+        if (!cake_design_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'cake_design_id is required'
+            });
+        }
+
+        // Use transaction for data consistency
+        const result = await sequelize.transaction(async (t) => {
+            // Check user and wallet
+            const user = await User.findByPk(user_id, { transaction: t });
+            if (!user) {
+                throw new Error('User not found');
+            }
+
+            const wallet = await Wallet.findOne({
+                where: { user_id: user_id },
+                transaction: t
+            });
+
+            if (!wallet) {
+                await Transaction.create({
+                    from_wallet_id: null,
+                    amount: AI_EDIT_COST,
+                    transaction_type: 'ai_edit',
+                    status: 'failed',
+                    description: `AI Cake Design Edit for design ID ${cake_design_id} - Wallet not found`,
+                }, { transaction: t });
+                throw new Error('Wallet not found. Please contact support.');
+            }
+
+            // Find existing cake design
+            const existingCakeDesign = await CakeDesign.findByPk(cake_design_id, { transaction: t });
+            if (!existingCakeDesign) {
+                await Transaction.create({
+                    from_wallet_id: wallet.id,
+                    amount: AI_EDIT_COST,
+                    transaction_type: 'ai_edit',
+                    status: 'failed',
+                    description: `AI Cake Design Edit for design ID ${cake_design_id} - Cake design not found`,
+                }, { transaction: t });
+                throw new Error('Cake design not found');
+            }
+
+            // Check permissions
+            if (!existingCakeDesign.is_public && existingCakeDesign.user_id !== user_id) {
+                await Transaction.create({
+                    from_wallet_id: wallet.id,
+                    amount: AI_EDIT_COST,
+                    transaction_type: 'ai_edit',
+                    status: 'failed',
+                    description: `AI Cake Design Edit for design ID ${cake_design_id} - Access denied`,
+                }, { transaction: t });
+                throw new Error('Access denied. You can only edit your own designs or public designs.');
+            }
+
+            // Create transaction
+            const transaction = await Transaction.create({
+                from_wallet_id: wallet.id,
+                amount: AI_EDIT_COST,
+                transaction_type: 'ai_edit',
+                status: 'pending',
+                description: `AI Cake Design Edit for design ID ${cake_design_id}`,
+            }, { transaction: t });
+
+            // Check balance
+            if (wallet.balance < AI_EDIT_COST) {
+                await Transaction.update({
+                    status: 'failed'
+                }, {
+                    where: { id: transaction.id },
+                    transaction: t
+                });
+                throw new Error(`Insufficient balance. Required: ${AI_EDIT_COST} VND, Available: ${wallet.balance} VND`);
+            }
+
+            // Deduct money
+            const newBalance = wallet.balance - AI_EDIT_COST;
+            await Wallet.update({
+                balance: newBalance,
+                updated_at: new Date()
+            }, {
+                where: { id: wallet.id },
+                transaction: t
+            });
+
+            // Update transaction to completed
+            await Transaction.update({
+                status: 'completed'
+            }, {
+                where: { id: transaction.id },
+                transaction: t
+            });
+
+            return {
+                transaction,
+                existingCakeDesign,
+                wallet: await Wallet.findByPk(wallet.id, { transaction: t }),
+                previousBalance: wallet.balance
+            };
+        });
+
+        // Convert image to base64 for direct API call
+        const { design_image } = result.existingCakeDesign;
+        let base64Image;
+
+        if (design_image.startsWith('data:image/')) {
+            // Already base64 format
+            base64Image = design_image.split(',')[1];
+        } else if (design_image.startsWith('http://') || design_image.startsWith('https://')) {
+            // Download URL and convert to base64
+            const response = await axios.get(design_image, { responseType: 'arraybuffer' });
+            base64Image = Buffer.from(response.data).toString('base64');
+        } else {
+            // Pure base64
+            base64Image = design_image;
+        }
+
+        // Use DALL-E 2 variations endpoint for full image transformation
+        const editResponse = await axios.post('https://api.openai.com/v1/images/variations', {
+            image: base64Image,
+            n: 1,
+            size: "1024x1024"
+        }, {
+            headers: {
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const editedImageUrl = editResponse.data.data[0].url;
+        console.log('AI image edited successfully:', editedImageUrl);
+
+        // Download the edited image
+        const imageResponse = await axios.get(editedImageUrl, { responseType: 'arraybuffer' });
+        const editedImageBuffer = Buffer.from(imageResponse.data);
+
+        // Upload to Firebase
+        const filename = `ai_cake_edits/${user_id}/${Date.now()}_ai_edited.png`;
+        const storageRef = ref(storage, filename);
+        const metadata = {
+            contentType: 'image/png',
+            customMetadata: {
+                userId: user_id.toString(),
+                originalCakeDesignId: cake_design_id.toString(),
+                editPrompt: edit_prompt || 'AI Variation',
+                aiEdited: 'true',
+                model: 'dall-e-2-variations'
+            }
+        };
+
+        await uploadBytes(storageRef, editedImageBuffer, metadata);
+        const firebaseUrl = await getDownloadURL(storageRef);
+
+        // Create new cake design with edited image
+        const editedCakeDesign = await CakeDesign.create({
+            user_id,
+            description: `${result.existingCakeDesign.description} - AI Variation`,
+            design_image: firebaseUrl,
+            is_public: result.existingCakeDesign.is_public,
+            ai_generated: `DALL-E 2 Variation based on: ${edit_prompt}`
+        });
+
+        // Update transaction description
+        await Transaction.update({
+            description: `AI Cake Design Edit for design ID ${cake_design_id} - Completed successfully`
+        }, {
+            where: { id: result.transaction.id }
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'AI cake design variation created successfully',
+            data: {
+                originalDesign: {
+                    id: result.existingCakeDesign.id,
+                    design_image: result.existingCakeDesign.design_image
+                },
+                editedDesign: {
+                    id: editedCakeDesign.id,
+                    user_id: editedCakeDesign.user_id,
+                    description: editedCakeDesign.description,
+                    design_image: editedCakeDesign.design_image,
+                    created_at: editedCakeDesign.created_at,
+                    is_public: editedCakeDesign.is_public,
+                    ai_generated: editedCakeDesign.ai_generated
+                },
+                transaction: {
+                    id: result.transaction.id,
+                    amount: result.transaction.amount,
+                    status: 'completed'
+                },
+                wallet: {
+                    previousBalance: result.previousBalance,
+                    newBalance: result.wallet.balance,
+                    deductedAmount: result.transaction.amount
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('Error editing cake design:', error);
+
+        // Handle specific errors
+        if (error.message.includes('Insufficient balance')) {
+            return res.status(402).json({
+                success: false,
+                message: 'Insufficient balance',
+                error: error.message,
+                requiredAmount: 500
+            });
+        }
+
+        if (error.message.includes('not found')) {
+            return res.status(404).json({
+                success: false,
+                message: 'Resource not found',
+                error: error.message
+            });
+        }
+
+        if (error.message.includes('Access denied')) {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied',
+                error: error.message
             });
         }
 
