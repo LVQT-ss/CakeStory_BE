@@ -5,15 +5,11 @@ import Transaction from '../models/transaction.model.js';
 import { Op } from 'sequelize';
 import { storage } from '../utils/firebase.js';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import OpenAI from 'openai';
 import axios from 'axios';
 import { Buffer } from 'buffer';
 import process from 'process';
 import sequelize from '../database/db.js';
-
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-});
+import FormData from 'form-data';
 
 // Helper function to validate Base64 image
 const isValidBase64Image = (str) => {
@@ -299,80 +295,78 @@ export const generateAICakeDesign = async (req, res) => {
 
         const { design_image, description } = result.existingCakeDesign;
 
-        // Helper function to convert image to base64 if it's a URL
-        const getBase64Image = async (imageInput) => {
-            if (imageInput.startsWith('data:image/')) {
-                // Already base64
-                return imageInput;
-            } else if (imageInput.startsWith('http://') || imageInput.startsWith('https://')) {
-                // Download and convert URL to base64
-                const response = await axios.get(imageInput, { responseType: 'arraybuffer' });
-                const base64 = Buffer.from(response.data).toString('base64');
-                const mimeType = response.headers['content-type'] || 'image/jpeg';
-                return `data:${mimeType};base64,${base64}`;
-            } else {
-                // Pure base64, add data URL prefix
-                return `data:image/jpeg;base64,${imageInput}`;
+        // Convert image to buffer for DALL-E 2 edit
+        let imageBuffer;
+        if (design_image.startsWith('data:image/')) {
+            // Base64 to buffer
+            const base64Data = design_image.split(',')[1];
+            imageBuffer = Buffer.from(base64Data, 'base64');
+        } else if (design_image.startsWith('http://') || design_image.startsWith('https://')) {
+            // URL to buffer
+            const response = await axios.get(design_image, { responseType: 'arraybuffer' });
+            imageBuffer = Buffer.from(response.data);
+        } else {
+            // Pure base64 to buffer
+            imageBuffer = Buffer.from(design_image, 'base64');
+        }
+
+        // Create default mask for editing (center circle)
+        const { createCanvas } = await import('canvas');
+        const canvas = createCanvas(1024, 1024);
+        const ctx = canvas.getContext('2d');
+
+        // Transparent background (areas to keep unchanged)
+        ctx.clearRect(0, 0, 1024, 1024);
+
+        // White circle in center (area to edit)
+        ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+        ctx.beginPath();
+        ctx.arc(512, 512, 300, 0, 2 * Math.PI);
+        ctx.fill();
+
+        const maskBuffer = canvas.toBuffer('image/png');
+
+        // Create enhanced prompt for editing
+        const editPrompt = `Transform this cake design into a beautiful, professional cake with:
+        - Enhanced decorations and artistic elements
+        - Premium bakery-quality appearance  
+        - Creative and unique design features
+        - Appealing colors and textures
+        - Professional cake styling
+        Based on description: "${description || 'A beautiful cake design'}"`;
+
+        // Create FormData for DALL-E 2 edit endpoint
+        const formData = new FormData();
+        formData.append('image', imageBuffer, {
+            filename: 'cake_design.png',
+            contentType: 'image/png'
+        });
+        formData.append('mask', maskBuffer, {
+            filename: 'mask.png',
+            contentType: 'image/png'
+        });
+        formData.append('prompt', editPrompt);
+        formData.append('n', '1');
+        formData.append('size', '1024x1024');
+
+        // Use DALL-E 2 edit endpoint instead of generation
+        const response = await axios.post('https://api.openai.com/v1/images/edits', formData, {
+            headers: {
+                ...formData.getHeaders(),
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
             }
-        };
-
-        // Convert image to base64 for OpenAI Vision API
-        const base64Image = await getBase64Image(design_image);
-
-        // First, use GPT-4 Vision to analyze the image and create a detailed prompt
-        const visionResponse = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [
-                {
-                    role: "user",
-                    content: [
-                        {
-                            type: "text",
-                            text: `Analyze this cake design image and create a detailed description for generating a similar cake using DALL-E 3. Focus on: colors, decorations, layers, frosting style, toppings, shape, and overall aesthetic. Original description. Make it creative and detailed for AI image generation.
-                            Create a beautiful, professional cake design based on this description: "${description || 'A beautiful cake design'}". 
-        The new design should be elegant and visually appealing with:
-        - Professional cake styling and presentation
-        - Appealing colors and artistic decoration
-        - High-quality, bakery-worthy appearance
-        - Creative and unique design elements
-        - Do not put any unrelated object in the image
-        - Do not put any length of ruler in the image
-        Make it look like a premium cake design that would be featured in a high-end bakery`
-
-                        },
-                        {
-                            type: "image_url",
-                            image_url: {
-                                url: base64Image
-                            }
-                        }
-                    ]
-                }
-            ],
-            max_tokens: 300
         });
 
-        const enhancedPrompt = visionResponse.choices[0].message.content;
-        console.log('Enhanced prompt from vision analysis:', enhancedPrompt);
-
-        // Generate image using OpenAI DALL-E 3 with enhanced prompt
-        const response = await openai.images.generate({
-            model: "dall-e-3",
-            prompt: enhancedPrompt,
-            n: 1,
-            size: "1024x1024",
-        });
-
-        // Get the generated image URL
-        const generatedImageUrl = response.data[0].url;
-        console.log('AI image generated successfully:', generatedImageUrl);
+        // Get the edited image URL
+        const generatedImageUrl = response.data.data[0].url;
+        console.log('AI image edited successfully:', generatedImageUrl);
 
         // Download the generated image
         const imageResponse = await axios.get(generatedImageUrl, { responseType: 'arraybuffer' });
         const generatedImageBuffer = Buffer.from(imageResponse.data);
 
         // Generate unique filename for Firebase
-        const filename = `ai_cake_designs/${user_id}/${Date.now()}_ai_generated.png`;
+        const filename = `ai_cake_designs/${user_id}/${Date.now()}_ai_edited.png`;
 
         // Upload to Firebase Storage
         const storageRef = ref(storage, filename);
@@ -382,7 +376,7 @@ export const generateAICakeDesign = async (req, res) => {
                 userId: user_id.toString(),
                 originalDescription: description || 'A beautiful cake design',
                 aiGenerated: 'true',
-                model: 'dall-e-3',
+                model: 'dall-e-2-edit',
                 originalCakeDesignId: cake_design_id.toString()
             }
         };
@@ -405,7 +399,7 @@ export const generateAICakeDesign = async (req, res) => {
 
         // Update transaction with cake design ID (status đã là completed rồi)
         await Transaction.update({
-            description: `AI Cake Design Generation for design ID ${cake_design_id} - Completed successfully`
+            description: `AI Cake Design Edit for design ID ${cake_design_id} - Completed successfully`
         }, {
             where: { id: result.transaction.id }
         });
@@ -431,7 +425,7 @@ export const generateAICakeDesign = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: 'AI cake design generated successfully',
+            message: 'AI cake design edited successfully',
             data: {
                 cakeDesign: {
                     id: updatedCakeDesign.id,
