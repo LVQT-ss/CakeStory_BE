@@ -1,7 +1,8 @@
 import express from 'express';
 import {
     createPicture,
-
+    deletePicture,
+    getPicturesByUserId
 } from '../controllers/pictureCakeDesign.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
@@ -77,5 +78,72 @@ const router = express.Router();
 router.post('/create', verifyToken, createPicture);
 
 
+/**
+ * @swagger
+ * /api/pictures/{id}:
+ *   delete:
+ *     tags:
+ *       - Picture For Cake Design
+ *     summary: Delete picture
+ *     description: Delete a picture for cake design (only owner can delete)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Picture ID
+ *     responses:
+ *       200:
+ *         description: Picture deleted successfully
+ *       403:
+ *         description: Access denied
+ *       404:
+ *         description: Picture not found
+ *       500:
+ *         description: Internal Server Error
+ */
+router.delete('/:id', verifyToken, deletePicture);
+
+/**
+ * @swagger
+ * /api/pictures/user/{userId}:
+ *   get:
+ *     tags:
+ *       - Picture For Cake Design
+ *     summary: Get pictures by user ID
+ *     description: Retrieve all pictures for cake design created by a specific user
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: User ID
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of items per page
+ *     responses:
+ *       200:
+ *         description: Pictures by user fetched successfully
+ *       400:
+ *         description: Invalid user ID
+ *       500:
+ *         description: Internal Server Error
+ */
+router.get('/user/:userId', verifyToken, getPicturesByUserId);
 
 export default router;
