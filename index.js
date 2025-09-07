@@ -27,6 +27,7 @@ import { autoConfirmPendingOrders, autoCompleteShippedOrders, autoUpdateChalleng
 import complaintRoutes from './routes/complaint.routes.js';
 import reviewRoutes from './routes/review.route.js';
 import shopGalleryRoutes from './routes/shopGallery.route.js';
+import pictureCakeDesignRoutes from './routes/pictureCakeDesign.route.js';
 dotenv.config();
 
 const app = express();
@@ -59,6 +60,7 @@ app.use('/api/cake-designs', cakeDesignRoutes);
 app.use('/api/complaints', complaintRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/shop-gallery', shopGalleryRoutes);
+app.use('/api/pictures', pictureCakeDesignRoutes);
 // Initialize and synchronize the database
 initDB().then(() => {
     // Setup associations after database is initialized
