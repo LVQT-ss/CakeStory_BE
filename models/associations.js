@@ -26,6 +26,7 @@ import OrderDetail from './order_detail.model.js';
 import CakeSize from "./cake_size.model.js";
 import Complaint from "./complaint.model.js";
 import ShopGallery from './shop_gallery.model.js';
+import PictureForCakeDesign from './picture_for_cake_design.model.js';
 
 function setupAssociations() {
   // User ↔ Shop (1-1)
@@ -213,6 +214,10 @@ function setupAssociations() {
   // Shop ↔ ShopGallery (1-N)
   Shop.hasMany(ShopGallery, { foreignKey: 'shop_id', as: 'gallery' });
   ShopGallery.belongsTo(Shop, { foreignKey: 'shop_id', as: 'shop' });
+
+  // User ↔ PictureForCakeDesign (1-N)
+  User.hasMany(PictureForCakeDesign, { foreignKey: 'user_id', as: 'picturesForCakeDesign' });
+  PictureForCakeDesign.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 }
 
 export default setupAssociations;
