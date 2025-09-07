@@ -20,10 +20,6 @@ const PictureForCakeDesign = sequelize.define('PictureForCakeDesign', {
     created_at: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW
-    },
-    updated_at: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
     }
 }, {
     tableName: 'picture_for_cake_design',
