@@ -3,6 +3,7 @@ import { initializeApp } from "firebase/app";
 import { getAuth, sendEmailVerification } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+import admin from 'firebase-admin';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -17,8 +18,15 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
+// Initialize Firebase Admin SDK
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.applicationDefault(),
+  });
+}
 
 export const auth = getAuth(app)
 export const db = getFirestore()
 export const storage = getStorage()
+export const adminAuth = admin.auth()
 export { sendEmailVerification }

@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, getAuth } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import User from '../models/User.model.js';
-import { auth, db, sendEmailVerification } from '../utils/firebase.js';
+import { auth, db, sendEmailVerification, adminAuth } from '../utils/firebase.js';
 import 'dotenv/config';
 
 export const register = async (req, res) => {
@@ -135,8 +135,15 @@ export const login = async (req, res) => {
         const firebaseUid = firebaseUser.user.uid;
 
         const firebaseIdToken = await firebaseUser.user.getIdToken();
+
         // Find user in PostgreSQL database
         const user = await User.findOne({ where: { email } });
+
+        // Create custom Firebase token
+        const customToken = await adminAuth.createCustomToken(firebaseUid, {
+            username: user?.username,
+            role: user?.role
+        });
 
         if (!user) {
             return res.status(401).json({ message: "User not found in database" });
@@ -173,7 +180,8 @@ export const login = async (req, res) => {
             token: token,
             user: userWithoutPassword,
             firebaseUid: firebaseUid,
-            firebaseIdToken: firebaseIdToken
+            firebaseToken: firebaseIdToken,
+            customToken: customToken
 
         });
     } catch (err) {
