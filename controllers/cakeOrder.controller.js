@@ -7,11 +7,10 @@ import Transaction from '../models/transaction.model.js';
 import Shop from '../models/shop.model.js';
 import { Op } from 'sequelize';
 import User from '../models/User.model.js';
-
+import { verifyToken } from '../middleware/verifyUser.js';
 // CREATE CakeOrder with multiple OrderDetails and Payment Processing
 export const createCakeOrder = async (req, res) => {
   const {
-    customer_id,
     shop_id,
     marketplace_post_id,
     base_price,
@@ -20,7 +19,7 @@ export const createCakeOrder = async (req, res) => {
     tier,
     order_details = []
   } = req.body;
-
+  const customer_id = req.user.id;
   const dbTransaction = await sequelize.transaction();
 
   try {
@@ -177,10 +176,18 @@ export const getAllCakeOrders = async (req, res) => {
   }
 };
 
-// GET CakeOrders by User ID (excluding cancelled)
+// GET CakeOrders by User ID 
 export const getCakeOrdersByUserId = async (req, res) => {
   try {
     const { user_id } = req.params;
+
+    // Nếu không phải admin/staff → chỉ được lấy order của chính mình
+    if (req.role !== 'admin' && req.role !== 'staff') {
+      if (parseInt(user_id, 10) !== req.userId) {
+        return res.status(403).json({ message: 'Not authorized to view other users orders' });
+      }
+    }
+
     const orders = await CakeOrder.findAll({
       where: {
         customer_id: user_id,
@@ -192,21 +199,38 @@ export const getCakeOrdersByUserId = async (req, res) => {
         },
         {
           model: User,
-          attributes: ['id', 'username', 'full_name', 'email', 'address', 'phone_number']
+          attributes: [
+            'id',
+            'username',
+            'full_name',
+            'email',
+            'address',
+            'phone_number'
+          ]
         },
         {
           model: Shop,
-          attributes: ['shop_id', 'business_name', 'phone_number', 'business_address']
+          attributes: [
+            'shop_id',
+            'business_name',
+            'phone_number',
+            'business_address'
+          ]
         },
       ]
     });
+
     res.status(200).json(orders);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to retrieve orders', error: error.message });
+    res.status(500).json({
+      message: 'Failed to retrieve orders',
+      error: error.message
+    });
   }
 };
 
-// GET CakeOrder by ID (excluding cancelled)
+
+// GET CakeOrder by ID 
 export const getCakeOrderById = async (req, res) => {
   try {
     const order = await CakeOrder.findOne({
@@ -229,21 +253,45 @@ export const getCakeOrderById = async (req, res) => {
       ]
     });
 
-    if (!order) return res.status(404).json({ message: 'Order not found' });
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    // ✅ Chỉ cho phép user thường xem đơn của chính họ
+    if (req.role !== 'admin' && req.role !== 'staff') {
+      if (order.customer_id !== req.userId) {
+        return res.status(403).json({ message: 'Not authorized to view this order' });
+      }
+    }
+
     res.status(200).json(order);
   } catch (error) {
     res.status(500).json({ message: 'Failed to retrieve order', error: error.message });
   }
 };
 
-// GET CakeOrders by Shop ID (excluding cancelled)
+// GET CakeOrders by Shop ID (with role check)
 export const getCakeOrdersByShopId = async (req, res) => {
   try {
     const { shop_id } = req.params;
+
+    // Tìm shop để check quyền
+    const shop = await Shop.findByPk(shop_id);
+    if (!shop) {
+      return res.status(404).json({ message: 'Shop not found' });
+    }
+
+    // Nếu không phải admin/staff → chỉ được xem shop của chính mình
+    if (req.role !== 'admin' && req.role !== 'staff') {
+      if (shop.user_id !== req.userId) {
+        return res.status(403).json({ message: 'Not authorized to view orders of this shop' });
+      }
+    }
+
+    // Lấy danh sách orders
     const orders = await CakeOrder.findAll({
       where: {
         shop_id,
-        status: { [Op.ne]: 'cancelled' }
       },
       include: [
         {
@@ -260,6 +308,7 @@ export const getCakeOrdersByShopId = async (req, res) => {
         },
       ]
     });
+
     res.status(200).json(orders);
   } catch (error) {
     res.status(500).json({ message: 'Failed to retrieve orders', error: error.message });
@@ -352,37 +401,61 @@ export const updateCakeOrder = async (req, res) => {
 };
 
 // UPDATE status to "ordered" only if current status = "pending"
-export const markOrderAsOrdered = async (req, res) => {
-  try {
-    const order = await CakeOrder.findByPk(req.params.id);
+export const markOrderAsOrdered = [
+  verifyToken, // ✅ middleware check JWT
+  async (req, res) => {
+    try {
+      const order = await CakeOrder.findByPk(req.params.id, {
+        include: [{ model: Shop, as: 'shop' }]
+      });
 
-    if (!order) return res.status(404).json({ message: 'Order not found' });
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
 
-    if (order.status !== 'pending') {
-      return res.status(400).json({ message: 'Only pending orders can be marked as ordered' });
+      // ✅ Lấy user từ token
+      const currentUser = req.user;
+
+      // ✅ Chỉ shop owner hoặc admin/staff được phép update
+      if (currentUser.role !== 'admin' && currentUser.role !== 'staff') {
+        if (order.shop.user_id !== currentUser.id) {
+          return res.status(403).json({ message: 'Not authorized to update this order' });
+        }
+      }
+
+      if (order.status !== 'pending') {
+        return res.status(400).json({ message: 'Only pending orders can be marked as ordered' });
+      }
+
+      await order.update({ status: 'ordered' });
+
+      res.status(200).json({ message: 'Order marked as ordered' });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to update order', error: error.message });
     }
-
-    await CakeOrder.update(
-      { status: 'ordered' },
-      { where: { id: req.params.id } }
-    );
-
-    res.status(200).json({ message: 'Order marked as ordered' });
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to update order', error: error.message });
   }
-};
+];
 
 // UPDATE status to "completed" + release payment with 5% fee
 export const markOrderAsCompleted = async (req, res) => {
   const dbTransaction = await sequelize.transaction();
 
   try {
+    const { id: userId, role } = req.user; // lấy từ verifyToken
+
     // 1. Lấy order
     const order = await CakeOrder.findByPk(req.params.id, { transaction: dbTransaction });
     if (!order) {
       await dbTransaction.rollback();
       return res.status(404).json({ message: 'Order not found' });
+    }
+
+    // ✅ Chỉ cho phép customer của order update (trừ khi admin/staff)
+    if (role !== 'admin' && role !== 'staff') {
+      if (order.customer_id !== userId) {
+        await dbTransaction.rollback();
+        return res.status(403).json({ message: 'Not authorized to complete this order' });
+      }
     }
 
     if (order.status !== 'shipped') {
@@ -495,11 +568,22 @@ export const cancelCakeOrder = async (req, res) => {
   const dbTransaction = await sequelize.transaction();
 
   try {
+    const { id: userId, role } = req.user; // lấy từ verifyToken
+
+    // 1. Lấy order
     const order = await CakeOrder.findByPk(req.params.id, { transaction: dbTransaction });
 
     if (!order) {
       await dbTransaction.rollback();
       return res.status(404).json({ message: 'Order not found' });
+    }
+
+    // ✅ Chỉ cho phép customer hủy (trừ admin/staff)
+    if (role !== 'admin' && role !== 'staff') {
+      if (order.customer_id !== userId) {
+        await dbTransaction.rollback();
+        return res.status(403).json({ message: 'Not authorized to cancel this order' });
+      }
     }
 
     if (order.status !== 'pending') {
@@ -594,47 +678,67 @@ export const cancelCakeOrder = async (req, res) => {
   }
 };
 
-// UPDATE status to "shipped" and set shipped_at timestamp NOTE : đang cho chủ shop để set shipped 
-export const markOrderAsShipped = async (req, res) => {
-  try {
-    const order = await CakeOrder.findByPk(req.params.id);
+// middleware helper: check quyền
+const canManageOrder = (order, req) => {
+  // Admin hoặc staff thì luôn được phép
+  if (req.role === 'admin' || req.role === 'staff') return true;
 
-    if (!order) return res.status(404).json({ message: 'Order not found' });
-
-    if (order.status !== 'prepared') {
-      return res.status(400).json({ message: 'Only ordered orders can be shipped' });
-    }
-
-    await CakeOrder.update(
-      {
-        status: 'shipped',
-        shipped_at: new Date()
-      },
-      { where: { id: req.params.id } }
-    );
-
-    res.status(200).json({ message: 'Order marked as shipped' });
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to update order', error: error.message });
-  }
+  // Chủ shop mới được phép
+  return order.shop.user_id === req.userId;
 };
-// UPDATE status to "prepared"
+
+// UPDATE status to "prepared" (chỉ khi hiện tại = "ordered")
 export const markOrderAsPrepared = async (req, res) => {
   try {
-    const order = await CakeOrder.findByPk(req.params.id);
+    const order = await CakeOrder.findByPk(req.params.id, {
+      include: [{ model: Shop, as: 'shop' }]
+    });
 
-    if (!order) return res.status(404).json({ message: 'Order not found' });
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    if (!canManageOrder(order, req)) {
+      return res.status(403).json({ message: 'Not authorized to prepare this order' });
+    }
 
     if (order.status !== 'ordered') {
       return res.status(400).json({ message: 'Only ordered orders can be marked as prepared' });
     }
 
-    await CakeOrder.update(
-      { status: 'prepared' },
-      { where: { id: req.params.id } }
-    );
+    await order.update({ status: 'prepared' });
 
     res.status(200).json({ message: 'Order marked as prepared' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to update order', error: error.message });
+  }
+};
+
+// UPDATE status to "shipped" (chỉ khi hiện tại = "prepared")
+export const markOrderAsShipped = async (req, res) => {
+  try {
+    const order = await CakeOrder.findByPk(req.params.id, {
+      include: [{ model: Shop, as: 'shop' }]
+    });
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    if (!canManageOrder(order, req)) {
+      return res.status(403).json({ message: 'Not authorized to ship this order' });
+    }
+
+    if (order.status !== 'prepared') {
+      return res.status(400).json({ message: 'Only prepared orders can be marked as shipped' });
+    }
+
+    await order.update({
+      status: 'shipped',
+      shipped_at: new Date()
+    });
+
+    res.status(200).json({ message: 'Order marked as shipped' });
   } catch (error) {
     res.status(500).json({ message: 'Failed to update order', error: error.message });
   }
