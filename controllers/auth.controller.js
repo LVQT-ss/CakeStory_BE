@@ -134,6 +134,7 @@ export const login = async (req, res) => {
         const firebaseUser = await signInWithEmailAndPassword(auth, email, password);
         const firebaseUid = firebaseUser.user.uid;
 
+        const firebaseIdToken = await firebaseUser.user.getIdToken();
         // Find user in PostgreSQL database
         const user = await User.findOne({ where: { email } });
 
@@ -171,7 +172,9 @@ export const login = async (req, res) => {
             message: "Login successful",
             token: token,
             user: userWithoutPassword,
-            firebaseUid: firebaseUid
+            firebaseUid: firebaseUid,
+            firebaseIdToken: firebaseIdToken
+
         });
     } catch (err) {
         if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
