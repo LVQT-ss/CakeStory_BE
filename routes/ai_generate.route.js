@@ -6,7 +6,7 @@ import {
     freeGenerateImage,
     getFreeUsageCount
 } from '../controllers/ai_generate.controller.js';
-import { verifyToken, verifyAdmin } from '../middleware/verifyUser.js';
+import { verifyToken, verifyStaff } from '../middleware/verifyUser.js';
 
 const router = express.Router();
 
@@ -90,7 +90,7 @@ router.get('/images', verifyToken, getUserGeneratedImages);
  *       500:
  *         description: Internal server error
  */
-router.get('/totalAmountAiGenerate', verifyToken, verifyAdmin, totalAmountAiGenerate);
+router.get('/totalAmountAiGenerate', verifyToken, verifyStaff, totalAmountAiGenerate);
 
 /**
  * @swagger
