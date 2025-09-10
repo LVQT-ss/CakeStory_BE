@@ -9,7 +9,7 @@ import {
   getComplaintsByShopId,
   getComplaintsByCustomerId
 } from '../controllers/complaint.controller.js';
-import { verifyToken } from '../middleware/verifyUser.js';
+import { verifyAdmin, verifyStaff, verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
 
@@ -34,7 +34,7 @@ const router = express.Router();
  *       500:
  *         description: Server error
  */
-router.get('/', verifyToken, getAllComplaints);
+router.get('/', verifyToken, verifyAdmin, verifyStaff, getAllComplaints);
 
 /**
  * @swagger
@@ -178,7 +178,7 @@ router.post('/', verifyToken, createComplaint);
  *       500:
  *         description: Server error
  */
-router.put('/:id', verifyToken, updateComplaint);
+router.put('/:id', verifyToken, verifyAdmin, verifyStaff,updateComplaint);
 
 /**
  * @swagger
@@ -203,7 +203,7 @@ router.put('/:id', verifyToken, updateComplaint);
  *       500:
  *         description: Server error
  */
-router.put('/:id/approve', verifyToken, approveComplaint);
+router.put('/:id/approve', verifyToken, verifyAdmin, verifyStaff,approveComplaint);
 
 /**
  * @swagger
@@ -228,6 +228,6 @@ router.put('/:id/approve', verifyToken, approveComplaint);
  *       500:
  *         description: Server error
  */
-router.put('/:id/reject', verifyToken, rejectComplaint);
+router.put('/:id/reject', verifyToken, verifyAdmin, verifyStaff,rejectComplaint);
 
 export default router;

@@ -4,6 +4,7 @@ import Wallet from "../models/wallet.model.js";
 import Transaction from "../models/transaction.model.js";
 import sequelize from "../database/db.js";
 import User from "../models/User.model.js";
+import Shop from "../models/shop.model.js";
 export const createComplaint = async (req, res) => {
   try {
     const { order_id, reason, evidence_images } = req.body;
@@ -17,9 +18,13 @@ export const createComplaint = async (req, res) => {
       return res.status(404).json({ message: "Order not found or not yours" });
     }
 
-    // Nếu status là "shipped" thì chuyển thành "complaining"
-    if (order.status === "shipped") {
+    // Nếu status là "ordered", "prepared" hoặc "shipped" thì chuyển thành "complaining"
+    if (["ordered", "prepared", "shipped"].includes(order.status)) {
       await order.update({ status: "complaining" });
+    } else {
+      return res.status(400).json({ 
+        message: "Complaint can only be created for orders that are ordered, prepared, or shipped" 
+      });
     }
 
     // Tạo complaint
@@ -233,20 +238,34 @@ export const getComplaintsByShopId = async (req, res) => {
   try {
     const { shop_id } = req.params;
 
+    // Nếu không phải admin/staff thì kiểm tra quyền sở hữu shop
+    if (req.role !== "admin" && req.role !== "staff") {
+      const shop = await Shop.findByPk(shop_id);
+
+      if (!shop) {
+        return res.status(404).json({ message: "Shop not found" });
+      }
+
+      if (shop.user_id !== req.userId) {
+        return res.status(403).json({ message: "Not authorized to view complaints of this shop" });
+      }
+    }
+
+    // Lấy complaint theo shop_id
     const complaints = await Complaint.findAll({
       include: [
         {
           model: CakeOrder,
-          as: 'order',
+          as: "order",
           where: { shop_id },
           include: [
             {
               model: User,
-              attributes: ['id', 'username','full_name','email', 'address', 'phone_number']
-            }
-          ]
-        }
-      ]
+              attributes: ["id", "username", "full_name", "email", "address", "phone_number"],
+            },
+          ],
+        },
+      ],
     });
 
     return res.json(complaints);
@@ -263,20 +282,27 @@ export const getComplaintsByCustomerId = async (req, res) => {
   try {
     const { customer_id } = req.params;
 
+    // Nếu là user thường thì chỉ cho phép xem của chính họ
+    if (req.role !== "admin" && req.role !== "staff") {
+      if (parseInt(customer_id) !== req.userId) {
+        return res.status(403).json({ message: "Not authorized to view complaints of this customer" });
+      }
+    }
+
     const complaints = await Complaint.findAll({
       include: [
         {
           model: CakeOrder,
-          as: 'order',
+          as: "order",
           where: { customer_id },
           include: [
             {
               model: User,
-              attributes: ['id', 'username','full_name','email', 'address', 'phone_number']
-            }
-          ]
-        }
-      ]
+              attributes: ["id", "username", "full_name", "email", "address", "phone_number"],
+            },
+          ],
+        },
+      ],
     });
 
     return res.json(complaints);
@@ -323,25 +349,41 @@ export const getComplaintById = async (req, res) => {
       include: [
         {
           model: CakeOrder,
-          as: 'order',
-          attributes: ['id', 'customer_id', 'shop_id', 'total_price', 'status', 'created_at'],
+          as: "order",
+          attributes: ["id", "customer_id", "shop_id", "total_price", "status", "created_at"],
           include: [
             {
               model: User,
-              attributes: ['id', 'username','full_name','email', 'address', 'phone_number']
-            }
-          ]
-        }
-      ]
+              attributes: ["id", "username", "full_name", "email", "address", "phone_number"],
+            },
+            {
+              model: Shop,
+              attributes: ["shop_id", "user_id", "business_name"],
+            },
+          ],
+        },
+      ],
     });
 
     if (!complaint) {
       return res.status(404).json({ message: "Complaint not found" });
     }
 
+    // ✅ Kiểm tra quyền
+    if (req.role !== "admin" && req.role !== "staff") {
+      const order = complaint.order;
+
+      const isCustomer = order.customer_id === req.userId;
+      const isShopOwner = order.shop && order.shop.user_id === req.userId;
+
+      if (!isCustomer && !isShopOwner) {
+        return res.status(403).json({ message: "Not authorized to view this complaint" });
+      }
+    }
+
     return res.json(complaint);
   } catch (error) {
-    console.error('getComplaintById error:', error);
+    console.error("getComplaintById error:", error);
     return res.status(500).json({ message: "Server error" });
   }
 };
