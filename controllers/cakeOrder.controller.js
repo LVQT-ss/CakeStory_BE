@@ -151,9 +151,15 @@ export const createCakeOrder = async (req, res) => {
   }
 };
 
-// GET all CakeOrders (excluding cancelled)
+// GET all CakeOrders 
 export const getAllCakeOrders = async (req, res) => {
   try {
+    const { role } = req.user; 
+    // Chỉ cho admin và staff
+    if (role !== 'admin' && role !== 'staff') {
+      return res.status(403).json({ message: 'Not authorized to view all orders' });
+    }
+
     const orders = await CakeOrder.findAll({
       include: [
         {
@@ -170,6 +176,7 @@ export const getAllCakeOrders = async (req, res) => {
         },
       ]
     });
+
     res.status(200).json(orders);
   } catch (error) {
     res.status(500).json({ message: 'Failed to retrieve orders', error: error.message });
@@ -248,7 +255,7 @@ export const getCakeOrderById = async (req, res) => {
         },
         {
           model: Shop,
-          attributes: ['shop_id', 'business_name', 'phone_number', 'business_address']
+          attributes: ['shop_id', 'business_name', 'phone_number', 'business_address', 'user_id'] // cần lấy user_id
         },
       ]
     });
@@ -257,9 +264,12 @@ export const getCakeOrderById = async (req, res) => {
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    // ✅ Chỉ cho phép user thường xem đơn của chính họ
+    // ✅ Chỉ cho phép user thường xem đơn của chính họ hoặc shop của họ
     if (req.role !== 'admin' && req.role !== 'staff') {
-      if (order.customer_id !== req.userId) {
+      const isCustomer = order.customer_id === req.userId;
+      const isShopOwner = order.shop && order.shop.user_id === req.userId;
+
+      if (!isCustomer && !isShopOwner) {
         return res.status(403).json({ message: 'Not authorized to view this order' });
       }
     }
@@ -269,6 +279,7 @@ export const getCakeOrderById = async (req, res) => {
     res.status(500).json({ message: 'Failed to retrieve order', error: error.message });
   }
 };
+
 
 // GET CakeOrders by Shop ID (with role check)
 export const getCakeOrdersByShopId = async (req, res) => {
@@ -402,7 +413,7 @@ export const updateCakeOrder = async (req, res) => {
 
 // UPDATE status to "ordered" only if current status = "pending"
 export const markOrderAsOrdered = [
-  verifyToken, // ✅ middleware check JWT
+  verifyToken,
   async (req, res) => {
     try {
       const order = await CakeOrder.findByPk(req.params.id, {
@@ -412,11 +423,9 @@ export const markOrderAsOrdered = [
       if (!order) {
         return res.status(404).json({ message: 'Order not found' });
       }
-
-      // ✅ Lấy user từ token
       const currentUser = req.user;
 
-      // ✅ Chỉ shop owner hoặc admin/staff được phép update
+      // Chỉ shop owner hoặc admin/staff được phép update
       if (currentUser.role !== 'admin' && currentUser.role !== 'staff') {
         if (order.shop.user_id !== currentUser.id) {
           return res.status(403).json({ message: 'Not authorized to update this order' });
