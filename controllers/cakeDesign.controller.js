@@ -683,13 +683,14 @@ export const editCakeDesign = async (req, res) => {
             base64Image = design_image;
         }
 
-        // Use DALL-E 2 variations endpoint for full image transformation
+        // Use OpenAI image edits endpoint to apply prompt-guided edits
         const formData = new FormData();
         formData.append('image', Buffer.from(base64Image, 'base64'), 'image.png');
+        formData.append('prompt', edit_prompt || 'Improve this cake design');
         formData.append('n', '1');
         formData.append('size', '1024x1024');
 
-        const editResponse = await axios.post('https://api.openai.com/v1/images/variations', formData, {
+        const editResponse = await axios.post('https://api.openai.com/v1/images/edits', formData, {
             headers: {
                 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
                 ...formData.getHeaders()
@@ -711,9 +712,9 @@ export const editCakeDesign = async (req, res) => {
             customMetadata: {
                 userId: user_id.toString(),
                 originalCakeDesignId: cake_design_id.toString(),
-                editPrompt: edit_prompt || 'AI Variation',
+                editPrompt: edit_prompt || 'Improve this cake design',
                 aiEdited: 'true',
-                model: 'dall-e-2-variations'
+                model: 'dall-e-2-edit'
             }
         };
 
@@ -723,8 +724,8 @@ export const editCakeDesign = async (req, res) => {
         // Create new cake design with edited image
         const editedCakeDesign = await CakeDesign.create({
             user_id,
-            description: `${result.existingCakeDesign.description} - AI Variation`,
-            design_image: `DALL-E 2 Variation based on: ${edit_prompt}`,
+            description: `${result.existingCakeDesign.description} - AI Edited`,
+            design_image: `DALL-E 2 Edit: ${edit_prompt || 'Improved cake design'}`,
             is_public: result.existingCakeDesign.is_public,
             ai_generated: firebaseUrl
         });
@@ -743,7 +744,7 @@ export const editCakeDesign = async (req, res) => {
         });
         res.status(200).json({
             success: true,
-            message: 'AI cake design variation created successfully',
+            message: 'AI cake design edited successfully',
             data: {
                 originalDesign: {
                     id: result.existingCakeDesign.id,
