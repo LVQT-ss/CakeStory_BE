@@ -34,7 +34,7 @@ const router = express.Router();
  *       500:
  *         description: Server error
  */
-router.get('/', verifyToken, verifyAdmin, verifyStaff, getAllComplaints);
+router.get('/', verifyToken, verifyStaff, getAllComplaints);
 
 /**
  * @swagger
@@ -178,7 +178,7 @@ router.post('/', verifyToken, createComplaint);
  *       500:
  *         description: Server error
  */
-router.put('/:id', verifyToken, verifyAdmin, verifyStaff,updateComplaint);
+router.put('/:id', verifyToken, verifyStaff,updateComplaint);
 
 /**
  * @swagger
@@ -203,7 +203,7 @@ router.put('/:id', verifyToken, verifyAdmin, verifyStaff,updateComplaint);
  *       500:
  *         description: Server error
  */
-router.put('/:id/approve', verifyToken, verifyAdmin, verifyStaff,approveComplaint);
+router.put('/:id/approve', verifyToken, verifyStaff,approveComplaint);
 
 /**
  * @swagger
@@ -228,6 +228,6 @@ router.put('/:id/approve', verifyToken, verifyAdmin, verifyStaff,approveComplain
  *       500:
  *         description: Server error
  */
-router.put('/:id/reject', verifyToken, verifyAdmin, verifyStaff,rejectComplaint);
+router.put('/:id/reject', verifyToken, verifyStaff,rejectComplaint);
 
 export default router;
