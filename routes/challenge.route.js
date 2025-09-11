@@ -6,7 +6,7 @@ import {
   updateChallenge,
   deleteChallenge
 } from '../controllers/challenge.controller.js';
-import { verifyToken } from '../middleware/verifyUser.js';
+import { verifyAdmin, verifyStaff, verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
 
@@ -69,7 +69,7 @@ const router = express.Router();
  *       500:
  *         description: Server error
  */
-router.post('/', verifyToken, createChallenge);
+router.post('/', verifyToken, verifyAdmin,createChallenge);
 
 /**
  * @swagger
@@ -194,7 +194,7 @@ router.get('/:id', getChallengeById);
  *       500:
  *         description: Server error
  */
-router.put('/:id', verifyToken, updateChallenge);
+router.put('/:id', verifyToken, verifyAdmin, verifyStaff, updateChallenge);
 
 /**
  * @swagger
@@ -220,7 +220,7 @@ router.put('/:id', verifyToken, updateChallenge);
  *       500:
  *         description: Server error
  */
-router.delete('/:id', verifyToken, deleteChallenge);
+router.delete('/:id', verifyToken,verifyAdmin, deleteChallenge);
 
 /**
  * @swagger
