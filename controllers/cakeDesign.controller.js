@@ -589,7 +589,7 @@ export const editCakeDesign = async (req, res) => {
                 await Transaction.create({
                     from_wallet_id: null,
                     amount: AI_EDIT_COST,
-                    transaction_type: 'ai_edit',
+                    transaction_type: 'ai_generation',
                     status: 'failed',
                     description: `AI Cake Design Edit for design ID ${cake_design_id} - Wallet not found`,
                 }, { transaction: t });
@@ -602,7 +602,7 @@ export const editCakeDesign = async (req, res) => {
                 await Transaction.create({
                     from_wallet_id: wallet.id,
                     amount: AI_EDIT_COST,
-                    transaction_type: 'ai_edit',
+                    transaction_type: 'ai_generation',
                     status: 'failed',
                     description: `AI Cake Design Edit for design ID ${cake_design_id} - Cake design not found`,
                 }, { transaction: t });
@@ -614,7 +614,7 @@ export const editCakeDesign = async (req, res) => {
                 await Transaction.create({
                     from_wallet_id: wallet.id,
                     amount: AI_EDIT_COST,
-                    transaction_type: 'ai_edit',
+                    transaction_type: 'ai_generation',
                     status: 'failed',
                     description: `AI Cake Design Edit for design ID ${cake_design_id} - Access denied`,
                 }, { transaction: t });
@@ -625,7 +625,7 @@ export const editCakeDesign = async (req, res) => {
             const transaction = await Transaction.create({
                 from_wallet_id: wallet.id,
                 amount: AI_EDIT_COST,
-                transaction_type: 'ai_edit',
+                transaction_type: 'ai_generation',
                 status: 'pending',
                 description: `AI Cake Design Edit for design ID ${cake_design_id}`,
             }, { transaction: t });
@@ -684,14 +684,15 @@ export const editCakeDesign = async (req, res) => {
         }
 
         // Use DALL-E 2 variations endpoint for full image transformation
-        const editResponse = await axios.post('https://api.openai.com/v1/images/variations', {
-            image: base64Image,
-            n: 1,
-            size: "1024x1024"
-        }, {
+        const formData = new FormData();
+        formData.append('image', Buffer.from(base64Image, 'base64'), 'image.png');
+        formData.append('n', '1');
+        formData.append('size', '1024x1024');
+
+        const editResponse = await axios.post('https://api.openai.com/v1/images/variations', formData, {
             headers: {
                 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-                'Content-Type': 'application/json'
+                ...formData.getHeaders()
             }
         });
 
@@ -741,7 +742,6 @@ export const editCakeDesign = async (req, res) => {
             data: {
                 originalDesign: {
                     id: result.existingCakeDesign.id,
-                    design_image: result.existingCakeDesign.design_image
                 },
                 editedDesign: {
                     id: editedCakeDesign.id,
