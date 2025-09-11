@@ -724,9 +724,9 @@ export const editCakeDesign = async (req, res) => {
         const editedCakeDesign = await CakeDesign.create({
             user_id,
             description: `${result.existingCakeDesign.description} - AI Variation`,
-            design_image: firebaseUrl,
+            design_image: `DALL-E 2 Variation based on: ${edit_prompt}`,
             is_public: result.existingCakeDesign.is_public,
-            ai_generated: `DALL-E 2 Variation based on: ${edit_prompt}`
+            ai_generated: firebaseUrl
         });
 
         // Update transaction description
@@ -736,6 +736,11 @@ export const editCakeDesign = async (req, res) => {
             where: { id: result.transaction.id }
         });
 
+        await CakeDesign.update({
+            ai_generated: firebaseUrl
+        }, {
+            where: { id: cake_design_id }
+        });
         res.status(200).json({
             success: true,
             message: 'AI cake design variation created successfully',
