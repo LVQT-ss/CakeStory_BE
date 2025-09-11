@@ -7,7 +7,7 @@ import {
   updateChallengeEntry,
   deleteChallengeEntry,
 } from '../controllers/challengeEntry.controller.js';
-import { verifyToken } from '../middleware/verifyUser.js';
+import { verifyAdmin, verifyStaff, verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
 
@@ -115,7 +115,7 @@ router.post('/', verifyToken, createChallengeEntry);
  *       500:
  *         description: Server error
  */
-router.get('/', getAllChallengeEntries);
+router.get('/', verifyAdmin, verifyStaff, getAllChallengeEntries);
 
 /**
  * @swagger
@@ -146,7 +146,7 @@ router.get('/', getAllChallengeEntries);
  *       500:
  *         description: Server error
  */
-router.get('/:id', getChallengeEntryById);
+router.get('/:id', verifyToken, verifyAdmin, verifyStaff,getChallengeEntryById);
 
 /**
  * @swagger
@@ -177,7 +177,7 @@ router.get('/:id', getChallengeEntryById);
  *       500:
  *         description: Server error
  */
-router.get('/challenge/:challenge_id', getChallengeEntriesByChallengeId);
+router.get('/challenge/:challenge_id', verifyToken,verifyAdmin, verifyStaff, getChallengeEntriesByChallengeId);
 
 /**
  * @swagger
@@ -247,6 +247,6 @@ router.put('/:id', updateChallengeEntry);
  *       500:
  *         description: Error deleting entry
  */
-router.delete('/:id', deleteChallengeEntry);
+router.delete('/:id', verifyToken,verifyAdmin, verifyStaff, deleteChallengeEntry);
 
 export default router;

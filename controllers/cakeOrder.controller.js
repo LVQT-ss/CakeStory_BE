@@ -154,10 +154,13 @@ export const createCakeOrder = async (req, res) => {
 // GET all CakeOrders 
 export const getAllCakeOrders = async (req, res) => {
   try {
-    const { role } = req.user; 
-    // Chỉ cho admin và staff
-    if (role !== 'admin' && role !== 'staff') {
-      return res.status(403).json({ message: 'Not authorized to view all orders' });
+    const { user_id } = req.params;
+
+    // Nếu không phải admin/staff → chỉ được lấy order của chính mình
+    if (req.role !== 'admin' && req.role !== 'staff') {
+      if (parseInt(user_id, 10) !== req.userId) {
+        return res.status(403).json({ message: 'Not authorized to view' });
+      }
     }
 
     const orders = await CakeOrder.findAll({
