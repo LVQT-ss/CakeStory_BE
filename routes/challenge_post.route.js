@@ -9,7 +9,7 @@ import {
   deleteChallengePost,
   getLeaderBoard
 } from '../controllers/challengePost.controller.js';
-import { verifyToken } from '../middleware/verifyUser.js';
+import { verifyStaff, verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
 
@@ -329,6 +329,6 @@ router.put('/:post_id', verifyToken, updateChallengePost);
  *       500:
  *         description: Server error
  */
-router.delete('/:post_id', verifyToken, deleteChallengePost);
+router.delete('/:post_id', verifyToken, verifyStaff, deleteChallengePost);
 
 export default router;

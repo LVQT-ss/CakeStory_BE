@@ -69,7 +69,7 @@ const router = express.Router();
  *       500:
  *         description: Server error
  */
-router.post('/', verifyToken, verifyAdmin,createChallenge);
+router.post('/', verifyToken, verifyStaff,createChallenge);
 
 /**
  * @swagger
@@ -194,7 +194,7 @@ router.get('/:id', getChallengeById);
  *       500:
  *         description: Server error
  */
-router.put('/:id', verifyToken, verifyAdmin, verifyStaff, updateChallenge);
+router.put('/:id', verifyToken, verifyStaff, updateChallenge);
 
 /**
  * @swagger
@@ -220,7 +220,7 @@ router.put('/:id', verifyToken, verifyAdmin, verifyStaff, updateChallenge);
  *       500:
  *         description: Server error
  */
-router.delete('/:id', verifyToken,verifyAdmin, deleteChallenge);
+router.delete('/:id', verifyToken,verifyStaff, deleteChallenge);
 
 /**
  * @swagger

@@ -146,7 +146,7 @@ router.get('/', verifyAdmin, verifyStaff, getAllChallengeEntries);
  *       500:
  *         description: Server error
  */
-router.get('/:id', verifyToken, verifyAdmin, verifyStaff,getChallengeEntryById);
+router.get('/:id', verifyToken,getChallengeEntryById);
 
 /**
  * @swagger
@@ -177,7 +177,7 @@ router.get('/:id', verifyToken, verifyAdmin, verifyStaff,getChallengeEntryById);
  *       500:
  *         description: Server error
  */
-router.get('/challenge/:challenge_id', verifyToken,verifyAdmin, verifyStaff, getChallengeEntriesByChallengeId);
+router.get('/challenge/:challenge_id', verifyToken, getChallengeEntriesByChallengeId);
 
 /**
  * @swagger
@@ -247,6 +247,6 @@ router.put('/:id', updateChallengeEntry);
  *       500:
  *         description: Error deleting entry
  */
-router.delete('/:id', verifyToken,verifyAdmin, verifyStaff, deleteChallengeEntry);
+router.delete('/:id', verifyToken, verifyStaff, deleteChallengeEntry);
 
 export default router;
