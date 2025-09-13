@@ -3,7 +3,8 @@ import {
     createCakeQuote,
     getCakeQuotes,
     getCakeQuoteById,
-
+    updateCakeQuoteStatus,
+    deleteCakeQuote
 } from '../controllers/cakeQuote.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
@@ -111,5 +112,68 @@ router.get('/', verifyToken, getCakeQuotes);
  *         description: Unauthorized
  */
 router.get('/:id', verifyToken, getCakeQuoteById);
+
+/**
+ * @swagger
+ * /api/cake-quotes/{id}/status:
+ *   patch:
+ *     summary: Update cake quote status
+ *     tags: [Cake Quotes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [open, closed, expired]
+ *                 example: "closed"
+ *     responses:
+ *       200:
+ *         description: Status updated successfully
+ *       400:
+ *         description: Invalid status
+ *       403:
+ *         description: Can only update own quotes
+ *       404:
+ *         description: Quote not found
+ */
+router.patch('/:id/status', verifyToken, updateCakeQuoteStatus);
+
+/**
+ * @swagger
+ * /api/cake-quotes/{id}:
+ *   delete:
+ *     summary: Delete a cake quote
+ *     tags: [Cake Quotes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Quote deleted successfully
+ *       403:
+ *         description: Can only delete own quotes
+ *       404:
+ *         description: Quote not found
+ */
+router.delete('/:id', verifyToken, deleteCakeQuote);
 
 export default router;
