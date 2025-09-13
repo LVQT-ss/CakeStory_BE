@@ -2,7 +2,7 @@ import express from 'express';
 import {
     createCakeQuote,
     getCakeQuotes,
-
+    getCakeQuoteById,
 
 } from '../controllers/cakeQuote.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
@@ -88,5 +88,28 @@ router.post('/', verifyToken, createCakeQuote);
  */
 router.get('/', verifyToken, getCakeQuotes);
 
+/**
+ * @swagger
+ * /api/cake-quotes/{id}:
+ *   get:
+ *     summary: Get a specific cake quote by ID
+ *     tags: [Cake Quotes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Cake quote retrieved successfully
+ *       404:
+ *         description: Cake quote not found
+ *       401:
+ *         description: Unauthorized
+ */
+router.get('/:id', verifyToken, getCakeQuoteById);
 
 export default router;
