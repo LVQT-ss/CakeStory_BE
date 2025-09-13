@@ -27,6 +27,8 @@ import CakeSize from "./cake_size.model.js";
 import Complaint from "./complaint.model.js";
 import ShopGallery from './shop_gallery.model.js';
 import PictureForCakeDesign from './picture_for_cake_design.model.js';
+import CakeQuote from './cake_quote.model.js';
+import ShopQuote from './shop_quote.model.js';
 
 function setupAssociations() {
   // User ↔ Shop (1-1)
@@ -218,6 +220,24 @@ function setupAssociations() {
   // User ↔ PictureForCakeDesign (1-N)
   User.hasMany(PictureForCakeDesign, { foreignKey: 'user_id', as: 'picturesForCakeDesign' });
   PictureForCakeDesign.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+  // CakeQuote associations
+  // User ↔ CakeQuote (1-N)
+  User.hasMany(CakeQuote, { foreignKey: 'user_id', as: 'cakeQuotes' });
+  CakeQuote.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+  // Shop ↔ CakeQuote (1-N) - accepted quotes
+  Shop.hasMany(CakeQuote, { foreignKey: 'accepted_Shop', as: 'acceptedQuotes' });
+  CakeQuote.belongsTo(Shop, { foreignKey: 'accepted_Shop', as: 'acceptedShop' });
+
+  // ShopQuote associations
+  // CakeQuote ↔ ShopQuote (1-N)
+  CakeQuote.hasMany(ShopQuote, { foreignKey: 'cake_quote_id', as: 'shopQuotes' });
+  ShopQuote.belongsTo(CakeQuote, { foreignKey: 'cake_quote_id', as: 'cakeQuote' });
+
+  // Shop ↔ ShopQuote (1-N)
+  Shop.hasMany(ShopQuote, { foreignKey: 'shop_id', as: 'quotes' });
+  ShopQuote.belongsTo(Shop, { foreignKey: 'shop_id', as: 'shop' });
 }
 
 export default setupAssociations;
