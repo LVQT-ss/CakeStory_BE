@@ -1,6 +1,8 @@
 import express from 'express';
 import {
     createCakeQuote,
+    getCakeQuotes,
+
 
 } from '../controllers/cakeQuote.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
@@ -56,6 +58,35 @@ const router = express.Router();
  *         description: Unauthorized
  */
 router.post('/', verifyToken, createCakeQuote);
+
+/**
+ * @swagger
+ * /api/cake-quotes:
+ *   get:
+ *     summary: Get all cake quotes
+ *     tags: [Cake Quotes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of items per page
+ *     responses:
+ *       200:
+ *         description: Cake quotes retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.get('/', verifyToken, getCakeQuotes);
 
 
 export default router;
