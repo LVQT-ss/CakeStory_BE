@@ -457,34 +457,47 @@ router.get('/', verifyToken, getCakeDesigns);
  *                   example: "AI service temporarily unavailable"
  */
 router.put('/generate-ai', verifyToken, generateAICakeDesign);
-
 /**
  * @swagger
  * /api/cake-designs/edit:
- *   put:
+ *   post:
  *     tags:
  *       - Cake Design
- *     summary: Create AI variation of cake design using DALL-E 2
- *     description: Create an AI-powered variation of an existing cake design. Scans the entire image and creates a new variation. Costs 500 VND per variation.
+ *     summary: Edit AI cake design using GPT-image-1
+ *     description: Upload an image (or provide Base64/URL) and apply AI-powered edits based on a text prompt. Each edit costs 500 VND.
  *     security:
  *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - design_image
+ *             properties:
+ *               design_image:
+ *                 type: string
+ *                 format: binary
+ *                 description: Image file to upload (jpg, jpeg, png, gif, webp - max 5MB)
+ *               edit_prompt:
+ *                 type: string
+ *                 description: Optional text describing the edit to apply
+ *                 example: "Add chocolate sprinkles on top"
  *         application/json:
  *           schema:
  *             type: object
  *             required:
- *               - cake_design_id
+ *               - design_image
  *             properties:
- *               cake_design_id:
- *                 type: integer
- *                 description: ID of the existing cake design to create variation from
- *                 example: 1
+ *               design_image:
+ *                 type: string
+ *                 description: Either an image URL or a Base64 string (supports `data:image/...;base64,` format or raw Base64)
+ *                 example: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
  *               edit_prompt:
  *                 type: string
- *                 description: Optional description for the variation (for metadata only)
- *                 example: "Birthday cake variation"
+ *                 description: Optional text describing the edit to apply
+ *                 example: "Make the cake pink with strawberries"
  *     responses:
  *       200:
  *         description: Cake design edited successfully
@@ -498,7 +511,7 @@ router.put('/generate-ai', verifyToken, generateAICakeDesign);
  *                   example: true
  *                 message:
  *                   type: string
- *                   example: "AI cake design variation created successfully"
+ *                   example: "AI cake design edited successfully"
  *                 data:
  *                   type: object
  *                   properties:
@@ -522,7 +535,7 @@ router.put('/generate-ai', verifyToken, generateAICakeDesign);
  *                           example: 1
  *                         description:
  *                           type: string
- *                           example: "Beautiful cake - Edited: Add chocolate sprinkles"
+ *                           example: "Beautiful cake - AI Edited: Add chocolate sprinkles"
  *                         design_image:
  *                           type: string
  *                           example: "https://firebase.com/edited.png"
@@ -535,31 +548,7 @@ router.put('/generate-ai', verifyToken, generateAICakeDesign);
  *                           example: true
  *                         ai_generated:
  *                           type: string
- *                           example: "DALL-E 2 Variation based on: Birthday cake variation"
- *                     transaction:
- *                       type: object
- *                       properties:
- *                         id:
- *                           type: integer
- *                           example: 123
- *                         amount:
- *                           type: integer
- *                           example: 500
- *                         status:
- *                           type: string
- *                           example: "completed"
- *                     wallet:
- *                       type: object
- *                       properties:
- *                         previousBalance:
- *                           type: integer
- *                           example: 2000
- *                         newBalance:
- *                           type: integer
- *                           example: 1500
- *                         deductedAmount:
- *                           type: integer
- *                           example: 500
+ *                           example: "DALL-E 2 variation based on: Add chocolate sprinkles"
  *       400:
  *         description: Bad Request - Missing required fields
  *         content:
@@ -572,64 +561,18 @@ router.put('/generate-ai', verifyToken, generateAICakeDesign);
  *                   example: false
  *                 message:
  *                   type: string
- *                   example: "cake_design_id and edit_prompt are required"
+ *                   example: "design_image is required (either upload a file, Base64, or URL)"
  *       402:
  *         description: Payment Required - Insufficient balance
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
- *                 message:
- *                   type: string
- *                   example: "Insufficient balance"
- *                 requiredAmount:
- *                   type: integer
- *                   example: 500
  *       403:
  *         description: Forbidden - Access denied
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
- *                 message:
- *                   type: string
- *                   example: "Access denied"
  *       404:
  *         description: Not Found - Resource not found
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
- *                 message:
- *                   type: string
- *                   example: "Resource not found"
  *       500:
  *         description: Internal Server Error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
- *                 message:
- *                   type: string
- *                   example: "Internal server error"
  */
-router.put('/edit', verifyToken, editCakeDesign);
+router.post('/edit', verifyToken, upload.single('design_image'), editCakeDesign);
+
 
 /**
  * @swagger

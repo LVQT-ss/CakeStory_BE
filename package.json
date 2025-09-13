@@ -34,6 +34,7 @@
     "qrcode": "^1.5.4",
     "querystring": "^0.2.1",
     "sequelize": "^6.37.5",
+    "sharp": "^0.34.3",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "vnpay": "^1.6.1"

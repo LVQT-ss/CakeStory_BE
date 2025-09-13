@@ -10,11 +10,17 @@ import axios from 'axios';
 import { Buffer } from 'buffer';
 import process from 'process';
 import sequelize from '../database/db.js';
-import FormData from 'form-data';
+import { Readable } from "stream";
+import sharp from "sharp";
+
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
+
+
+
+
 
 // Helper function to validate Base64 image
 const isValidBase64Image = (str) => {
@@ -557,198 +563,144 @@ export const generateAICakeDesign = async (req, res) => {
     }
 };
 
-// Edit specific parts of cake design using DALL-E 2 inpainting
+// Edit specific parts of cake design using GPT-image-1 inpainting
 export const editCakeDesign = async (req, res) => {
     try {
-        const { cake_design_id, edit_prompt } = req.body;
+        console.log("🚀 Starting editCakeDesign...");
+        const { edit_prompt, design_image } = req.body;
         const user_id = req.userId;
-        const AI_EDIT_COST = 500; // Cost per image edit (cheaper than generation)
+        const AI_EDIT_COST = 500; // Cost per image edit
 
-        // Validate required fields
-        if (!cake_design_id) {
+        console.log("📝 Received params:", { design_image, edit_prompt, user_id, hasFile: !!req.file });
+
+        // Check if we have either a file upload or design_image in body
+        if (!req.file && !design_image) {
             return res.status(400).json({
                 success: false,
-                message: 'cake_design_id is required'
+                message:
+                    "design_image is required (either upload a file, Base64, or URL)",
             });
         }
 
-        // Use transaction for data consistency
+        // ---- 💳 Transaction handling ----
+        console.log("💳 Starting transaction...");
         const result = await sequelize.transaction(async (t) => {
-            // Check user and wallet
             const user = await User.findByPk(user_id, { transaction: t });
-            if (!user) {
-                throw new Error('User not found');
-            }
+            if (!user) throw new Error("User not found");
 
-            const wallet = await Wallet.findOne({
-                where: { user_id: user_id },
-                transaction: t
-            });
+            const wallet = await Wallet.findOne({ where: { user_id }, transaction: t });
+            if (!wallet) throw new Error("Wallet not found. Please contact support.");
 
-            if (!wallet) {
-                await Transaction.create({
-                    from_wallet_id: null,
-                    amount: AI_EDIT_COST,
-                    transaction_type: 'ai_generation',
-                    status: 'failed',
-                    description: `AI Cake Design Edit for design ID ${cake_design_id} - Wallet not found`,
-                }, { transaction: t });
-                throw new Error('Wallet not found. Please contact support.');
-            }
-
-            // Find existing cake design
-            const existingCakeDesign = await CakeDesign.findByPk(cake_design_id, { transaction: t });
-            if (!existingCakeDesign) {
-                await Transaction.create({
+            const transaction = await Transaction.create(
+                {
                     from_wallet_id: wallet.id,
                     amount: AI_EDIT_COST,
-                    transaction_type: 'ai_generation',
-                    status: 'failed',
-                    description: `AI Cake Design Edit for design ID ${cake_design_id} - Cake design not found`,
-                }, { transaction: t });
-                throw new Error('Cake design not found');
-            }
+                    transaction_type: "ai_generation",
+                    status: "pending",
+                    description: `AI Cake Design Edit`,
+                },
+                { transaction: t }
+            );
 
-            // Check permissions
-            if (!existingCakeDesign.is_public && existingCakeDesign.user_id !== user_id) {
-                await Transaction.create({
-                    from_wallet_id: wallet.id,
-                    amount: AI_EDIT_COST,
-                    transaction_type: 'ai_generation',
-                    status: 'failed',
-                    description: `AI Cake Design Edit for design ID ${cake_design_id} - Access denied`,
-                }, { transaction: t });
-                throw new Error('Access denied. You can only edit your own designs or public designs.');
-            }
-
-            // Create transaction
-            const transaction = await Transaction.create({
-                from_wallet_id: wallet.id,
-                amount: AI_EDIT_COST,
-                transaction_type: 'ai_generation',
-                status: 'pending',
-                description: `AI Cake Design Edit for design ID ${cake_design_id}`,
-            }, { transaction: t });
-
-            // Check balance
             if (wallet.balance < AI_EDIT_COST) {
-                await Transaction.update({
-                    status: 'failed'
-                }, {
-                    where: { id: transaction.id },
-                    transaction: t
-                });
-                throw new Error(`Insufficient balance. Required: ${AI_EDIT_COST} VND, Available: ${wallet.balance} VND`);
+                await Transaction.update(
+                    { status: "failed" },
+                    { where: { id: transaction.id }, transaction: t }
+                );
+                throw new Error(
+                    `Insufficient balance. Required: ${AI_EDIT_COST}, Available: ${wallet.balance}`
+                );
             }
 
-            // Deduct money
-            const newBalance = wallet.balance - AI_EDIT_COST;
-            await Wallet.update({
-                balance: newBalance,
-                updated_at: new Date()
-            }, {
-                where: { id: wallet.id },
-                transaction: t
-            });
+            await Wallet.update(
+                { balance: wallet.balance - AI_EDIT_COST, updated_at: new Date() },
+                { where: { id: wallet.id }, transaction: t }
+            );
 
-            // Update transaction to completed
-            await Transaction.update({
-                status: 'completed'
-            }, {
-                where: { id: transaction.id },
-                transaction: t
-            });
+            await Transaction.update(
+                { status: "completed" },
+                { where: { id: transaction.id }, transaction: t }
+            );
 
             return {
                 transaction,
-                existingCakeDesign,
                 wallet: await Wallet.findByPk(wallet.id, { transaction: t }),
-                previousBalance: wallet.balance
+                previousBalance: wallet.balance,
             };
         });
 
-        // Convert image to base64 for direct API call
-        const { design_image } = result.existingCakeDesign;
-        let base64Image;
+        console.log("✅ Transaction completed successfully");
 
-        if (design_image.startsWith('data:image/')) {
-            // Already base64 format
-            base64Image = design_image.split(',')[1];
-        } else if (design_image.startsWith('http://') || design_image.startsWith('https://')) {
-            // Download URL and convert to base64
-            const response = await axios.get(design_image, { responseType: 'arraybuffer' });
-            base64Image = Buffer.from(response.data).toString('base64');
+        // ---- 🖼️ Fetch & prepare source image ----
+        let sourceImageBuffer;
+
+        if (req.file) {
+            // Use uploaded file buffer directly
+            sourceImageBuffer = req.file.buffer;
+            console.log("📁 Using uploaded file buffer, size:", sourceImageBuffer.length);
+        } else if (design_image.startsWith("http://") || design_image.startsWith("https://")) {
+            const response = await axios.get(design_image, { responseType: "arraybuffer" });
+            sourceImageBuffer = Buffer.from(response.data, "binary");
+        } else if (design_image.startsWith("data:image")) {
+            sourceImageBuffer = Buffer.from(design_image.split(",")[1], "base64");
         } else {
-            // Pure base64
-            base64Image = design_image;
+            sourceImageBuffer = Buffer.from(design_image, "base64"); // raw base64
         }
 
-        // Use OpenAI image edits endpoint to apply prompt-guided edits
-        const formData = new FormData();
-        formData.append('image', Buffer.from(base64Image, 'base64'), 'image.png');
-        formData.append('prompt', edit_prompt || 'Improve this cake design');
-        formData.append('n', '1');
-        formData.append('size', '1024x1024');
+        console.log("📏 Original image size:", sourceImageBuffer.length);
 
-        const editResponse = await axios.post('https://api.openai.com/v1/images/edits', formData, {
-            headers: {
-                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-                ...formData.getHeaders()
-            }
+        // ---- 🤖 Call OpenAI ----
+        console.log("🤖 Calling OpenAI API for image editing...");
+
+        // Convert buffer to File object for OpenAI
+        const imageFile = new File([sourceImageBuffer], "image.png", {
+            type: req.file?.mimetype || "image/png"
         });
 
-        const editedImageUrl = editResponse.data.data[0].url;
-        console.log('AI image edited successfully:', editedImageUrl);
+        const editResponse = await openai.images.edit({
+            model: "gpt-image-1",
+            image: imageFile,
+            prompt: edit_prompt || "Improve this cake design",
+            size: "1024x1024",
+        });
 
-        // Download the edited image
-        const imageResponse = await axios.get(editedImageUrl, { responseType: 'arraybuffer' });
-        const editedImageBuffer = Buffer.from(imageResponse.data);
+        // Get the base64 encoded image data directly (no URL needed)
+        const editedImageBase64 = editResponse.data[0].b64_json;
+        console.log("✨ OpenAI API returned base64 image data");
 
-        // Upload to Firebase
+        // Convert base64 to buffer directly (no download needed)
+        const editedImageBuffer = Buffer.from(editedImageBase64, 'base64');
+
+        // ---- ☁️ Upload to Firebase ----
         const filename = `ai_cake_edits/${user_id}/${Date.now()}_ai_edited.png`;
         const storageRef = ref(storage, filename);
-        const metadata = {
-            contentType: 'image/png',
+        await uploadBytes(storageRef, editedImageBuffer, {
+            contentType: "image/png",
             customMetadata: {
                 userId: user_id.toString(),
-                originalCakeDesignId: cake_design_id.toString(),
-                editPrompt: edit_prompt || 'Improve this cake design',
-                aiEdited: 'true',
-                model: 'dall-e-2-edit'
-            }
-        };
-
-        await uploadBytes(storageRef, editedImageBuffer, metadata);
+                editPrompt: edit_prompt || "Improve this cake design",
+                aiEdited: "true",
+                model: "gpt-image-1",
+            },
+        });
         const firebaseUrl = await getDownloadURL(storageRef);
 
-        // Create new cake design with edited image
+        console.log("✅ Firebase upload complete:", firebaseUrl);
+
+        // ---- 💾 Save DB record ----
         const editedCakeDesign = await CakeDesign.create({
             user_id,
-            description: `${result.existingCakeDesign.description} - AI Edited`,
-            design_image: `DALL-E 2 Edit: ${edit_prompt || 'Improved cake design'}`,
-            is_public: result.existingCakeDesign.is_public,
-            ai_generated: firebaseUrl
+            description: `AI Edited: ${edit_prompt || "Improved cake design"}`,
+            design_image: firebaseUrl,
+            is_public: true,
+            ai_generated: "true",
         });
 
-        // Update transaction description
-        await Transaction.update({
-            description: `AI Cake Design Edit for design ID ${cake_design_id} - Completed successfully`
-        }, {
-            where: { id: result.transaction.id }
-        });
-
-        await CakeDesign.update({
-            ai_generated: firebaseUrl
-        }, {
-            where: { id: cake_design_id }
-        });
+        // ---- ✅ Response ----
         res.status(200).json({
             success: true,
-            message: 'AI cake design edited successfully',
+            message: "AI cake design edited successfully",
             data: {
-                originalDesign: {
-                    id: result.existingCakeDesign.id,
-                },
                 editedDesign: {
                     id: editedCakeDesign.id,
                     user_id: editedCakeDesign.user_id,
@@ -756,57 +708,51 @@ export const editCakeDesign = async (req, res) => {
                     design_image: editedCakeDesign.design_image,
                     created_at: editedCakeDesign.created_at,
                     is_public: editedCakeDesign.is_public,
-                    ai_generated: editedCakeDesign.ai_generated
+                    ai_generated: editedCakeDesign.ai_generated,
                 },
                 transaction: {
                     id: result.transaction.id,
                     amount: result.transaction.amount,
-                    status: 'completed'
+                    status: "completed",
                 },
                 wallet: {
                     previousBalance: result.previousBalance,
                     newBalance: result.wallet.balance,
-                    deductedAmount: result.transaction.amount
-                }
-            }
+                    deductedAmount: result.transaction.amount,
+                },
+            },
         });
-
     } catch (error) {
-        console.error('Error editing cake design:', error);
+        console.error("❌ Error in editCakeDesign:", error);
+        const safeMessage =
+            error?.response?.data?.error?.message ||
+            error.message ||
+            "Unknown error";
 
-        // Handle specific errors
-        if (error.message.includes('Insufficient balance')) {
+        if (safeMessage.includes("Insufficient balance")) {
             return res.status(402).json({
                 success: false,
-                message: 'Insufficient balance',
-                error: error.message,
-                requiredAmount: 500
+                message: "Insufficient balance",
+                error: safeMessage,
+                requiredAmount: 500,
             });
         }
-
-        if (error.message.includes('not found')) {
+        if (safeMessage.includes("not found")) {
             return res.status(404).json({
                 success: false,
-                message: 'Resource not found',
-                error: error.message
-            });
-        }
-
-        if (error.message.includes('Access denied')) {
-            return res.status(403).json({
-                success: false,
-                message: 'Access denied',
-                error: error.message
+                message: "Resource not found",
+                error: safeMessage,
             });
         }
 
         res.status(500).json({
             success: false,
-            message: 'Internal server error',
-            error: error.message
+            message: "Internal server error",
+            error: safeMessage,
         });
     }
 };
+
 
 // Get all cake designs by specific user ID
 export const getCakeDesignsByUserId = async (req, res) => {
