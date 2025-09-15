@@ -606,7 +606,7 @@ export const cancelCakeOrder = async (req, res) => {
   const dbTransaction = await sequelize.transaction();
 
   try {
-    const { id: userId, role } = req.user; // lấy từ verifyToken
+    const { id: userId, role } = req.userId; // lấy từ verifyToken
 
     // 1. Lấy order
     const order = await CakeOrder.findByPk(req.params.id, { transaction: dbTransaction });
