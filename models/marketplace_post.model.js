@@ -8,7 +8,8 @@ const MarketplacePost = sequelize.define('MarketplacePost', {
   available: { type: DataTypes.BOOLEAN, defaultValue: true },
   expiry_date: { type: DataTypes.DATE },
   tier: { type: DataTypes.INTEGER, allowNull: true, },
-  created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }
+  created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
+  required_time: { type: DataTypes.INTEGER, allowNull: true, defaultValue: 0},
 }, {
   tableName: 'marketplace_post',
   timestamps: false,

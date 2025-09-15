@@ -43,6 +43,9 @@ const router = express.Router();
  *               tier:
  *                 type: integer
  *                 example: 2
+ *               required_time:            
+ *                 type: integer
+ *                 example: 6
  *               available:
  *                 type: boolean
  *               expiry_date:
@@ -94,7 +97,7 @@ router.post('/', verifyToken, createMarketplacePost);
  *       500:
  *         description: Server error
  */
-router.get('/',  getAllMarketplacePosts);
+router.get('/', getAllMarketplacePosts);
 
 /**
  * @swagger
@@ -164,6 +167,9 @@ router.get('/:id', getMarketplacePostById);
  *               tier:
  *                 type: integer
  *                 example: 2
+ *               required_time:
+ *                 type: integer
+ *                 example: 4
  *               media:
  *                 type: array
  *                 description: Replace old media with new list
