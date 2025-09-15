@@ -371,7 +371,7 @@ export const getComplaintById = async (req, res) => {
         {
           model: CakeOrder,
           as: "order",
-          attributes: ["id", "customer_id", "shop_id", "total_price", "status", "created_at"],
+          attributes: ["id", "customer_id", "shop_id", "total_price", "status", "created_at", "special_instructions", "tier", "delivery_time", "shipped_at"],
           include: [
             {
               model: User,
