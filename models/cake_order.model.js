@@ -18,7 +18,8 @@ const CakeOrder = sequelize.define('CakeOrder', {
   },
   special_instructions: { type: DataTypes.TEXT },
   shipped_at: { type: DataTypes.DATE, allowNull: true },
-  created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }
+  created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
+  delivery_time: { type: DataTypes.DATE, allowNull: true},
 }, {
   tableName: 'cake_order',
   timestamps: true,

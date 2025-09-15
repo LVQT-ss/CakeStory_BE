@@ -18,8 +18,28 @@ export const createComplaint = async (req, res) => {
       return res.status(404).json({ message: "Order not found or not yours" });
     }
 
-    // Nếu status là "ordered", "prepared" hoặc "shipped" thì chuyển thành "complaining"
-    if (["ordered", "prepared", "shipped"].includes(order.status)) {
+    const now = new Date();
+
+    if (["ordered", "prepared"].includes(order.status)) {
+      if (!order.delivery_time) {
+        return res.status(400).json({ 
+          message: "This order has no delivery_time set, cannot file complaint" 
+        });
+      }
+
+      const deliveryTime = new Date(order.delivery_time);
+
+      if (now < deliveryTime) {
+        return res.status(400).json({ 
+          message: "You can only file a complaint after the delivery time has passed" 
+        });
+      }
+
+      // Nếu hợp lệ thì cập nhật sang complaining
+      await order.update({ status: "complaining" });
+
+    } else if (order.status === "shipped") {
+      // shipped thì cho complain luôn
       await order.update({ status: "complaining" });
     } else {
       return res.status(400).json({ 
@@ -40,6 +60,7 @@ export const createComplaint = async (req, res) => {
     });
 
     return res.status(201).json(complaint);
+
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Server error" });
@@ -369,7 +390,7 @@ export const getComplaintById = async (req, res) => {
       return res.status(404).json({ message: "Complaint not found" });
     }
 
-    // ✅ Kiểm tra quyền
+    // Kiểm tra quyền
     if (req.role !== "admin" && req.role !== "staff") {
       const order = complaint.order;
 

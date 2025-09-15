@@ -14,7 +14,6 @@ import {
 import { verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
-
 /**
  * @swagger
  * tags:
@@ -37,14 +36,13 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             required:
- *               - customer_id
  *               - shop_id
  *               - base_price
- *               - order_details
  *               - size
+ *               - tier
+ *               - order_details
+ *               - delivery_time
  *             properties:
- *               customer_id:
- *                 type: integer
  *               shop_id:
  *                 type: integer
  *               marketplace_post_id:
@@ -57,6 +55,10 @@ const router = express.Router();
  *               tier:
  *                 type: integer
  *                 example: 2
+ *               delivery_time:
+ *                 type: string
+ *                 format: date-time
+ *                 example: "2025-09-20T14:00:00.000Z"
  *               status:
  *                 type: string
  *                 enum: [pending, ordered, completed, cancelled]

@@ -8,6 +8,7 @@ import Shop from '../models/shop.model.js';
 import { Op } from 'sequelize';
 import User from '../models/User.model.js';
 import { verifyToken } from '../middleware/verifyUser.js';
+import MarketplacePost from '../models/marketplace_post.model.js';
 // CREATE CakeOrder with multiple OrderDetails and Payment Processing
 export const createCakeOrder = async (req, res) => {
   const {
@@ -17,9 +18,10 @@ export const createCakeOrder = async (req, res) => {
     size,
     special_instructions,
     tier,
-    order_details = []
+    order_details = [],
+    delivery_time
   } = req.body;
-  const customer_id = req.user.id;
+  const customer_id = req.userId;
   const dbTransaction = await sequelize.transaction();
 
   try {
@@ -77,7 +79,30 @@ export const createCakeOrder = async (req, res) => {
         message: 'Shop wallet not found. Please create a wallet for shop owner first.'
       });
     }
+    // 2.5. Kiểm tra delivery_time với required_time
+    if (delivery_time) {
+    const marketplacePost = await MarketplacePost.findByPk(marketplace_post_id);
+    if (!marketplacePost) {
+      await dbTransaction.rollback();
+      return res.status(404).json({ message: 'Marketplace post not found' });
+    }
 
+    const requiredTime = marketplacePost.required_time || 0;
+
+    // Tính thời gian tối thiểu: now + required_time (giờ)
+    const minDeliveryTime = new Date();
+    minDeliveryTime.setHours(minDeliveryTime.getHours() + requiredTime);
+
+    const requestedDelivery = new Date(delivery_time);
+
+    if (requestedDelivery < minDeliveryTime) {
+      await dbTransaction.rollback();
+      return res.status(400).json({
+        message: `Invalid delivery time. Earliest allowed: ${minDeliveryTime.toISOString()}`
+      });
+    }
+  }
+ 
     // 3. Tạo đơn hàng
     const newOrder = await CakeOrder.create({
       customer_id,
@@ -89,7 +114,8 @@ export const createCakeOrder = async (req, res) => {
       total_price,
       status: 'pending',
       special_instructions,
-      tier
+      tier,
+      delivery_time
     }, { transaction: dbTransaction });
 
     // 4. Tạo OrderDetail nếu có
