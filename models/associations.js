@@ -122,6 +122,16 @@ function setupAssociations() {
 
   CakeOrder.belongsTo(MarketplacePost, { foreignKey: "marketplace_post_id" });
 
+  // CakeOrder ↔ CakeQuote (N-1)
+  CakeQuote.hasMany(CakeOrder, { foreignKey: "cake_quote_id", as: "orders" });
+  CakeOrder.belongsTo(CakeQuote, { foreignKey: "cake_quote_id", as: "cakeQuote" });
+
+  // CakeOrder ↔ ShopQuote (N-1)
+  ShopQuote.hasMany(CakeOrder, { foreignKey: "shop_quote_id", as: "orders" });
+  CakeOrder.belongsTo(ShopQuote, { foreignKey: "shop_quote_id", as: "shopQuote" });
+
+
+
   // CakeOrder ↔ Review (1-1)
   CakeOrder.hasMany(Review, { foreignKey: "order_id" });
   Review.belongsTo(CakeOrder, { foreignKey: "order_id" });

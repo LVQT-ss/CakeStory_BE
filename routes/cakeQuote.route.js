@@ -9,7 +9,8 @@ import {
     getShopQuotesByCakeQuote,
     getShopQuotesByShop,
     acceptShopQuote,
-    updateShopQuote
+    updateShopQuote,
+    createOrderFromQuote
 } from '../controllers/cakeQuote.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
@@ -371,5 +372,94 @@ router.put('/shop-quotes/:shop_quote_id/accept', verifyToken, acceptShopQuote);
  *         description: Unauthorized
  */
 router.put('/shop-quotes/:shop_quote_id', verifyToken, updateShopQuote);
+
+/**
+ * @swagger
+ * /api/cake-quotes/from-quote:
+ *   post:
+ *     tags: [Cake Quotes]
+ *     summary: Create a new cake order from an accepted shop quote
+ *     description: Creates a cake order based on an accepted shop quote, using quoted_price as total_price. Payment is held in escrow.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - shop_quote_id
+ *             properties:
+ *               shop_quote_id:
+ *                 type: integer
+ *                 example: 1
+ *               delivery_time:
+ *                 type: string
+ *                 format: date-time
+ *                 example: "2025-09-20T14:00:00.000Z"
+ *     responses:
+ *       201:
+ *         description: Cake order created successfully from quote
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 order:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     customer_id:
+ *                       type: integer
+ *                     shop_id:
+ *                       type: integer
+ *                     cake_quote_id:
+ *                       type: integer
+ *                     shop_quote_id:
+ *                       type: integer
+ *                     total_price:
+ *                       type: number
+ *                     status:
+ *                       type: string
+ *                     special_instructions:
+ *                       type: string
+ *                     delivery_time:
+ *                       type: string
+ *                       format: date-time
+ *                     shop:
+ *                       type: object
+ *                     cakeQuote:
+ *                       type: object
+ *                     shopQuote:
+ *                       type: object
+ *                 payment:
+ *                   type: object
+ *                   properties:
+ *                     transaction_id:
+ *                       type: integer
+ *                     amount_paid:
+ *                       type: number
+ *                     previous_balance:
+ *                       type: number
+ *                     new_balance:
+ *                       type: number
+ *                     shop_wallet_id:
+ *                       type: integer
+ *                     status:
+ *                       type: string
+ *       400:
+ *         description: Validation error, insufficient balance, or quote issues
+ *       403:
+ *         description: Unauthorized to create order from this quote
+ *       404:
+ *         description: Shop quote or wallet not found
+ *       500:
+ *         description: Server error
+ */
+router.post('/from-quote', verifyToken, createOrderFromQuote);
 
 export default router;

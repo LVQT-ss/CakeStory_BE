@@ -6,6 +6,8 @@ import Shop from '../models/shop.model.js';
 import User from '../models/User.model.js';
 // import { Op } from 'sequelize'; // Unused for now
 import sequelize from '../database/db.js';
+import Transaction from '../models/transaction.model.js';
+import Wallet from '../models/wallet.model.js';
 
 // Create a new cake quote (requires user to have completed at least one order)
 export const createCakeQuote = async (req, res) => {
@@ -735,5 +737,167 @@ export const updateShopQuote = async (req, res) => {
             success: false,
             message: error.message || 'Failed to update shop quote'
         });
+    }
+};
+
+// CREATE CakeOrder from Accepted ShopQuote with Payment Processing
+export const createOrderFromQuote = async (req, res) => {
+    const { shop_quote_id, delivery_time } = req.body; // Required: shop_quote_id, optional: delivery_time
+    const customer_id = req.userId; // From JWT
+    const dbTransaction = await sequelize.transaction();
+
+    try {
+        // 1. Fetch shop_quote with cake_quote and shop
+        const shopQuote = await ShopQuote.findByPk(shop_quote_id, {
+            include: [
+                { model: CakeQuote, as: 'cakeQuote' },
+                { model: Shop, as: 'shop' }
+            ],
+            transaction: dbTransaction
+        });
+
+        if (!shopQuote || !shopQuote.cakeQuote || !shopQuote.shop) {
+            await dbTransaction.rollback();
+            return res.status(404).json({ message: 'Shop quote or related data not found' });
+        }
+
+        const cakeQuote = shopQuote.cakeQuote;
+
+        // 2. Validate permissions and status
+        if (shopQuote.status !== 'accepted') {
+            await dbTransaction.rollback();
+            return res.status(400).json({ message: 'Only accepted shop quotes can be converted to orders' });
+        }
+
+        if (cakeQuote.status !== 'closed' || cakeQuote.accepted_Shop !== shopQuote.shop_id) {
+            await dbTransaction.rollback();
+            return res.status(400).json({ message: 'Cake quote is not closed or accepted shop mismatch' });
+        }
+
+        if (cakeQuote.user_id !== customer_id) {
+            await dbTransaction.rollback();
+            return res.status(403).json({ message: 'You can only create orders from your own cake quotes' });
+        }
+
+        // 3. Check for existing order
+        const existingOrder = await CakeOrder.findOne({
+            where: { shop_quote_id },
+            transaction: dbTransaction
+        });
+        if (existingOrder) {
+            await dbTransaction.rollback();
+            return res.status(400).json({ message: 'An order already exists for this shop quote' });
+        }
+
+        // 4. Validate delivery_time
+        let finalDeliveryTime = delivery_time ? new Date(delivery_time) : null;
+        if (finalDeliveryTime) {
+            const minDeliveryTime = new Date();
+            minDeliveryTime.setHours(minDeliveryTime.getHours() + (shopQuote.preparation_time || 0));
+            if (finalDeliveryTime < minDeliveryTime) {
+                await dbTransaction.rollback();
+                return res.status(400).json({
+                    message: `Invalid delivery time. Earliest allowed: ${minDeliveryTime.toISOString()}`
+                });
+            }
+        } else {
+            finalDeliveryTime = new Date();
+            finalDeliveryTime.setHours(finalDeliveryTime.getHours() + (shopQuote.preparation_time || 0));
+        }
+
+        // 5. Set pricing (quoted_price = total_price, others null)
+        const total_price = parseFloat(shopQuote.quoted_price);
+
+        // 6. Validate customer's wallet
+        const customerWallet = await Wallet.findOne({
+            where: { user_id: customer_id },
+            transaction: dbTransaction
+        });
+
+        if (!customerWallet) {
+            await dbTransaction.rollback();
+            return res.status(404).json({ message: 'Customer wallet not found' });
+        }
+
+        if (parseFloat(customerWallet.balance) < total_price) {
+            await dbTransaction.rollback();
+            return res.status(400).json({
+                message: `Insufficient balance. Current: ${customerWallet.balance}, Required: ${total_price}`
+            });
+        }
+
+        // 7. Fetch shop wallet
+        const shopWallet = await Wallet.findOne({
+            where: { user_id: shopQuote.shop.user_id },
+            transaction: dbTransaction
+        });
+
+        if (!shopWallet) {
+            await dbTransaction.rollback();
+            return res.status(404).json({ message: 'Shop wallet not found' });
+        }
+
+        // 8. Create the order
+        const newOrder = await CakeOrder.create({
+            customer_id,
+            shop_id: shopQuote.shop_id,
+            cake_quote_id: cakeQuote.id,
+            shop_quote_id: shopQuote.id,
+            base_price: total_price, // Set to null
+            ingredient_total: null, // Set to null
+            total_price,
+            size: null, // Set to null
+            tier: null, // Set to null
+            status: 'pending',
+            special_instructions: cakeQuote.special_requirements,
+            delivery_time: finalDeliveryTime
+        }, { transaction: dbTransaction });
+
+        // 9. Deduct from customer's wallet
+        const newCustomerBalance = parseFloat(customerWallet.balance) - total_price;
+        await customerWallet.update(
+            { balance: newCustomerBalance, updated_at: new Date() },
+            { transaction: dbTransaction }
+        );
+
+        // 10. Create transaction (held in escrow)
+        const paymentTransaction = await Transaction.create({
+            from_wallet_id: customerWallet.id,
+            to_wallet_id: shopWallet.id,
+            order_id: newOrder.id,
+            amount: total_price,
+            transaction_type: 'order_payment',
+            status: 'pending',
+            description: `Payment for cake order #${newOrder.id} from quote (held in escrow)`
+        }, { transaction: dbTransaction });
+
+        await dbTransaction.commit();
+
+        // 11. Fetch order with details for response
+        const orderResponse = await CakeOrder.findByPk(newOrder.id, {
+            include: [
+                { model: Shop, as: 'shop' },
+                { model: CakeQuote, as: 'cakeQuote' },
+                { model: ShopQuote, as: 'shopQuote' }
+            ]
+        });
+
+        res.status(201).json({
+            message: 'Cake order created from quote and payment processed successfully',
+            order: orderResponse,
+            payment: {
+                transaction_id: paymentTransaction.id,
+                amount_paid: total_price,
+                previous_balance: parseFloat(customerWallet.balance),
+                new_balance: newCustomerBalance,
+                shop_wallet_id: shopWallet.id,
+                status: 'held_in_escrow'
+            }
+        });
+
+    } catch (error) {
+        await dbTransaction.rollback();
+        console.error('Error creating order from quote:', error);
+        res.status(500).json({ message: 'Failed to create order from quote', error: error.message });
     }
 };
