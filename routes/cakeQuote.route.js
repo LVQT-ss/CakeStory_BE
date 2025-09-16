@@ -184,7 +184,7 @@ router.get('/:id', verifyToken, getCakeQuoteById);
  *       404:
  *         description: Quote not found
  */
-router.patch('/:id/status', verifyToken, updateCakeQuoteStatus);
+router.put('/:id/status', verifyToken, updateCakeQuoteStatus);
 
 /**
  * @swagger
