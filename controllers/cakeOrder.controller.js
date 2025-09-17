@@ -479,7 +479,8 @@ export const markOrderAsCompleted = async (req, res) => {
   const dbTransaction = await sequelize.transaction();
 
   try {
-    const { id: userId, role } = req.user; // lấy từ verifyToken
+    const userId = req.userId; 
+    const role = req.role;
 
     // 1. Lấy order
     const order = await CakeOrder.findByPk(req.params.id, { transaction: dbTransaction });
