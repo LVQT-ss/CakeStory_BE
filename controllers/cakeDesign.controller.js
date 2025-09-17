@@ -691,7 +691,7 @@ export const editCakeDesign = async (req, res) => {
         const editedCakeDesign = await CakeDesign.create({
             user_id,
             description: `AI Edited: ${edit_prompt || "Improved cake design"}`,
-
+            design_image: firebaseUrl,
             is_public: true,
             ai_generated: firebaseUrl,
         });
