@@ -606,27 +606,47 @@ export const cancelCakeOrder = async (req, res) => {
   const dbTransaction = await sequelize.transaction();
 
   try {
-    const { id: userId, role } = req.userId; // lấy từ verifyToken
+    const userId = req.userId;  // từ middleware
+    const role = req.role;
 
-    // 1. Lấy order
-    const order = await CakeOrder.findByPk(req.params.id, { transaction: dbTransaction });
+    const order = await CakeOrder.findByPk(req.params.id, {
+      include: [{ model: Shop, as: 'shop' }],
+      transaction: dbTransaction
+    });
 
     if (!order) {
       await dbTransaction.rollback();
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    // ✅ Chỉ cho phép customer hủy (trừ admin/staff)
-    if (role !== 'admin' && role !== 'staff') {
+    // Admin & Staff không được hủy
+    if (role === 'admin' || role === 'staff') {
+      await dbTransaction.rollback();
+      return res.status(403).json({ message: 'Admin and staff cannot cancel orders' });
+    }
+
+    // Customer: chỉ hủy đơn của chính mình và khi pending
+    if (role === 'customer') {
       if (order.customer_id !== userId) {
         await dbTransaction.rollback();
-        return res.status(403).json({ message: 'Not authorized to cancel this order' });
+        return res.status(403).json({ message: 'You can only cancel your own orders' });
+      }
+      if (order.status !== 'pending') {
+        await dbTransaction.rollback();
+        return res.status(400).json({ message: 'Customers can only cancel pending orders' });
       }
     }
 
-    if (order.status !== 'pending') {
-      await dbTransaction.rollback();
-      return res.status(400).json({ message: 'Only pending orders can be cancelled' });
+    // Baker: chỉ hủy đơn của shop mình và khi ordered
+    if (role === 'baker') {
+      if (order.shop.user_id !== userId) {
+        await dbTransaction.rollback();
+        return res.status(403).json({ message: 'You can only cancel orders from your own shop' });
+      }
+      if (order.status !== 'ordered') {
+        await dbTransaction.rollback();
+        return res.status(400).json({ message: 'Shop owners can only cancel ordered orders' });
+      }
     }
 
     // 1. Tìm transaction thanh toán gốc của đơn hàng này
