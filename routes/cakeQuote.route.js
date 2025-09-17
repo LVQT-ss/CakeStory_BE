@@ -10,7 +10,8 @@ import {
     getShopQuotesByShop,
     acceptShopQuote,
     updateShopQuote,
-    createOrderFromQuote
+    createOrderFromQuote,
+    getAcceptedQuotesByShop
 } from '../controllers/cakeQuote.controller.js';
 import { verifyToken } from '../middleware/verifyUser.js';
 
@@ -461,5 +462,124 @@ router.put('/shop-quotes/:shop_quote_id', verifyToken, updateShopQuote);
  *         description: Server error
  */
 router.post('/from-quote', verifyToken, createOrderFromQuote);
+
+/**
+ * @swagger
+ * /api/cake-quotes/accepted-by-shop:
+ *   get:
+ *     summary: Get accepted cake quotes for the current user's shop
+ *     description: Retrieves all cake quotes that have been accepted by users and assigned to the current user's shop
+ *     tags: [Cake Quotes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of items per page
+ *     responses:
+ *       200:
+ *         description: Accepted cake quotes retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Accepted cake quotes retrieved successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     shop:
+ *                       type: object
+ *                       properties:
+ *                         shop_id:
+ *                           type: integer
+ *                         business_name:
+ *                           type: string
+ *                     acceptedQuotes:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                           title:
+ *                             type: string
+ *                           description:
+ *                             type: string
+ *                           imageDesign:
+ *                             type: string
+ *                           cake_size:
+ *                             type: string
+ *                           special_requirements:
+ *                             type: string
+ *                           budget_range:
+ *                             type: number
+ *                           status:
+ *                             type: string
+ *                             example: "closed"
+ *                           accepted_Shop:
+ *                             type: integer
+ *                           user:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                               username:
+ *                                 type: string
+ *                               full_name:
+ *                                 type: string
+ *                               avatar:
+ *                                 type: string
+ *                           shopQuotes:
+ *                             type: array
+ *                             items:
+ *                               type: object
+ *                               properties:
+ *                                 id:
+ *                                   type: integer
+ *                                 quoted_price:
+ *                                   type: number
+ *                                 preparation_time:
+ *                                   type: integer
+ *                                 message:
+ *                                   type: string
+ *                                 ingredients_breakdown:
+ *                                   type: string
+ *                                 accepted_at:
+ *                                   type: string
+ *                                   format: date-time
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         currentPage:
+ *                           type: integer
+ *                         totalPages:
+ *                           type: integer
+ *                         totalItems:
+ *                           type: integer
+ *                         itemsPerPage:
+ *                           type: integer
+ *       404:
+ *         description: Shop not found for user
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+router.get('/accepted-by-shop', verifyToken, getAcceptedQuotesByShop);
 
 export default router;

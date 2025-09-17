@@ -901,3 +901,77 @@ export const createOrderFromQuote = async (req, res) => {
         res.status(500).json({ message: 'Failed to create order from quote', error: error.message });
     }
 };
+
+// Get accepted cake quotes for a shop
+export const getAcceptedQuotesByShop = async (req, res) => {
+    try {
+        const { page = 1, limit = 10 } = req.query;
+        const user_id = req.userId;
+        const offset = (page - 1) * limit;
+
+        // Check if user owns a shop
+        const shop = await Shop.findOne({
+            where: { user_id: user_id }
+        });
+
+        if (!shop) {
+            return res.status(404).json({
+                success: false,
+                message: 'Shop not found for this user'
+            });
+        }
+
+        // Find cake quotes that have been accepted and assigned to this shop
+        const { count, rows: acceptedQuotes } = await CakeQuote.findAndCountAll({
+            where: {
+                status: 'closed',
+                accepted_Shop: shop.shop_id
+            },
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: ['id', 'username', 'full_name', 'avatar']
+                },
+                {
+                    model: ShopQuote,
+                    as: 'shopQuotes',
+                    where: {
+                        shop_id: shop.shop_id,
+                        status: 'accepted'
+                    },
+                    required: true,
+                    attributes: ['id', 'quoted_price', 'preparation_time', 'message', 'ingredients_breakdown', 'accepted_at']
+                }
+            ],
+            order: [['updated_at', 'DESC']],
+            limit: parseInt(limit),
+            offset: parseInt(offset)
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Accepted cake quotes retrieved successfully',
+            data: {
+                shop: {
+                    shop_id: shop.shop_id,
+                    business_name: shop.business_name
+                },
+                acceptedQuotes: acceptedQuotes,
+                pagination: {
+                    currentPage: parseInt(page),
+                    totalPages: Math.ceil(count / limit),
+                    totalItems: count,
+                    itemsPerPage: parseInt(limit)
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('Error retrieving accepted quotes:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Failed to retrieve accepted quotes'
+        });
+    }
+};
