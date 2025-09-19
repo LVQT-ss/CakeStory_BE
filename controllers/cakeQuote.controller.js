@@ -1171,7 +1171,7 @@ export const getAcceptedQuotesByShop = async (req, res) => {
                     attributes: ['id', 'quoted_price', 'preparation_time', 'message', 'ingredients_breakdown', 'accepted_at']
                 }
             ],
-            order: [['updated_at', 'DESC']],
+            order: [['created_at', 'DESC']],
             limit: parseInt(limit),
             offset: parseInt(offset)
         });
