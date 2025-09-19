@@ -356,7 +356,7 @@ export const getMyCakeQuoteDetail = async (req, res) => {
                         {
                             model: Shop,
                             as: 'shop',
-                            attributes: ['shop_id', 'business_name', 'business_address', 'phone_number', 'avatar_image', 'description'],
+                            attributes: ['shop_id', 'business_name', 'business_address', 'phone_number', 'avatar_image', 'bio', 'specialty'],
                             include: [
                                 {
                                     model: User,
@@ -371,7 +371,7 @@ export const getMyCakeQuoteDetail = async (req, res) => {
                 {
                     model: Shop,
                     as: 'acceptedShop',
-                    attributes: ['shop_id', 'business_name', 'business_address', 'phone_number', 'avatar_image', 'description'],
+                    attributes: ['shop_id', 'business_name', 'business_address', 'phone_number', 'avatar_image', 'bio', 'specialty'],
                     required: false
                 }
             ]
