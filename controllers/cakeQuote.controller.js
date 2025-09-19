@@ -195,9 +195,12 @@ export const getCakeQuoteById = async (req, res) => {
                 {
                     model: ShopQuote,
                     as: 'shopQuotes',
-                    where: { shop_id: shop.shop_id },
+                    where: {
+                        shop_id: shop.shop_id,
+                        is_active: true
+                    },
                     required: false,
-                    attributes: ['id', 'quoted_price', 'preparation_time', 'message', 'ingredients_breakdown', 'status', 'created_at']
+                    attributes: ['id', 'quoted_price', 'preparation_time', 'message', 'ingredients_breakdown', 'status', 'created_at', 'accepted_at']
                 }
             ]
         });
@@ -209,15 +212,6 @@ export const getCakeQuoteById = async (req, res) => {
             });
         }
 
-        // Chỉ cho phép xem quote mở hoặc quote mà shop này đã tham gia
-        const hasShopQuote = cakeQuote.shopQuotes && cakeQuote.shopQuotes.length > 0;
-
-        if (cakeQuote.status !== 'open' && !hasShopQuote) {
-            return res.status(403).json({
-                success: false,
-                message: 'You can only access open cake quotes or quotes where your shop has participated'
-            });
-        }
 
         res.status(200).json({
             success: true,
@@ -227,8 +221,7 @@ export const getCakeQuoteById = async (req, res) => {
                 shopInfo: {
                     shop_id: shop.shop_id,
                     business_name: shop.business_name,
-                    hasQuoted: hasShopQuote,
-                    myQuote: hasShopQuote ? cakeQuote.shopQuotes[0] : null
+
                 }
             }
         });
