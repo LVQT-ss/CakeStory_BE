@@ -337,7 +337,8 @@ router.get('/my-quotes/:id', verifyToken, getMyCakeQuoteDetail);
  * @swagger
  * /api/cake-quotes/{id}:
  *   get:
- *     summary: Get a specific cake quote by ID
+ *     summary: Get a specific cake quote by ID (Shop owners only)
+ *     description: Retrieves a specific cake quote. Only users who own shops can access this endpoint. Shop owners can view open quotes or quotes where their shop has participated.
  *     tags: [Cake Quotes]
  *     security:
  *       - bearerAuth: []
@@ -347,13 +348,71 @@ router.get('/my-quotes/:id', verifyToken, getMyCakeQuoteDetail);
  *         required: true
  *         schema:
  *           type: integer
+ *         description: Cake quote ID
  *     responses:
  *       200:
  *         description: Cake quote retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Cake quote retrieved successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     title:
+ *                       type: string
+ *                     description:
+ *                       type: string
+ *                     status:
+ *                       type: string
+ *                     budget_range:
+ *                       type: number
+ *                     user:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                         username:
+ *                           type: string
+ *                         full_name:
+ *                           type: string
+ *                     shopInfo:
+ *                       type: object
+ *                       properties:
+ *                         shop_id:
+ *                           type: integer
+ *                         business_name:
+ *                           type: string
+ *                         hasQuoted:
+ *                           type: boolean
+ *                           description: Whether this shop has already submitted a quote
+ *                         myQuote:
+ *                           type: object
+ *                           description: This shop's quote for the cake quote (if exists)
+ *                           properties:
+ *                             id:
+ *                               type: integer
+ *                             quoted_price:
+ *                               type: number
+ *                             status:
+ *                               type: string
+ *       403:
+ *         description: You must have a shop to access this resource OR You can only access open quotes or quotes where your shop has participated
  *       404:
  *         description: Cake quote not found
  *       401:
- *         description: Unauthorized
+ *         description: Unauthorized - JWT token required
+ *       500:
+ *         description: Server error
  */
 router.get('/:id', verifyToken, getCakeQuoteById);
 
