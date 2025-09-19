@@ -4,6 +4,7 @@ import {
     getCakeQuotes,
     getCakeQuoteById,
     getMyCakeQuotes,
+    getMyCakeQuoteDetail,
     updateCakeQuoteStatus,
     deleteCakeQuote,
     createShopQuote,
@@ -223,6 +224,114 @@ router.get('/my-shop-quotes', verifyToken, getShopQuotesByShop);
  *         description: Server error
  */
 router.get('/my-quotes', verifyToken, getMyCakeQuotes);
+
+/**
+ * @swagger
+ * /api/cake-quotes/my-quotes/{id}:
+ *   get:
+ *     summary: Get detailed cake quote of current user by ID
+ *     description: Retrieves detailed information of a specific cake quote. Only the quote owner can access this endpoint.
+ *     tags: [Cake Quotes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Cake quote ID
+ *     responses:
+ *       200:
+ *         description: My cake quote detail retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "My cake quote detail retrieved successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     quote:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                         title:
+ *                           type: string
+ *                         description:
+ *                           type: string
+ *                         status:
+ *                           type: string
+ *                         budget_range:
+ *                           type: number
+ *                         expires_at:
+ *                           type: string
+ *                           format: date-time
+ *                         shopQuotes:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                               quoted_price:
+ *                                 type: number
+ *                               status:
+ *                                 type: string
+ *                               shop:
+ *                                 type: object
+ *                                 properties:
+ *                                   shop_id:
+ *                                     type: integer
+ *                                   business_name:
+ *                                     type: string
+ *                         acceptedShop:
+ *                           type: object
+ *                           description: Shop that was accepted (if any)
+ *                     stats:
+ *                       type: object
+ *                       properties:
+ *                         shopQuotes:
+ *                           type: object
+ *                           properties:
+ *                             totalQuotes:
+ *                               type: integer
+ *                             pendingQuotes:
+ *                               type: integer
+ *                             acceptedQuotes:
+ *                               type: integer
+ *                             rejectedQuotes:
+ *                               type: integer
+ *                         priceRange:
+ *                           type: object
+ *                           properties:
+ *                             minPrice:
+ *                               type: number
+ *                             maxPrice:
+ *                               type: number
+ *                             avgPrice:
+ *                               type: number
+ *                         isExpired:
+ *                           type: boolean
+ *                         daysUntilExpiry:
+ *                           type: integer
+ *       403:
+ *         description: You can only view your own cake quotes
+ *       404:
+ *         description: Cake quote not found
+ *       401:
+ *         description: Unauthorized - JWT token required
+ *       500:
+ *         description: Server error
+ */
+router.get('/my-quotes/:id', verifyToken, getMyCakeQuoteDetail);
 
 /**
  * @swagger

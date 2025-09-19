@@ -296,6 +296,110 @@ export const getMyCakeQuotes = async (req, res) => {
     }
 };
 
+// Get detailed cake quote of current user by ID (my quote detail)
+export const getMyCakeQuoteDetail = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user_id = req.userId; // From JWT token
+
+        const cakeQuote = await CakeQuote.findByPk(id, {
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: ['id', 'username', 'full_name', 'avatar']
+                },
+                {
+                    model: ShopQuote,
+                    as: 'shopQuotes',
+                    where: { is_active: true },
+                    required: false,
+                    include: [
+                        {
+                            model: Shop,
+                            as: 'shop',
+                            attributes: ['shop_id', 'business_name', 'business_address', 'phone_number', 'avatar_image', 'description'],
+                            include: [
+                                {
+                                    model: User,
+                                    as: 'user',
+                                    attributes: ['id', 'username', 'full_name']
+                                }
+                            ]
+                        }
+                    ],
+                    order: [['created_at', 'DESC']]
+                },
+                {
+                    model: Shop,
+                    as: 'acceptedShop',
+                    attributes: ['shop_id', 'business_name', 'business_address', 'phone_number', 'avatar_image', 'description'],
+                    required: false
+                }
+            ]
+        });
+
+        if (!cakeQuote) {
+            return res.status(404).json({
+                success: false,
+                message: 'Cake quote not found'
+            });
+        }
+
+        // Kiểm tra quyền sở hữu - chỉ owner mới được xem
+        if (cakeQuote.user_id !== user_id) {
+            return res.status(403).json({
+                success: false,
+                message: 'You can only view your own cake quotes'
+            });
+        }
+
+        // Thống kê shop quotes
+        const shopQuoteStats = {
+            totalQuotes: cakeQuote.shopQuotes ? cakeQuote.shopQuotes.length : 0,
+            pendingQuotes: cakeQuote.shopQuotes ? cakeQuote.shopQuotes.filter(sq => sq.status === 'pending').length : 0,
+            acceptedQuotes: cakeQuote.shopQuotes ? cakeQuote.shopQuotes.filter(sq => sq.status === 'accepted').length : 0,
+            rejectedQuotes: cakeQuote.shopQuotes ? cakeQuote.shopQuotes.filter(sq => sq.status === 'rejected').length : 0
+        };
+
+        // Tính giá trung bình và khoảng giá của shop quotes
+        let priceStats = null;
+        if (cakeQuote.shopQuotes && cakeQuote.shopQuotes.length > 0) {
+            const prices = cakeQuote.shopQuotes.map(sq => parseFloat(sq.quoted_price));
+            priceStats = {
+                minPrice: Math.min(...prices),
+                maxPrice: Math.max(...prices),
+                avgPrice: prices.reduce((sum, price) => sum + price, 0) / prices.length
+            };
+        }
+
+        // Kiểm tra xem quote có expired chưa
+        const isExpired = cakeQuote.expires_at && new Date(cakeQuote.expires_at) <= new Date();
+
+        res.status(200).json({
+            success: true,
+            message: 'My cake quote detail retrieved successfully',
+            data: {
+                quote: cakeQuote,
+                stats: {
+                    shopQuotes: shopQuoteStats,
+                    priceRange: priceStats,
+                    isExpired: isExpired,
+                    daysUntilExpiry: cakeQuote.expires_at ?
+                        Math.ceil((new Date(cakeQuote.expires_at) - new Date()) / (1000 * 60 * 60 * 24)) : null
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('Error retrieving my cake quote detail:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Failed to retrieve my cake quote detail'
+        });
+    }
+};
+
 // Update cake quote status (only owner can update)
 export const updateCakeQuoteStatus = async (req, res) => {
     try {
