@@ -3,6 +3,7 @@ import {
     createCakeQuote,
     getCakeQuotes,
     getCakeQuoteById,
+    getMyCakeQuotes,
     updateCakeQuoteStatus,
     deleteCakeQuote,
     createShopQuote,
@@ -124,6 +125,104 @@ router.get('/', verifyToken, getCakeQuotes);
  *         description: Unauthorized
  */
 router.get('/my-shop-quotes', verifyToken, getShopQuotesByShop);
+
+/**
+ * @swagger
+ * /api/cake-quotes/my-quotes:
+ *   get:
+ *     summary: Get all cake quotes of current user
+ *     description: Retrieves all cake quotes created by the current authenticated user with pagination and filtering options
+ *     tags: [Cake Quotes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of items per page
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [open, closed, expired]
+ *         description: Filter quotes by status
+ *     responses:
+ *       200:
+ *         description: My cake quotes retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "My cake quotes retrieved successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     quotes:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                           title:
+ *                             type: string
+ *                           description:
+ *                             type: string
+ *                           status:
+ *                             type: string
+ *                           budget_range:
+ *                             type: number
+ *                           created_at:
+ *                             type: string
+ *                             format: date-time
+ *                           shopQuotes:
+ *                             type: array
+ *                             description: Shop quotes received for this cake quote
+ *                           acceptedShop:
+ *                             type: object
+ *                             description: Shop that was accepted (if status is closed)
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         currentPage:
+ *                           type: integer
+ *                         totalPages:
+ *                           type: integer
+ *                         totalItems:
+ *                           type: integer
+ *                         itemsPerPage:
+ *                           type: integer
+ *                     summary:
+ *                       type: object
+ *                       properties:
+ *                         totalQuotes:
+ *                           type: integer
+ *                         openQuotes:
+ *                           type: integer
+ *                         closedQuotes:
+ *                           type: integer
+ *                         expiredQuotes:
+ *                           type: integer
+ *       401:
+ *         description: Unauthorized - JWT token required
+ *       500:
+ *         description: Server error
+ */
+router.get('/my-quotes', verifyToken, getMyCakeQuotes);
 
 /**
  * @swagger

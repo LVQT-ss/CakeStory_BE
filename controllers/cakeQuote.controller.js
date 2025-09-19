@@ -204,6 +204,98 @@ export const getCakeQuoteById = async (req, res) => {
     }
 };
 
+// Get all cake quotes of current user (my quotes)
+export const getMyCakeQuotes = async (req, res) => {
+    try {
+        const { page = 1, limit = 10, status } = req.query;
+        const user_id = req.userId; // From JWT token
+        const offset = (page - 1) * limit;
+
+        // Build where clause - chỉ lấy quotes của user hiện tại
+        const whereClause = { user_id: user_id };
+        if (status && ['open', 'closed', 'expired'].includes(status)) {
+            whereClause.status = status;
+        }
+
+        const { count, rows: cakeQuotes } = await CakeQuote.findAndCountAll({
+            where: whereClause,
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: ['id', 'username', 'full_name', 'avatar']
+                },
+                {
+                    model: ShopQuote,
+                    as: 'shopQuotes',
+                    where: { is_active: true },
+                    required: false,
+                    include: [
+                        {
+                            model: Shop,
+                            as: 'shop',
+                            attributes: ['shop_id', 'business_name', 'business_address', 'phone_number', 'avatar_image']
+                        }
+                    ]
+                },
+                {
+                    model: Shop,
+                    as: 'acceptedShop',
+                    attributes: ['shop_id', 'business_name', 'business_address', 'phone_number', 'avatar_image'],
+                    required: false
+                }
+            ],
+            order: [['created_at', 'DESC']],
+            limit: parseInt(limit),
+            offset: parseInt(offset)
+        });
+
+        // Tính toán thống kê
+        const summary = {
+            totalQuotes: count,
+            openQuotes: 0,
+            closedQuotes: 0,
+            expiredQuotes: 0
+        };
+
+        cakeQuotes.forEach(quote => {
+            switch (quote.status) {
+                case 'open':
+                    summary.openQuotes++;
+                    break;
+                case 'closed':
+                    summary.closedQuotes++;
+                    break;
+                case 'expired':
+                    summary.expiredQuotes++;
+                    break;
+            }
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'My cake quotes retrieved successfully',
+            data: {
+                quotes: cakeQuotes,
+                pagination: {
+                    currentPage: parseInt(page),
+                    totalPages: Math.ceil(count / limit),
+                    totalItems: count,
+                    itemsPerPage: parseInt(limit)
+                },
+                summary: summary
+            }
+        });
+
+    } catch (error) {
+        console.error('Error retrieving my cake quotes:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Failed to retrieve my cake quotes'
+        });
+    }
+};
+
 // Update cake quote status (only owner can update)
 export const updateCakeQuoteStatus = async (req, res) => {
     try {
