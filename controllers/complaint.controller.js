@@ -5,6 +5,9 @@ import Transaction from "../models/transaction.model.js";
 import sequelize from "../database/db.js";
 import User from "../models/User.model.js";
 import Shop from "../models/shop.model.js";
+import Post from "../models/post.model.js";
+import PostData from "../models/post_data.model.js";
+import MarketplacePost from "../models/marketplace_post.model.js";
 export const createComplaint = async (req, res) => {
   try {
     const { order_id, reason, evidence_images } = req.body;
@@ -380,6 +383,24 @@ export const getComplaintById = async (req, res) => {
             {
               model: Shop,
               attributes: ["shop_id", "user_id", "business_name"],
+            },
+            {
+              model: MarketplacePost,
+              attributes: ["post_id", "shop_id"],
+              include: [
+                {
+                  model: Post,
+                  as: "post",
+                  attributes: ["id", "title", "description"],
+                  include: [
+                    {
+                      model: PostData,
+                      as: "media",
+                      attributes: ["id", "image_url", "video_url"], 
+                    },
+                  ],
+                },
+              ],
             },
           ],
         },
