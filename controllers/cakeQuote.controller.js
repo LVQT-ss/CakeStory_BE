@@ -197,7 +197,7 @@ export const getCakeQuoteById = async (req, res) => {
                     {
                         model: Shop,
                         as: 'shop',
-                        attributes: ['shop_id', 'business_name', 'address', 'phone_number']
+                        attributes: ['shop_id', 'business_name', 'business_address', 'phone_number']
                     }
                 ],
                 attributes: ['id', 'quoted_price', 'preparation_time', 'message', 'ingredients_breakdown', 'status', 'created_at', 'accepted_at']
