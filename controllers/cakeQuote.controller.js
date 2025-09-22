@@ -167,42 +167,69 @@ export const getCakeQuotes = async (req, res) => {
     }
 };
 
-// Get a specific cake quote by ID (only for shop owners)
+// Get a specific cake quote by ID (for shop owners, staff, and admin)
 export const getCakeQuoteById = async (req, res) => {
     try {
         const { id } = req.params;
         const user_id = req.userId; // From JWT token
+        const user_role = req.role; // From JWT token
 
-        // Kiểm tra user có shop không
-        const shop = await Shop.findOne({
-            where: { user_id: user_id }
-        });
+        let shop = null;
+        let includeOptions = [
+            {
+                model: User,
+                as: 'user',
+                attributes: ['id', 'username', 'full_name', 'avatar']
+            }
+        ];
 
-        if (!shop) {
-            return res.status(403).json({
-                success: false,
-                message: 'You must have a shop to access cake quotes. Please create a shop first.'
+        // Kiểm tra quyền truy cập
+        if (user_role === 'admin' || user_role === 'staff') {
+            // Admin và staff có thể xem tất cả cake quotes với tất cả shop quotes
+            includeOptions.push({
+                model: ShopQuote,
+                as: 'shopQuotes',
+                where: {
+                    is_active: true
+                },
+                required: false,
+                include: [
+                    {
+                        model: Shop,
+                        as: 'shop',
+                        attributes: ['shop_id', 'business_name', 'address', 'phone_number']
+                    }
+                ],
+                attributes: ['id', 'quoted_price', 'preparation_time', 'message', 'ingredients_breakdown', 'status', 'created_at', 'accepted_at']
+            });
+        } else {
+            // User thường cần có shop để xem
+            shop = await Shop.findOne({
+                where: { user_id: user_id }
+            });
+
+            if (!shop) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'You must have a shop to access cake quotes. Please create a shop first.'
+                });
+            }
+
+            // Chỉ xem shop quotes của shop mình
+            includeOptions.push({
+                model: ShopQuote,
+                as: 'shopQuotes',
+                where: {
+                    shop_id: shop.shop_id,
+                    is_active: true
+                },
+                required: false,
+                attributes: ['id', 'quoted_price', 'preparation_time', 'message', 'ingredients_breakdown', 'status', 'created_at', 'accepted_at']
             });
         }
 
         const cakeQuote = await CakeQuote.findByPk(id, {
-            include: [
-                {
-                    model: User,
-                    as: 'user',
-                    attributes: ['id', 'username', 'full_name', 'avatar']
-                },
-                {
-                    model: ShopQuote,
-                    as: 'shopQuotes',
-                    where: {
-                        shop_id: shop.shop_id,
-                        is_active: true
-                    },
-                    required: false,
-                    attributes: ['id', 'quoted_price', 'preparation_time', 'message', 'ingredients_breakdown', 'status', 'created_at', 'accepted_at']
-                }
-            ]
+            include: includeOptions
         });
 
         if (!cakeQuote) {
@@ -212,18 +239,23 @@ export const getCakeQuoteById = async (req, res) => {
             });
         }
 
+        // Chuẩn bị response data
+        let responseData = {
+            ...cakeQuote.toJSON()
+        };
+
+        // Thêm shop info nếu có
+        if (shop) {
+            responseData.shopInfo = {
+                shop_id: shop.shop_id,
+                business_name: shop.business_name,
+            };
+        }
 
         res.status(200).json({
             success: true,
             message: 'Cake quote retrieved successfully',
-            data: {
-                ...cakeQuote.toJSON(),
-                shopInfo: {
-                    shop_id: shop.shop_id,
-                    business_name: shop.business_name,
-
-                }
-            }
+            data: responseData
         });
 
     } catch (error) {
