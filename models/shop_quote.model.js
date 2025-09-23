@@ -61,6 +61,13 @@ const ShopQuote = sequelize.define('ShopQuote', {
     underscored: true,
     createdAt: 'created_at',
     updatedAt: false, // Only track creation time
+    indexes: [
+        {
+            unique: true,
+            fields: ['cake_quote_id', 'shop_id'],
+            name: 'unique_shop_quote_per_cake'
+        }
+    ]
 });
 
 export default ShopQuote;

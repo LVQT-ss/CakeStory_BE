@@ -673,6 +673,16 @@ export const createShopQuote = async (req, res) => {
 
     } catch (error) {
         console.error('Error creating shop quote:', error);
+
+        // Handle unique constraint violation
+        if (error.name === 'SequelizeUniqueConstraintError' ||
+            error.original?.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({
+                success: false,
+                message: 'You have already submitted a quote for this cake request'
+            });
+        }
+
         res.status(400).json({
             success: false,
             message: error.message || 'Failed to create shop quote'
