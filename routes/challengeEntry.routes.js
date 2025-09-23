@@ -115,7 +115,7 @@ router.post('/', verifyToken, createChallengeEntry);
  *       500:
  *         description: Server error
  */
-router.get('/', verifyAdmin, verifyStaff, getAllChallengeEntries);
+router.get('/', verifyToken, getAllChallengeEntries);
 
 /**
  * @swagger
