@@ -1,6 +1,6 @@
 import express from 'express';
 import { getAllUsers, getUserById, deleteUser } from '../controllers/admin.controller.js';
-import { verifyAdmin, verifyToken } from '../middleware/verifyUser.js';
+import { verifyAdmin, verifyStaff, verifyToken } from '../middleware/verifyUser.js';
 
 const router = express.Router();
 
@@ -61,7 +61,7 @@ const router = express.Router();
  *       500:
  *         description: Server error
  */
-router.get('/users', verifyToken, verifyAdmin, getAllUsers);
+router.get('/users', verifyToken, verifyStaff, getAllUsers);
 
 
 /**
